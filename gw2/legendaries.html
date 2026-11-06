@@ -8,6 +8,7 @@
   :root {
     --bg: #121016; --panel: #1c1922; --text: #f2eef7; --accent: #c9a0ff;
     --accent2: #5fd3c4; --dim: #a89bbd; --border: #332c3e; --good: #7ddba3;
+    --now: #ff4d6d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -133,6 +134,38 @@
 
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
   .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
+
+  /* ---- themed modal (matches trackers page) ---- */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0, 0, 0, 0.65);
+    align-items: center; justify-content: center;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--panel); border: 1px solid var(--accent2);
+    border-radius: 10px; padding: 22px 26px; max-width: 400px; width: 90%;
+    text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+  }
+  .confirm-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
+  .confirm-text { color: var(--dim); font-size: 0.85rem; margin-bottom: 18px; word-break: break-word; }
+  .confirm-input-row { display: none; margin-bottom: 18px; }
+  .confirm-input-row.show { display: block; }
+  .confirm-input-row input {
+    width: 100%; background: #16131c; border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 9px 14px; font-family: inherit; font-size: 0.88rem;
+  }
+  .confirm-input-row input:focus { outline: none; border-color: var(--accent2); }
+  .confirm-buttons { display: flex; gap: 12px; justify-content: center; }
+  .btn-yes, .btn-no {
+    border-radius: 8px; padding: 9px 24px; cursor: pointer;
+    font-family: inherit; font-size: 0.9rem; font-weight: 700;
+    border: 1px solid var(--border);
+  }
+  .btn-yes { background: var(--now); border-color: var(--now); color: #fff; }
+  .btn-yes.safe { background: var(--accent2); border-color: var(--accent2); color: var(--bg); }
+  .btn-no { background: none; color: var(--dim); }
+  .btn-no:hover { border-color: var(--dim); color: var(--text); }
 </style>
 </head>
 <body>
@@ -147,7 +180,7 @@
   </nav>
 </div>
 
-<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Phases, achievements, and expandable material trees; progress counts every ingredient.</p>
+<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Newest projects at the top; progress counts every ingredient.</p>
 
 <div class="add-card">
   <h2>Start a new legendary</h2>
@@ -162,7 +195,22 @@
 
 <div class="leg-list" id="leg-list"></div>
 
-<p class="note">Data stored locally (key: gw2-legendaries). Parent items auto-check when all their ingredients are done; open/closed phases are remembered too.</p>
+<p class="note">Data stored locally (key: gw2-legendaries). New legendaries appear at the top; parent items auto-check when all ingredients are done.</p>
+
+<!-- ================= THEMED MODAL ================= -->
+<div class="confirm-overlay" id="modal-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="modal-title"></div>
+    <div class="confirm-text" id="modal-text"></div>
+    <div class="confirm-input-row" id="modal-input-row">
+      <input type="text" id="modal-input">
+    </div>
+    <div class="confirm-buttons">
+      <button class="btn-yes" id="modal-yes">YES</button>
+      <button class="btn-no" id="modal-no">NO</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // =====================================================================
@@ -172,6 +220,62 @@ const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
+
+// =====================================================================
+// THEMED MODAL — replaces native confirm() / prompt() so popups match
+// the rest of the dashboard (same pattern as trackers.html).
+//   askModal({ title, text, danger, inputLabel, inputDefault,
+//              yes, no, onYes(value) })
+//   danger:true  → red YES button (deletes)
+//   inputLabel   → shows a text field; YES submits its value
+// =====================================================================
+let modalCb = null;
+function askModal(opts) {
+  const ov = document.getElementById("modal-overlay");
+  const yesBtn = document.getElementById("modal-yes");
+  const inputRow = document.getElementById("modal-input-row");
+  const input = document.getElementById("modal-input");
+
+  document.getElementById("modal-title").textContent = opts.title || "Are you sure?";
+  document.getElementById("modal-text").textContent = opts.text || "";
+  yesBtn.textContent = opts.yes || "YES";
+  document.getElementById("modal-no").textContent = opts.no || "NO";
+  yesBtn.classList.toggle("safe", !opts.danger);
+
+  if (opts.inputLabel !== undefined) {
+    inputRow.classList.add("show");
+    input.placeholder = opts.inputLabel;
+    input.value = opts.inputDefault || "";
+  } else {
+    inputRow.classList.remove("show");
+    input.value = "";
+  }
+
+  modalCb = opts.onYes || null;
+  ov.classList.add("open");
+  if (opts.inputLabel !== undefined) setTimeout(() => input.focus(), 50);
+}
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("open");
+  modalCb = null;
+}
+document.getElementById("modal-yes").onclick = () => {
+  const cb = modalCb;
+  const val = document.getElementById("modal-input").value;
+  closeModal();
+  if (cb) cb(val);
+};
+document.getElementById("modal-no").onclick = closeModal;
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+  if (e.key === "Enter" && document.getElementById("modal-overlay").classList.contains("open")
+      && document.getElementById("modal-input-row").classList.contains("show")) {
+    document.getElementById("modal-yes").click();
+  }
+});
 
 // =====================================================================
 // TEMPLATES — phases contain items; items may carry "subs" (ingredient
@@ -274,6 +378,256 @@ const TEMPLATES = {
                 { label: "Fang", qty: "100x" } ]} ]} ]} ]} ]}
     ]
   },
+  "aurora": {
+    label: "Aurora (accessory) — FULL RECIPE",
+    hint: "Four achievements → Gleam of Sentience → Sentient Seed, the six Hero collections, 21 Electrum infusions, then Spark of Sentience via three big gifts.",
+    phases: [
+      { title: "Prerequisites", sub: "Achievements → Gleam of Sentience → Sentient Seed", items: [
+        { label: "Complete Achievements", subs: [
+          { label: "Conspiracy of Dunces", subs: [ { label: "Reward: Sentient Anomaly" } ] },
+          { label: "Token Collector", subs: [ { label: "Reward: Sentient Aberration" } ] },
+          { label: "Cin Business", subs: [ { label: "Reward: Sentient Oddity" } ] },
+          { label: "Lessons Learned", subs: [ { label: "Reward: Sentient Singularity" } ] } ]},
+        { label: "Combine 4x Rewards in Mystic Forge", subs: [ { label: "Reward: Gleam of Sentience" } ] },
+        { label: "Purchase Sentient Seed", qty: "1000x", subs: [ { label: "Unbound Magic" } ] } ]},
+      { title: "Aurora I: Awakening", sub: "Unlock: Sentient Seed — Reward: Gift of Valor", items: [
+        { label: "Sentient Seed" },
+        { label: "Bloodstone Fen Hero" },
+        { label: "Ember Bay Hero" },
+        { label: "Bitterfrost Frontier Hero" },
+        { label: "Lake Doric Hero" },
+        { label: "Draconis Mons Hero" },
+        { label: "Siren's Landing Hero" } ]},
+      { title: "Aurora II: Empowering", sub: "Prerequisite: Aurora: Awakening — Reward: Spark of Sentience", items: [
+        { label: "Infuse 21x Xunlai Electrum Ingots", qty: "21x", subs: [
+          { label: "Hidden Electrum — infuse ingot at Hidden Ourobon MP" },
+          { label: "Plundered Electrum — infuse ingot at Bloody Bill's Base MP" },
+          { label: "Sonic Electrum — infuse ingot at Copperhammer Mines MP" },
+          { label: "Stony Electrum — infuse ingot at Dostoev Sky Peak MP" },
+          { label: "Seared Electrum — infuse ingot at Cozen Desolation MP" },
+          { label: "Graven Electrum — infuse ingot at Sunken Halls of Clarent MP" },
+          { label: "Volcanic Electrum — infuse ingot at Volcanic Rim MP" },
+          { label: "Envenomed Electrum — infuse ingot at Shattercleft Hills MP" },
+          { label: "Scavenged Electrum — infuse ingot at Scavenger's Chasm MP" },
+          { label: "Blighted Electrum — infuse ingot at Corpse Grove MP" },
+          { label: "Atmospheric Electrum — infuse ingot at Holdfast Hollow MP" },
+          { label: "Luminous Electrum — infuse ingot at Luminate's Throne MP" },
+          { label: "Poisoned Electrum — infuse ingot at Burnisher Quarry MP" },
+          { label: "Goopy Electrum — infuse ingot at Nuhoch Lane MP" },
+          { label: "Covert Electrum — infuse ingot at Order of Whisper Outpost MP" },
+          { label: "Bloodstone-Infused Electrum — infuse ingot at Temple of Renewal MP" },
+          { label: "Pyroclastic Electrum — infuse ingot at Caliph's Steps MP" },
+          { label: "Frosted Electrum — infuse ingot at the Bitter Cold MP" },
+          { label: "Misty Electrum — infuse ingot at Melandru's Flourish MP" },
+          { label: "Sulfuric Electrum — infuse ingot at Western Boiling Sea MP" },
+          { label: "Scorched Electrum — infuse ingot at Lava Leap MP" } ]} ]},
+      { title: "Craft Aurora", sub: "Spark of Sentience + gifts", items: [
+        { label: "Spark of Sentience" },
+        { label: "Gift of Sentience", subs: [
+          { label: "Gift of Energy", subs: [
+            { label: "Pile of Crystalline Dust", qty: "250x" },
+            { label: "Pile of Incandescent Dust", qty: "250x" },
+            { label: "Pile of Luminous Dust", qty: "250x" },
+            { label: "Pile of Radiant Dust", qty: "250x" } ]},
+          { label: "Gift of the Mists", subs: [
+            { label: "Gift of Battle" },
+            { label: "Gift of Glory", subs: [ { label: "Shard of Glory", qty: "250x" } ] },
+            { label: "Gift of War", subs: [ { label: "Memory of Battle", qty: "250x" } ] },
+            { label: "Cube of Stabilized Dark Energy", subs: [
+              { label: "Ball of Dark Energy", qty: "1x" },
+              { label: "Stabilizing Matrix", qty: "75x" } ]} ]},
+          { label: "Icy Runestone", qty: "100x" },
+          { label: "Gift of Valor", qty: "1x" } ]},
+        { label: "Gift of Draconic Mastery", subs: [
+          { label: "Crystalline Ingot", subs: [
+            { label: "Crystalline Ore", qty: "1x" },
+            { label: "Fulgurite", qty: "1x", subs: [
+              { label: "Obsidian Shard", qty: "1x" },
+              { label: "Bottle of Airship Oil", qty: "1x" },
+              { label: "Pile of Auric Dust", qty: "1x" },
+              { label: "Ley Line Spark", qty: "1x" } ]},
+            { label: "Glob of Ectoplasm", qty: "1x" },
+            { label: "Amalgamated Gemstone", qty: "1x" } ]},
+          { label: "Bloodstone Shard", qty: "1x" },
+          { label: "Gift of Bloodstone Magic", subs: [
+            { label: "Blood Ruby", qty: "250x" },
+            { label: "Jade Shard", qty: "250x" },
+            { label: "Orrian Pearl", qty: "250x" } ]},
+          { label: "Gift of Dragon Magic", subs: [
+            { label: "Fire Orchid Blossom", qty: "250x" },
+            { label: "Fresh Winterberry", qty: "250x" },
+            { label: "Petrified Wood", qty: "250x" } ]} ]},
+        { label: "Mystic Tribute", subs: [
+          { label: "Mystic Coin", qty: "250x" },
+          { label: "Mystic Clover", qty: "77x" },
+          { label: "Gift of Condensed Magic", qty: "2x", subs: [
+            { label: "Gift of Blood", qty: "2x", subs: [
+              { label: "Vial of Powerful Blood", qty: "200x" },
+              { label: "Vial of Potent Blood", qty: "500x" },
+              { label: "Vial of Thick Blood", qty: "100x" },
+              { label: "Vial of Blood", qty: "100x" } ]},
+            { label: "Gift of Venom", qty: "2x", subs: [
+              { label: "Powerful Venom Sac", qty: "200x" },
+              { label: "Potent Venom Sac", qty: "500x" },
+              { label: "Full Venom Sac", qty: "100x" },
+              { label: "Venom Sac", qty: "100x" } ]},
+            { label: "Gift of Totems", qty: "2x", subs: [
+              { label: "Elaborate Totem", qty: "200x" },
+              { label: "Intricate Totem", qty: "500x" },
+              { label: "Engraved Totem", qty: "100x" },
+              { label: "Totem", qty: "100x" } ]},
+            { label: "Gift of Dust", qty: "2x", subs: [
+              { label: "Pile of Crystalline Dust", qty: "200x" },
+              { label: "Pile of Incandescent Dust", qty: "500x" },
+              { label: "Pile of Luminous Dust", qty: "100x" },
+              { label: "Pile of Radiant Dust", qty: "100x" } ]} ]},
+          { label: "Gift of Condensed Might", qty: "2x", subs: [
+            { label: "Gift of Claws", qty: "2x", subs: [
+              { label: "Vicious Claw", qty: "200x" },
+              { label: "Large Claw", qty: "500x" },
+              { label: "Sharp Claw", qty: "100x" },
+              { label: "Claw", qty: "100x" } ]},
+            { label: "Gift of Scales", qty: "2x", subs: [
+              { label: "Armored Scale", qty: "200x" },
+              { label: "Large Scale", qty: "500x" },
+              { label: "Smooth Scale", qty: "100x" },
+              { label: "Scale", qty: "100x" } ]},
+            { label: "Gift of Bones", qty: "2x", subs: [
+              { label: "Ancient Bone", qty: "200x" },
+              { label: "Large Bone", qty: "500x" },
+              { label: "Heavy Bone", qty: "100x" },
+              { label: "Bone", qty: "100x" } ]},
+            { label: "Gift of Fangs", qty: "2x", subs: [
+              { label: "Vicious Fang", qty: "200x" },
+              { label: "Large Fang", qty: "500x" },
+              { label: "Sharp Fang", qty: "100x" },
+              { label: "Fang", qty: "100x" } ]} ]} ]} ]}
+    ]
+  },
+  "fang": {
+    label: "Dragon's Fang / Primordus Fang (Gen 3 sword) — FULL RECIPE",
+    hint: "Dragon's Fang precursor, Gift of Jade Mastery, Draconic Tribute, Gift of Aurene's Fang, plus the Aurene's Facet of Fire collection for the empowered skin.",
+    phases: [
+      { title: "Dragon's Fang (Precursor)", sub: "Fortified components + Transcendent Crystal", items: [
+        { label: "Dragon's Fang", subs: [
+          { label: "Fortified Precursor Sword Blade", subs: [
+            { label: "Deldrimor Steel Sword Blade", subs: [
+              { label: "Pile of Crystalline Dust", qty: "5x" },
+              { label: "Deldrimor Steel Ingot", qty: "3x" },
+              { label: "Thermocatalytic Reagent", qty: "50x" } ]},
+            { label: "Blessing of the Jade Empress", qty: "1x" },
+            { label: "Chunk of Pure Jade", qty: "20x" } ]},
+          { label: "Fortified Precursor Sword Hilt", subs: [
+            { label: "Deldrimor Steel Sword Hilt", subs: [
+              { label: "Pile of Crystalline Dust", qty: "5x" },
+              { label: "Deldrimor Steel Ingot", qty: "3x" },
+              { label: "Thermocatalytic Reagent", qty: "50x" } ]},
+            { label: "Blessing of the Jade Empress", qty: "1x" },
+            { label: "Chunk of Pure Jade", qty: "20x" } ]},
+          { label: "Transcendent Crystal", subs: [
+            { label: "Glob of Ectoplasm", qty: "10x" },
+            { label: "Eldritch Scroll", qty: "1x" },
+            { label: "Hydrocatalytic Reagent", qty: "100x" },
+            { label: "Amalgamated Gemstone", qty: "10x" } ]},
+          { label: "Memory of Aurene", qty: "100x" } ]} ]},
+      { title: "Craft Dragon's Fang (Legendary)", sub: "Precursor + three gifts in the Mystic Forge", items: [
+        { label: "Gift of Jade Mastery", subs: [
+          { label: "Gift of the Dragon Empire", subs: [
+            { label: "Jade Runestone", qty: "100x" },
+            { label: "Chunk of Pure Jade", qty: "200x" },
+            { label: "Chunk of Ancient Ambergris", qty: "100x" },
+            { label: "Blessing of the Jade Empress", qty: "5x" } ]},
+          { label: "Bloodstone Shard", qty: "1x" },
+          { label: "Gift of Cantha", subs: [
+            { label: "Gift of Seitung Province", qty: "1x" },
+            { label: "Gift of New Kaineng City", qty: "1x" },
+            { label: "Gift of the Echovald Forest", qty: "1x" },
+            { label: "Gift of Dragon's End", qty: "1x" } ]},
+          { label: "Antique Summoning Stone", qty: "100x" } ]},
+        { label: "Draconic Tribute", subs: [
+          { label: "Mystic Clover", qty: "38x" },
+          { label: "Amalgamated Draconic Lodestone", qty: "5x" },
+          { label: "Gift of Condensed Magic", qty: "1x", subs: [
+            { label: "Gift of Blood", qty: "1x", subs: [
+              { label: "Vial of Powerful Blood", qty: "100x" },
+              { label: "Vial of Potent Blood", qty: "250x" },
+              { label: "Vial of Thick Blood", qty: "50x" },
+              { label: "Vial of Blood", qty: "50x" } ]},
+            { label: "Gift of Venom", qty: "1x", subs: [
+              { label: "Powerful Venom Sac", qty: "100x" },
+              { label: "Potent Venom Sac", qty: "250x" },
+              { label: "Full Venom Sac", qty: "50x" },
+              { label: "Venom Sac", qty: "50x" } ]},
+            { label: "Gift of Totems", qty: "1x", subs: [
+              { label: "Elaborate Totem", qty: "100x" },
+              { label: "Intricate Totem", qty: "250x" },
+              { label: "Engraved Totem", qty: "50x" },
+              { label: "Totem", qty: "50x" } ]},
+            { label: "Gift of Dust", qty: "1x", subs: [
+              { label: "Pile of Crystalline Dust", qty: "100x" },
+              { label: "Pile of Incandescent Dust", qty: "250x" },
+              { label: "Pile of Luminous Dust", qty: "50x" },
+              { label: "Pile of Radiant Dust", qty: "50x" } ]} ]},
+          { label: "Gift of Condensed Might", qty: "1x", subs: [
+            { label: "Gift of Claws", qty: "1x", subs: [
+              { label: "Vicious Claw", qty: "100x" },
+              { label: "Large Claw", qty: "250x" },
+              { label: "Sharp Claw", qty: "50x" },
+              { label: "Claw", qty: "50x" } ]},
+            { label: "Gift of Scales", qty: "1x", subs: [
+              { label: "Armored Scale", qty: "100x" },
+              { label: "Large Scale", qty: "250x" },
+              { label: "Smooth Scale", qty: "50x" },
+              { label: "Scale", qty: "50x" } ]},
+            { label: "Gift of Bones", qty: "1x", subs: [
+              { label: "Ancient Bone", qty: "100x" },
+              { label: "Large Bone", qty: "250x" },
+              { label: "Heavy Bone", qty: "50x" },
+              { label: "Bone", qty: "50x" } ]},
+            { label: "Gift of Fangs", qty: "1x", subs: [
+              { label: "Vicious Fang", qty: "100x" },
+              { label: "Large Fang", qty: "250x" },
+              { label: "Sharp Fang", qty: "50x" },
+              { label: "Fang", qty: "50x" } ]} ]} ]},
+        { label: "Gift of Aurene's Fang", subs: [
+          { label: "Poem on Swords", subs: [
+            { label: "Tale of Adventure", qty: "10x" },
+            { label: "Lamplighter's Badge", qty: "10x" },
+            { label: "Deldrimor Steel Sword Blade", subs: [
+              { label: "Pile of Crystalline Dust", qty: "5x" },
+              { label: "Deldrimor Steel Ingot", qty: "3x" },
+              { label: "Thermocatalytic Reagent", qty: "50x" } ]} ]},
+          { label: "Mystic Runestone", qty: "100x" },
+          { label: "Gift of Research", subs: [
+            { label: "Exotic Essence of Luck", qty: "250x" },
+            { label: "Thermocatalytic Reagent", qty: "250x" },
+            { label: "Hydrocatalytic Reagent", qty: "500x" } ]},
+          { label: "Gift of the Mists", subs: [
+            { label: "Gift of Battle" },
+            { label: "Gift of Glory", subs: [ { label: "Shard of Glory", qty: "250x" } ] },
+            { label: "Gift of War", subs: [ { label: "Memory of Battle", qty: "250x" } ] },
+            { label: "Cube of Stabilized Dark Energy", subs: [
+              { label: "Ball of Dark Energy", qty: "1x" },
+              { label: "Stabilizing Matrix", qty: "75x" } ]} ]} ]},
+        { label: "Combine Dragon's Fang precursor + gifts in the Mystic Forge" } ]},
+      { title: "Aurene's Facet of Fire", sub: "Empowered skin collection — Prerequisite: Arms of a New Cycle", items: [
+        { label: "Scale Fragment of Primordus", subs: [
+          { label: "Buy 4x Scale Splinter of Primordus", qty: "4x", subs: [
+            { label: "Karma", qty: "350,000x" },
+            { label: "Ancient Chunk of Ambergris", qty: "10x" },
+            { label: "Gold + Research Note", qty: "75g", subs: [ { label: "Research Note", qty: "2,500x" } ] },
+            { label: "Spirit Shard", qty: "100x" } ]} ]},
+        { label: "Purified Scale Fragment of Primordus", subs: [ { label: "Defeat the Megadestroyer" } ]},
+        { label: "Completed Memory of Primordus", subs: [ { label: "Fragmented Elder Dragon Memory", qty: "250x" } ]},
+        { label: "Lingering Destroyer Aether", subs: [ { label: "Defeat Aestus or Ignis with Aurene weapon equipped" } ]},
+        { label: "Purified Destroyer Aether", subs: [ { label: "Purify at Aurene's focusing crystal in Sector Zuhl" } ]},
+        { label: "Uncharged Fragment of Prismatic Fire", subs: [
+          { label: "Mystic Clover", qty: "5x" },
+          { label: "Jade Runestone", qty: "200x" },
+          { label: "Memory of Aurene", qty: "250x" } ]},
+        { label: "Fragment of Prismatic Fire", subs: [ { label: "Complete Dragonstorm with fragment and Aurene weapon equipped" } ]} ]}
+    ]
+  },
   "gen1": {
     label: "Gen 1 Legendary Weapon",
     hint: "Precursor hunt, Gift of Mastery, Gift of Fortune, specialty gift, forge it.",
@@ -317,8 +671,8 @@ const TEMPLATES = {
     ]
   },
   "gen3": {
-    label: "Gen 3 Legendary Weapon (Aurene)",
-    hint: "Runesteel precursors, research notes, map currencies, empowered pieces.",
+    label: "Gen 3 Legendary Weapon (Aurene) — outline",
+    hint: "Generic outline. Full recipes exist for Dragon's Fang — type 'Primordus Fang' or 'Dragon's Fang' to use it.",
     phases: [
       { title: "Per Piece", sub: "repeat for each of the 4 pieces", items: [
         { label: "Obtain Runesteel weapon precursor" },
@@ -345,8 +699,8 @@ const TEMPLATES = {
     ]
   },
   "accessory-other": {
-    label: "Other Accessory/Ring/Back (Aurora, Coalescence...) — outline",
-    hint: "Generic Living World / PoF / EoD outline. If you want the FULL recipe for one of these (like Vision has), tell Lumo and it gets added.",
+    label: "Other Accessory/Ring/Back (Coalescence, Infinity...) — outline",
+    hint: "Generic Living World / PoF / EoD outline. If you want the FULL recipe for one of these (like Vision and Aurora have), tell Lumo and it gets added.",
     phases: [
       { title: "Prerequisites", sub: "", items: [
         { label: "Complete prerequisite story/achievements" } ]},
@@ -367,11 +721,12 @@ const TEMPLATES = {
 // =====================================================================
 // NAME MATCHING — typing a known legendary's name auto-selects its
 // full-recipe template. Keys are lowercase substrings.
-// Add entries here as more full recipes get built out.
 // =====================================================================
 const NAME_MATCH = [
   { keys: ["vision", "glimpse"], tpl: "vision" },
-  { keys: ["aurora", "coalescence", "infinity"], tpl: "accessory-other" },
+  { keys: ["aurora", "spark of sentience"], tpl: "aurora" },
+  { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
+  { keys: ["coalescence", "infinity"], tpl: "accessory-other" },
   { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" }
 ];
 
@@ -464,25 +819,34 @@ tplSel.onchange = () => {
   matchNote.classList.remove("show");
   updHint();
 };
-autoMatch(); // cover prefilled/remembered input
+autoMatch();
 updHint();
 
 function addLegend() {
   const name = nameEl.value.trim();
   if (!name) return;
-  autoMatch(); // one last check before saving
+  autoMatch();
   const tpl = TEMPLATES[tplSel.value];
   const phases = snapshot(tpl.phases);
-  phases[0].open = true; // open the first phase for convenience
-  legs.push({ id: "l" + Date.now(), name: name, kind: tpl.label, phases: phases });
+  phases[0].open = true;
+  legs.unshift({ id: "l" + Date.now(), name: name, kind: tpl.label, phases: phases });
   nameEl.value = "";
   save(); render();
 }
 
+// delete now goes through the themed modal instead of native confirm()
 function delLegend(li) {
-  if (!confirm("Remove \"" + legs[li].name + "\"? Its checklist progress goes with it.")) return;
-  legs.splice(li, 1);
-  save(); render();
+  askModal({
+    title: "Remove " + legs[li].name + "?",
+    text: "Its checklist progress goes with it. This can't be undone.",
+    danger: true,
+    yes: "DELETE",
+    no: "KEEP IT",
+    onYes: () => {
+      legs.splice(li, 1);
+      save(); render();
+    }
+  });
 }
 
 function toggleAt(li, pi, path, checked) {
@@ -494,11 +858,21 @@ function toggleAt(li, pi, path, checked) {
   save(); render();
 }
 
+// add-step now goes through the themed modal instead of native prompt()
 function addStepTo(li, pi) {
-  const label = prompt("Step name:");
-  if (!label) return;
-  legs[li].phases[pi].items.push({ label: label, done: false });
-  save(); render();
+  askModal({
+    title: "Add a step",
+    text: "New step goes into \"" + legs[li].phases[pi].title + "\":",
+    inputLabel: "Step name...",
+    yes: "ADD",
+    no: "CANCEL",
+    onYes: (val) => {
+      const label = (val || "").trim();
+      if (!label) return;
+      legs[li].phases[pi].items.push({ label: label, done: false });
+      save(); render();
+    }
+  });
 }
 
 // ---------- rendering ----------
