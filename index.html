@@ -108,10 +108,11 @@
   }
   .theme-toggle:hover { border-color: var(--accent2); }
 
-  /* ============ SIGN-IN OVERLAY ============ */
-  /* Overlay is visible from the very first paint, but shows a
-     neutral "checking" state — the LOGIN FORM is hidden until
-     we know there is no session. This kills the flicker. */
+  /* ============ GATE ============ */
+  /* While checking: gate shows ONLY a tiny faint dot — visually
+     indistinguishable from a normal slow page load. If the browser
+     has the "unlocked" flag, the gate is removed before first paint
+     and the session check happens quietly in the background. */
   #gate {
     position: fixed; inset: 0; z-index: 200;
     background: var(--bg);
@@ -119,22 +120,24 @@
     padding: 20px;
   }
   #gate.hidden { display: none; }
-  .gate-box { width: 100%; max-width: 360px; text-align: center; }
-  .gate-box .cat {
-    font-size: 2.2rem; margin-bottom: 8px;
+  .gate-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border);
+    animation: pulse 1.2s ease-in-out infinite;
   }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  .gate-box { width: 100%; max-width: 360px; text-align: center; display: none; }
+  .gate-box.show { display: block; }
+  .gate-box .cat { font-size: 2.2rem; margin-bottom: 8px; }
   .gate-box h2 {
     color: var(--accent); font-size: 1.2rem; margin-bottom: 6px;
   }
   .gate-box p.hint {
     color: var(--dim); font-size: 0.8rem; margin-bottom: 24px;
   }
-  .gate-status {
-    color: var(--dim); font-size: 0.85rem; letter-spacing: 1px;
-    padding: 20px 0;
-  }
-  #gate-form { display: none; }
-  #gate-form.show { display: block; }
   .gate-field { margin-bottom: 14px; text-align: left; }
   .gate-field label {
     display: block; font-size: 0.68rem; color: var(--dim);
@@ -166,11 +169,11 @@
 
 <!-- ============ GATE ============ -->
 <div id="gate">
-  <div class="gate-box">
+  <div class="gate-dot" id="gate-dot"></div>
+  <div class="gate-box" id="gate-box">
     <div class="cat">🐱</div>
     <h2>Savich Dashboard</h2>
     <p class="hint">Household sign-in — your data lives in the cloud now.</p>
-    <div class="gate-status" id="gate-status">Checking sign-in…</div>
     <form id="gate-form" autocomplete="on">
       <div class="gate-error" id="gate-error"></div>
       <div class="gate-field">
@@ -254,49 +257,79 @@
     const current = document.body.getAttribute("data-accent") === "pink" ? "teal" : "pink";
     applyAccent(current);
   }
-  const saved = localStorage.getItem("savich-accent");
-  applyAccent(saved === "pink" ? "pink" : "teal");
+  applyAccent(localStorage.getItem("savich-accent") === "pink" ? "pink" : "teal");
 
-  // ---------- gate logic ----------
+  // ---------- gate elements ----------
   const gate = document.getElementById("gate");
-  const gateStatus = document.getElementById("gate-status");
-  const gateForm = document.getElementById("gate-form");
+  const gateDot = document.getElementById("gate-dot");
+  const gateBox = document.getElementById("gate-box");
   const gateError = document.getElementById("gate-error");
   const gateBtn = document.getElementById("gate-btn");
+  const UNLOCK_FLAG = "savich-unlocked";
+
+  function showLoginForm(msg) {
+    gateDot.style.display = "none";
+    gateBox.classList.add("show");
+    if (msg) {
+      gateError.textContent = msg;
+      gateError.classList.add("show");
+    }
+  }
+
+  function hideGate() {
+    gate.classList.add("hidden");
+  }
 
   async function signOut() {
+    localStorage.removeItem(UNLOCK_FLAG);
     try { await sb().auth.signOut(); } catch (e) {}
     location.reload();
   }
 
+  // ---------- OPTIMISTIC UNLOCK ----------
+  // If this browser signed in successfully before, trust it
+  // INSTANTLY (before first paint) so page navigation has zero
+  // gate flicker. The real session check runs quietly behind it.
+  const unlocked = localStorage.getItem(UNLOCK_FLAG);
+  if (unlocked) hideGate();
+
   (async function initGate() {
+    let session = null;
     try {
       const { data, error } = await sb().auth.getSession();
-      const session = data && data.session;
-
-      if (session) {
-        // Already signed in — reveal dashboard, no form ever shown
-        const email = session.user && session.user.email
-          ? session.user.email : "";
-        document.getElementById("who").textContent =
-          "Signed in as " + email;
-        gate.classList.add("hidden");
+      session = data && data.session;
+      if (error && !session) {
+        // unreachable cloud: if optimistically unlocked, ride it out;
+        // otherwise let the user try the form
+        if (unlocked) {
+          document.getElementById("who").textContent =
+            "Offline mode — last known session";
+          return;
+        }
+        showLoginForm("Could not reach the cloud — check your connection.");
         return;
       }
-
-      // Definitely not signed in — NOW show the form
-      gateStatus.style.display = "none";
-      gateForm.classList.add("show");
     } catch (err) {
-      // Supabase unreachable — still show the form so retry is possible
-      gateStatus.style.display = "none";
-      gateForm.classList.add("show");
-      gateError.textContent = "Could not reach the cloud — check your connection.";
-      gateError.classList.add("show");
+      if (unlocked) return; // stay unlocked, check failed silently
+      showLoginForm("Could not reach the cloud — check your connection.");
+      return;
     }
+
+    if (session) {
+      localStorage.setItem(UNLOCK_FLAG, String(Date.now()));
+      const email = session.user && session.user.email ? session.user.email : "";
+      document.getElementById("who").textContent =
+        "Signed in as " + email;
+      hideGate();
+      return;
+    }
+
+    // genuinely not signed in
+    localStorage.removeItem(UNLOCK_FLAG);
+    showLoginForm();
   })();
 
-  gateForm.addEventListener("submit", async (e) => {
+  document.getElementById("gate-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     gateError.classList.remove("show");
     gateBtn.disabled = true;
@@ -308,7 +341,7 @@
         email: email, password: pass
       });
       if (error) throw error;
-      // success — full reload so everything re-initializes signed in
+      localStorage.setItem(UNLOCK_FLAG, String(Date.now()));
       location.reload();
     } catch (err) {
       gateError.textContent =
