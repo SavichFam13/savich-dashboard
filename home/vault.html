@@ -81,12 +81,6 @@
     font-family: inherit; cursor: pointer;
   }
   button.danger:hover { border-color: var(--bad); color: var(--bad); }
-  button.neutral {
-    background: none; border: 1px solid var(--border); color: var(--dim);
-    padding: 8px 18px; border-radius: 5px; font-size: 0.8rem;
-    font-family: inherit; cursor: pointer;
-  }
-  button.neutral:hover { border-color: var(--accent2); color: var(--accent2); }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
   th {
@@ -121,6 +115,11 @@
   .detail-grid span.v { color: var(--dim); }
   .detail-grid span.a { color: var(--accent2); font-variant-numeric: tabular-nums; }
 
+  .sync-note {
+    font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px;
+  }
+  .sync-note.live { color: var(--good); }
+
   /* ---- custom modal ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
@@ -134,7 +133,7 @@
     max-width: 380px; width: 100%;
     box-shadow: 0 12px 40px rgba(0,0,0,0.5);
   }
-.modal-box h2 {
+  .modal-box h2 {
     font-size: 0.98rem; color: #e10ab2;
     margin-bottom: 12px; line-height: 1.4;
   }
@@ -175,9 +174,12 @@
 
 <div class="top">
   <h1>Vault Distribution</h1>
-  <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+  <div style="display:flex; gap:14px; align-items:baseline;">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+  </div>
 </div>
-<p class="sub">Save baby, save baby, save baby save!</p>
+<p class="sub">Save baby, save baby, save baby save! <span style="opacity:0.6;">(shared household data — cloud synced)</span></p>
 
 <nav>
   <button id="tab-distribute" class="active">DISTRIBUTE</button>
@@ -224,13 +226,11 @@
 <div class="page" id="page-history">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="neutral" onclick="exportHistory()">Export Backup</button>
-      <label class="neutral" style="display:inline-flex; align-items:center; cursor:pointer; padding:8px 18px; border:1px solid var(--border); border-radius:5px; font-size:0.8rem;">
-        Import Backup
-        <input type="file" accept=".json" style="display:none;" onchange="importHistory(event)">
-      </label>
-      <button class="danger" onclick="clearHistory()">Clear All History</button>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="danger" onclick="exportHistory()">Export Backup</button>
+      <button class="danger" onclick="document.getElementById('import-file').click()">Import Backup</button>
+      <button class="danger" id="btn-clear-history" onclick="clearHistory()">Clear All History</button>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
   <table>
@@ -260,10 +260,17 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // ==========================================================
-// VAULTS
+// VAULT DISTRIBUTION — CLOUD EDITION
+// Scope: SHARED (both accounts see and contribute)
+//   - vault config + in-progress cycle -> app_data blobs
+//   - saved pay cycles                -> vault_history rows
+//   - deleting history / clearing     -> admin only (DB-enforced)
 // ==========================================================
+
 const DEFAULT_VAULTS = [
   { name: "420", weight: 2 },
   { name: "Advantage", weight: 0 },
@@ -287,24 +294,59 @@ const DEFAULT_VAULTS = [
   { name: "Transportation", weight: 5 },
 ];
 
-const CFG_KEY = "savich-vault-config";
-const CUR_KEY = "savich-vault-current";
-const HIST_KEY = "savich-vault-history";
+const CFG_KEY  = "savich-vault-config";
+const CUR_KEY  = "savich-vault-current";
 
-function load(key, fallback) {
-  try {
-    const v = JSON.parse(localStorage.getItem(key));
-    return v !== null && v !== undefined ? v : fallback;
-  } catch { return fallback; }
-}
-function store(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
-
-let vaults = load(CFG_KEY, DEFAULT_VAULTS);
-let current = load(CUR_KEY, { amount: "", done: {} });
-let history = load(HIST_KEY, []);
+let vaults  = DEFAULT_VAULTS.map(v => ({ ...v }));
+let current = { amount: "", done: {} };
+let history = [];          // vault_history rows from the cloud
+let IS_ADMIN = false;
 
 // ==========================================================
-// TRANSFER MATH
+// CLOUD HELPERS (direct to supabase, shared scope)
+// ==========================================================
+async function ensureAuth() {
+  if (typeof requireAuth === "function") return await requireAuth();
+  const { data } = await sb().auth.getSession();
+  if (!data || !data.session) {
+    location.href = "../auth.html?next=" + encodeURIComponent(location.pathname);
+    throw new Error("not signed in");
+  }
+}
+
+async function getBlob(key) {
+  const { data, error } = await sb()
+    .from("app_data").select("data")
+    .eq("key", key).eq("owner", "shared").maybeSingle();
+  if (error) throw error;
+  return data ? data.data : null;
+}
+
+async function putBlob(key, dataObj) {
+  const { error } = await sb()
+    .from("app_data")
+    .upsert({ key: key, owner: "shared", data: dataObj });
+  if (error) throw error;
+}
+
+async function loadHistoryRows() {
+  const { data, error } = await sb()
+    .from("vault_history").select("*")
+    .eq("owner", "shared")
+    .order("cycle_date", { ascending: true })
+    .order("id", { ascending: true });
+  if (error) throw error;
+  history = data || [];
+}
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+
+// ==========================================================
+// TRANSFER MATH (unchanged)
 // ==========================================================
 function transferFor(amount, weight) {
   if (amount === "" || !Number.isFinite(amount)) return "";
@@ -323,7 +365,7 @@ function poolAmount() {
 }
 
 // ==========================================================
-// CUSTOM MODAL — returns true for YES, false for NO
+// CUSTOM MODAL
 // ==========================================================
 let modalResolve = null;
 
@@ -348,8 +390,6 @@ document.getElementById("modal-no").onclick = () => closeModal(false);
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(false);
 });
-
-// ESC key also counts as NO
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" &&
       document.getElementById("modal-overlay").classList.contains("open")) {
@@ -423,24 +463,28 @@ function renderVaults() {
 function toggleDone(encName) {
   const name = decodeURIComponent(encName);
   current.done[name] = !current.done[name];
-  store(CUR_KEY, current);
+  putBlob(CUR_KEY, current).then(() => setSync(true)).catch(err => setSync(false));
   renderVaults();
 }
 
 function setWeight(i, val) {
   vaults[i].weight = val === "" ? 0 : Number(val);
-  store(CFG_KEY, vaults);
+  putBlob(CFG_KEY, { vaults: vaults }).then(() => setSync(true)).catch(err => setSync(false));
   renderVaults();
 }
 
+let curSaveTimer = null;
 document.getElementById("pool-amount").addEventListener("input", () => {
   current.amount = document.getElementById("pool-amount").value;
-  store(CUR_KEY, current);
   renderVaults();
+  clearTimeout(curSaveTimer);
+  curSaveTimer = setTimeout(() => {
+    putBlob(CUR_KEY, current).then(() => setSync(true)).catch(err => setSync(false));
+  }, 600);
 });
 
 // ==========================================================
-// SAVE CYCLE
+// SAVE CYCLE — inserts a vault_history row
 // ==========================================================
 async function saveCycle() {
   const amount = poolAmount();
@@ -470,23 +514,34 @@ async function saveCycle() {
   if (!ok) return;
 
   const d = new Date();
-  history.push({
-    date: d.getFullYear() + "-" +
-      String(d.getMonth() + 1).padStart(2, "0") + "-" +
-      String(d.getDate()).padStart(2, "0"),
-    amount: amount,
-    entries: entries,
-    doneState: { ...current.done }
-  });
-  store(HIST_KEY, history);
+  const dateStr = d.getFullYear() + "-" +
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
 
-  current = { amount: "", done: {} };
-  store(CUR_KEY, current);
-  document.getElementById("pool-amount").value = "";
-  renderVaults();
-  renderHistory();
+  try {
+    const { error } = await sb().from("vault_history").insert([{
+      owner: "shared",
+      cycle_date: dateStr,
+      amount: amount,
+      entries: entries,
+      done_state: { ...current.done }
+    }]);
+    if (error) throw error;
 
-  showToast("Pay cycle saved to history. Board reset for next time.");
+    current = { amount: "", done: {} };
+    await putBlob(CUR_KEY, current);
+    document.getElementById("pool-amount").value = "";
+
+    await loadHistoryRows();
+    renderVaults();
+    renderHistory();
+    setSync(true);
+    showToast("Pay cycle saved to history. Board reset for next time.");
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not save — check your connection.");
+  }
 }
 
 // ==========================================================
@@ -500,14 +555,17 @@ async function resetCycle() {
   );
   if (!ok) return;
   current = { amount: "", done: {} };
-  store(CUR_KEY, current);
+  try {
+    await putBlob(CUR_KEY, current);
+    setSync(true);
+  } catch { setSync(false); }
   document.getElementById("pool-amount").value = "";
   renderVaults();
   showToast("Ready for the next pay cycle.");
 }
 
 // ==========================================================
-// HISTORY
+// HISTORY (rows come from vault_history)
 // ==========================================================
 function renderHistory() {
   const tbody = document.getElementById("history-body");
@@ -522,115 +580,156 @@ function renderHistory() {
 
   const sorted = [...history].reverse();
 
-  sorted.forEach((cycle, idx) => {
-    const realIdx = history.length - 1 - idx;
-    const [y, m, d] = cycle.date.split("-");
+  sorted.forEach(row => {
+    const [y, m, d] = row.cycle_date.split("-");
     const tr = document.createElement("tr");
     tr.className = "hist-row";
-    tr.onclick = () => toggleDetail(realIdx);
+    tr.onclick = () => toggleDetail(tr, row);
     tr.innerHTML =
       "<td>" + (m + "/" + d + "/" + y) + "</td>" +
-      '<td class="transfer">' + money(cycle.amount) + "</td>" +
-      '<td class="transfer">' + cycle.entries.length + "</td>" +
+      '<td class="transfer">' + money(row.amount) + "</td>" +
+      '<td class="transfer">' + (row.entries ? row.entries.length : 0) + "</td>" +
       '<td style="color:var(--dim); font-size:0.75rem;">&#9662;</td>';
     tbody.appendChild(tr);
   });
 }
 
-function toggleDetail(idx) {
-  const existing = document.getElementById("detail-" + idx);
+function toggleDetail(tr, row) {
+  const existing = document.getElementById("detail-" + row.id);
   if (existing) { existing.remove(); return; }
-
-  const cycle = history[idx];
-  const rows = document.querySelectorAll("#history-body .hist-row");
-  const sortedIdx = history.length - 1 - idx;
-  const row = rows[sortedIdx];
-  if (!row) return;
 
   const detail = document.createElement("tr");
   detail.className = "detail-row";
-  detail.id = "detail-" + idx;
-  const cells = cycle.entries.map(e =>
+  detail.id = "detail-" + row.id;
+  const cells = (row.entries || []).map(e =>
     "<div><span class='v'>" + e.name + " (" + e.weight + "%)</span>" +
     "<span class='a'>" + money(e.transfer) + "</span></div>").join("");
   detail.innerHTML = '<td colspan="4"><div class="detail-grid">' + cells + "</div></td>";
-  row.after(detail);
+  tr.after(detail);
 }
 
+// Clear All = admin only at the DB level; hide button for members
 async function clearHistory() {
+  if (!IS_ADMIN) {
+    showToast("Only the household admin can clear history.");
+    return;
+  }
   const ok = await askConfirm(
     "Delete entire history?",
-    "This cannot be undone.",
+    "This cannot be undone. Every pay cycle on every device will be gone.",
     true
   );
   if (!ok) return;
-  history = [];
-  store(HIST_KEY, history);
-  renderHistory();
+  try {
+    const { error } = await sb().from("vault_history").delete().eq("owner", "shared");
+    if (error) throw error;
+    await loadHistoryRows();
+    renderHistory();
+    setSync(true);
+    showToast("History cleared.");
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not clear history.");
+  }
 }
 
 // ==========================================================
-// HISTORY BACKUP / RESTORE
+// EXPORT / IMPORT BACKUP (also the migration path:
+// export from the old local page, import here)
 // ==========================================================
-function isValidHistory(data) {
-  return Array.isArray(data) && data.every(c =>
-    c && typeof c === "object" &&
-    typeof c.date === "string" &&
-    Number.isFinite(Number(c.amount)) &&
-    Array.isArray(c.entries));
-}
-
 function exportHistory() {
-  if (history.length === 0) {
-    showToast("No history to export yet.");
+  const payload = {
+    vaults: vaults,
+    history: history.map(r => ({
+      date: r.cycle_date,
+      amount: Number(r.amount),
+      entries: r.entries || [],
+      doneState: r.done_state || {}
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vault-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast("Backup downloaded (" + payload.history.length + " cycles).");
+}
+
+async function importHistory(input) {
+  const file = input.files && input.files[0];
+  input.value = "";
+  if (!file) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    showToast("That file isn't valid JSON.");
     return;
   }
-  const blob = new Blob([JSON.stringify(history, null, 2)],
-    { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "vault-history-backup-" +
-    new Date().toISOString().slice(0, 10) + ".json";
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("History backup downloaded. Keep it somewhere safe.");
-}
 
-function importHistory(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (!isValidHistory(data)) {
-        showToast("That file isn't a valid vault history backup.");
-        return;
-      }
-      const ok = await askConfirm(
-        "Restore history from backup?",
-        "This replaces the current history with the contents of the backup file:\n\n" +
-        data.length + " pay cycle" + (data.length === 1 ? "" : "s") +
-        "\nCurrent history: " + history.length +
-        " pay cycle" + (history.length === 1 ? "" : "s"),
-        true
-      );
-      if (!ok) return;
-      history = data;
-      store(HIST_KEY, history);
-      renderHistory();
-      showToast("History restored from backup.");
-    } catch (err) {
-      showToast("Couldn't read that file.");
+  // Accept either the full backup format or a bare history array
+  let impVaults = null;
+  let cycles = null;
+  if (Array.isArray(parsed)) {
+    cycles = parsed;
+  } else if (parsed && typeof parsed === "object") {
+    if (Array.isArray(parsed.history)) cycles = parsed.history;
+    if (Array.isArray(parsed.vaults)) impVaults = parsed.vaults;
+  }
+
+  if (!cycles && !impVaults) {
+    showToast("No recognizable vault data in that file.");
+    return;
+  }
+
+  const lines = [];
+  if (impVaults) lines.push(impVaults.length + " vaults (names + weights)");
+  if (cycles) lines.push(cycles.length + " pay cycles");
+  if (!impVaults && cycles && !cycles.every(c => Array.isArray(c.entries))) {
+    showToast("Some cycles look malformed — aborting.");
+    return;
+  }
+
+  const ok = await askConfirm(
+    "Import this backup?",
+    "Will add to the shared cloud data:\n" + lines.join("\n"),
+    false
+  );
+  if (!ok) return;
+
+  try {
+    if (impVaults) {
+      vaults = impVaults;
+      await putBlob(CFG_KEY, { vaults: vaults });
     }
-  };
-  reader.readAsText(file);
-  e.target.value = "";
+    if (cycles && cycles.length) {
+      const rows = cycles.map(c => ({
+        owner: "shared",
+        cycle_date: c.date,
+        amount: Number(c.amount),
+        entries: c.entries || [],
+        done_state: c.doneState || c.done_state || {}
+      }));
+      const { error } = await sb().from("vault_history").insert(rows);
+      if (error) throw error;
+    }
+    await loadHistoryRows();
+    renderVaults();
+    renderHistory();
+    setSync(true);
+    showToast("Backup imported to the cloud.");
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Import failed — nothing was half-added.");
+  }
 }
 
 // ==========================================================
-// TABS + INIT
+// TABS
 // ==========================================================
 document.getElementById("tab-distribute").onclick = () => switchTab("distribute");
 document.getElementById("tab-history").onclick = () => switchTab("history");
@@ -644,9 +743,50 @@ function switchTab(name) {
   document.getElementById("page-" + name).classList.add("visible");
 }
 
-document.getElementById("pool-amount").value = current.amount || "";
-renderVaults();
-renderHistory();
+// ==========================================================
+// INIT — gate, then load everything from the cloud
+// ==========================================================
+(async function init() {
+  try {
+    await ensureAuth();
+  } catch (e) {
+    return; // redirecting to login
+  }
+
+  // admin check drives UI (the DB enforces regardless)
+  try {
+    const { data, error } = await sb().rpc("is_admin");
+    IS_ADMIN = !error && data === true;
+  } catch { IS_ADMIN = false; }
+  if (!IS_ADMIN) {
+    document.getElementById("btn-clear-history").style.display = "none";
+  }
+
+  try {
+    const cfg = await getBlob(CFG_KEY);
+    if (cfg && Array.isArray(cfg.vaults) && cfg.vaults.length) {
+      vaults = cfg.vaults;
+    } else if (Array.isArray(cfg) && cfg.length) {
+      vaults = cfg; // older blob format, just in case
+    }
+
+    const cur = await getBlob(CUR_KEY);
+    if (cur) {
+      current = { amount: cur.amount || "", done: cur.done || {} };
+    }
+
+    await loadHistoryRows();
+    setSync(true);
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Loaded locally-known data — cloud unreachable.");
+  }
+
+  document.getElementById("pool-amount").value = current.amount || "";
+  renderVaults();
+  renderHistory();
+})();
 </script>
 
 </body>

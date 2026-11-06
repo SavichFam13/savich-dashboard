@@ -15,9 +15,6 @@
     --border: #332c3e;
     --bad: #ff8a8a;
   }
-  body[data-accent="pink"] {
-    --accent2: #ff9ec4;
-  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
@@ -93,20 +90,6 @@
     cursor: pointer;
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
-  .theme-toggle {
-    position: absolute;
-    top: 22px;
-    right: 22px;
-    background: var(--panel);
-    color: var(--accent2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-family: inherit;
-    font-size: 0.75rem;
-    cursor: pointer;
-  }
-  .theme-toggle:hover { border-color: var(--accent2); }
 
   /* ============ GATE ============ */
   /* While checking: gate shows ONLY a tiny faint dot — visually
@@ -241,24 +224,9 @@
   <button onclick="signOut()">Sign out</button>
 </div>
 
-<button class="theme-toggle" onclick="toggleAccent()">✦ Teal</button>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
 <script>
-  // ---------- accent theme (unchanged) ----------
-  function applyAccent(mode) {
-    document.body.setAttribute("data-accent", mode);
-    document.querySelector(".theme-toggle").textContent =
-      mode === "pink" ? "✦ Lavender" : "✦ Teal";
-    localStorage.setItem("savich-accent", mode);
-  }
-  function toggleAccent() {
-    const current = document.body.getAttribute("data-accent") === "pink" ? "teal" : "pink";
-    applyAccent(current);
-  }
-  applyAccent(localStorage.getItem("savich-accent") === "pink" ? "pink" : "teal");
-
   // ---------- gate elements ----------
   const gate = document.getElementById("gate");
   const gateDot = document.getElementById("gate-dot");

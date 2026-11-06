@@ -8,6 +8,7 @@
   :root {
     --bg: #121016; --panel: #1c1922; --text: #f2eef7; --accent: #c9a0ff;
     --accent2: #5fd3c4; --dim: #a89bbd; --border: #332c3e; --good: #7ddba3;
+    --bad: #ff8a8a; --hot-pink: #e10ab2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -62,7 +63,7 @@
     padding: 18px 20px; flex: 1; min-width: 320px;
   }
   .chart-card h2 {
-    font-size: 0.78rem; letter-spacing: 1.5px; color: var(--hot-pink, #e10ab2);
+    font-size: 0.78rem; letter-spacing: 1.5px;
     color: var(--accent2); text-transform: uppercase; margin-bottom: 14px; font-weight: 700;
   }
   #donut-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
@@ -84,6 +85,53 @@
   }
   .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
+
+  /* ---- modal (house style, same as inventory/recipes) ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--hot-pink);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ---- toast (house style) ---- */
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 110; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -118,6 +166,16 @@
 
 <div class="section-title">Days on record</div>
 <div id="day-list"></div>
+
+<!-- ============ MODAL + TOAST ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
 // =====================================================================
@@ -409,7 +467,7 @@ function exportYear() {
   const data = Store.get("gw2-daily-log-" + currentYear) || {};
   const dayCount = Object.keys(data).length;
   if (dayCount === 0) {
-    alert("Nothing archived for " + currentYear + " yet.");
+    showToast("Nothing archived for " + currentYear + " yet.");
     return;
   }
   const payload = JSON.stringify({ year: currentYear, log: data }, null, 2);
@@ -421,7 +479,7 @@ function exportYear() {
     new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
-  alert("Backup downloaded: " + dayCount + " archived days from " + currentYear + ".");
+  showToast("Backup downloaded: " + dayCount + " archived days from " + currentYear + ".");
 }
 
 function inferYearFromLog(log) {
@@ -438,11 +496,11 @@ function validateLog(log) {
     log[d] && typeof log[d] === "object" && !Array.isArray(log[d]));
 }
 
-function importYear(e) {
+async function importYear(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const raw = JSON.parse(reader.result);
       let year, incoming;
@@ -458,7 +516,7 @@ function importYear(e) {
       }
 
       if (!year || !/^\d{4}$/.test(year) || !validateLog(incoming)) {
-        alert("That file isn't a valid dailies backup. Expected a gw2-dailies YEAR export (or a plain { \"YYYY-MM-DD\": {...} } dump).");
+        showToast("That file isn't a valid dailies backup. Expected a gw2-dailies YEAR export.");
         e.target.value = "";
         return;
       }
@@ -468,50 +526,114 @@ function importYear(e) {
       const curDays = Object.keys(cur).length;
       const overlap = Object.keys(incoming).filter(d => cur[d]).length;
 
-      let msg =
-        "Restore " + year + " archive from backup?\n\n" +
-        "Backup file:    " + inDays + " days\n" +
+      const details =
+        "Backup file: " + inDays + " days\n" +
         "On this device: " + curDays + " days" +
-        (overlap ? ("\nOverlap:         " + overlap + " days exist in both") : "") + "\n\n";
+        (overlap ? "\nOverlap: " + overlap + " days exist in both" : "");
 
-      const hasExisting = curDays > 0;
       let mode;
-      if (hasExisting) {
-        mode = prompt(
-          msg +
-          "Type MERGE to add the backup's days on top of what's here\n" +
-          "(backup wins on overlapping days), or REPLACE to wipe the year\n" +
-          "and use only the backup. Anything else cancels.",
-          "MERGE"
+      if (curDays > 0) {
+        mode = await askChoice(
+          "Restore " + year + " archive from backup?",
+          details + "\n\nMERGE adds the backup's days on top of what's here (backup wins on overlapping days). REPLACE wipes the year and uses only the backup.",
+          [
+            { label: "MERGE", value: "MERGE", primary: true },
+            { label: "REPLACE", value: "REPLACE", destructive: true },
+            { label: "CANCEL", value: null }
+          ]
         );
       } else {
-        mode = confirm(msg + "No existing data for " + year + " — click OK to restore.") ? "REPLACE" : null;
+        mode = await askChoice(
+          "Restore " + year + " archive from backup?",
+          details + "\n\nNo existing data for " + year + " — nothing will be overwritten.",
+          [
+            { label: "RESTORE", value: "REPLACE", primary: true },
+            { label: "CANCEL", value: null }
+          ]
+        );
       }
-      if (mode === null) { e.target.value = ""; return; }
+      if (mode === null || mode === undefined) { e.target.value = ""; return; }
 
-      mode = String(mode).trim().toUpperCase();
       let merged;
       if (mode === "MERGE") {
         merged = { ...cur };
         for (const d in incoming) merged[d] = incoming[d]; // backup wins on overlap
       } else if (mode === "REPLACE") {
         merged = { ...incoming };
-      } else {
-        e.target.value = "";
-        return;
       }
 
       Store.set("gw2-daily-log-" + year, merged);
       currentYear = year;
       render();
-      alert(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
+      showToast(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
         (mode === "MERGE" ? "merged" : "replaced") + ").");
     } catch (err) {
-      alert("Couldn't read that file.");
+      showToast("Couldn't read that file.");
     }
     e.target.value = "";
   };
   reader.readAsText(file);
+}
+
+// =====================================================================
+// MODAL — askConfirm but with any number of choices.
+// Each choice: { label, value, primary?, destructive? }
+// Resolves with the chosen value (null if cancelled/escaped/backdrop).
+// =====================================================================
+let modalResolve = null;
+
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
+
+// =====================================================================
+// TOAST
+// =====================================================================
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
 const yrs = findYears();

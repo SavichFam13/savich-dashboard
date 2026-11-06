@@ -13,6 +13,7 @@
     --accent2: #5fd3c4;
     --dim: #a89bbd;
     --border: #332c3e;
+    --bad: #ff8a8a;
     /* lisa frank neon layer */
     --lf-pink: #ff4fa3;
     --lf-magenta: #d81b7f;
@@ -268,6 +269,41 @@
     0% { transform: scale(.4) translateY(0); opacity: 1; }
     100% { transform: scale(1.6) translateY(-50px); opacity: 0; }
   }
+
+  /* ---- modal (house style, same as inventory/recipes/history/nodes) ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--lf-pink);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
 </style>
 </head>
 <body>
@@ -320,6 +356,14 @@
   <p class="footer-note">✦ every day is a chance to accidentally achieve something ✦</p>
 </div>
 
+<!-- ============ MODAL + TOAST ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -407,10 +451,18 @@ function toggleDone(ev, kind, i) {
   if (nowDone) burst(ev);
 }
 
-function removeItem(kind, i) {
+async function removeItem(kind, i) {
+  const item = data[kind][i];
+  const ok = await askConfirm(
+    "Banish this one forever?",
+    item.txt + "\n\nThere's no take-backs on a banishing.",
+    true
+  );
+  if (!ok) return;
   data[kind].splice(i, 1);
   save();
   renderAll();
+  showToast("Banished to the shadow realm. 👋");
 }
 
 function toggleStory(kind) {
@@ -463,15 +515,17 @@ function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const parsed = JSON.parse(reader.result);
       if (!parsed || !Array.isArray(parsed.twist) || !Array.isArray(parsed.classic)) {
         showToast("That file isn't a valid bucket backup.");
         return;
       }
-      const ok = confirm(
-        "Replace current bucket list?\n\nThis overwrites everything on this page with the contents of the backup file."
+      const ok = await askConfirm(
+        "Replace current bucket list?",
+        "This overwrites everything on this page with the contents of the backup file.",
+        true
       );
       if (!ok) return;
       data = parsed;
@@ -485,6 +539,55 @@ function importData(e) {
   reader.readAsText(file);
   e.target.value = "";
 }
+
+// ==========================================================
+// MODAL — askConfirm but with any number of choices.
+// Each choice: { label, value, primary?, destructive? }
+// Resolves with the chosen value (null if cancelled/escaped/backdrop).
+// ==========================================================
+let modalResolve = null;
+
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
 
 // ==========================================================
 // TOAST

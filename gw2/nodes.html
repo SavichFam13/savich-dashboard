@@ -139,6 +139,53 @@
   .filter-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
+
+  /* ---- modal (house style, same as inventory/recipes/history) ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--accent);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ---- toast (house style) ---- */
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 210; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -200,6 +247,15 @@
   <div id="info-lines"></div>
 </div>
 
+<!-- ============ MODAL + TOAST ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
 // =====================================================================
@@ -385,7 +441,7 @@ function exportState() {
   const customCount = (state.custom || []).length;
   const locCount = Object.keys(state.locs || {}).length;
   if (ownedCount === 0 && customCount === 0 && locCount === 0) {
-    alert("Nothing to back up yet — no owned nodes, custom nodes, or saved codes.");
+    showToast("Nothing to back up yet — no owned nodes, custom nodes, or saved codes.");
     return;
   }
   const blob = new Blob([JSON.stringify(state, null, 2)],
@@ -397,31 +453,35 @@ function exportState() {
     new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Keep it somewhere safe.");
 }
 
 function importState(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
       const data = JSON.parse(reader.result);
       if (!isValidNodeState(data)) {
-        alert("That file isn't a valid nodes backup. It should be a gw2-nodes export.");
+        showToast("That file isn't a valid nodes backup. It should be a gw2-nodes export.");
+        e.target.value = "";
         return;
       }
       const ownedN = Object.keys(data.owned || {}).length;
       const customN = (data.custom || []).length;
       const locN = Object.keys(data.locs || {}).length;
       const curOwned = Object.keys(state.owned).length;
-      if (!confirm(
-        "Restore backup over current data?\n\n" +
+      const ok = await askConfirm(
+        "Restore backup over current data?",
         "Backup: " + ownedN + " owned, " + customN + " custom nodes, " + locN + " saved codes\n" +
         "Current: " + curOwned + " owned, " +
         (state.custom || []).length + " custom nodes, " +
         Object.keys(state.locs || {}).length + " saved codes\n\n" +
-        "This replaces everything on this page with the backup contents."
-      )) { e.target.value = ""; return; }
+        "This replaces everything on this page with the backup contents.",
+        true
+      );
+      if (!ok) { e.target.value = ""; return; }
       state = {
         owned: data.owned || {},
         custom: data.custom || [],
@@ -429,8 +489,9 @@ function importState(e) {
       };
       save();
       render();
+      showToast("Backup restored.");
     } catch (err) {
-      alert("Couldn't read that file.");
+      showToast("Couldn't read that file.");
     }
     e.target.value = "";
   };
@@ -515,6 +576,7 @@ function openInfo(node, evt) {
       const btn = this;
       navigator.clipboard.writeText(code).then(function () {
         btn.textContent = "copied!";
+        showToast("Map code copied — paste it into GW2 chat.");
         setTimeout(function () { btn.textContent = "copy code"; }, 1200);
       });
     }));
@@ -563,10 +625,7 @@ function openInfo(node, evt) {
     btn.className = "info-del";
     btn.textContent = "delete this custom node";
     btn.onclick = () => {
-      if (confirm("Remove \"" + node.name + "\"?")) {
-        delCustom(node.name);
-        closeInfo();
-      }
+      confirmAndRemove(node.name);
     };
     lines.appendChild(btn);
   }
@@ -676,24 +735,93 @@ function addNode() {
   const nameEl = document.getElementById("new-name");
   const group = document.getElementById("new-group").value;
   const name = nameEl.value.trim();
-  if (!name) return;
+  if (!name) { showToast("Type a node name first."); return; }
   state.custom = state.custom || [];
   state.custom.push({ group: group === "Custom" ? "Custom" : group, name: name, details: "" });
   nameEl.value = "";
   save(); render();
+  showToast("Added \"" + name + "\".");
 }
 
-function delCustom(name) {
-  if (!confirm("Remove custom node \"" + name + "\"?")) return;
+async function confirmAndRemove(name) {
+  const ok = await askConfirm(
+    "Remove custom node?",
+    "\"" + name + "\"\n\nThis deletes it from the list permanently.",
+    true
+  );
+  if (!ok) return;
   state.custom = (state.custom || []).filter(c => c.name !== name);
   if (state.owned[name]) delete state.owned[name];
   save(); render();
+  closeInfo();
+  showToast("Custom node removed.");
 }
 
 function setFilter(f) { filter = f; render(); }
 
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// =====================================================================
+// MODAL — askConfirm but with any number of choices.
+// Each choice: { label, value, primary?, destructive? }
+// Resolves with the chosen value (null if cancelled/escaped/backdrop).
+// =====================================================================
+let modalResolve = null;
+
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
+
+// =====================================================================
+// TOAST
+// =====================================================================
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
 render();
