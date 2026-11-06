@@ -13,6 +13,7 @@
     --accent2: #5fd3c4;
     --dim: #a89bbd;
     --border: #332c3e;
+    --bad: #ff8a8a;
   }
   body[data-accent="pink"] {
     --accent2: #ff9ec4;
@@ -79,7 +80,19 @@
     color: var(--dim);
     padding-top: 20px;
     border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
   }
+  .footer-note button {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 6px 14px; font-family: inherit; font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
   .theme-toggle {
     position: absolute;
     top: 22px;
@@ -95,167 +108,145 @@
   }
   .theme-toggle:hover { border-color: var(--accent2); }
 
-  /* ---- login gate ---- */
+  /* ============ SIGN-IN OVERLAY ============ */
+  /* Overlay is visible from the very first paint, but shows a
+     neutral "checking" state — the LOGIN FORM is hidden until
+     we know there is no session. This kills the flicker. */
   #gate {
-    position: fixed; inset: 0;
+    position: fixed; inset: 0; z-index: 200;
     background: var(--bg);
     display: flex; align-items: center; justify-content: center;
-    z-index: 500; padding: 20px;
+    padding: 20px;
   }
   #gate.hidden { display: none; }
-  .gate-box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 34px 30px;
-    width: 100%; max-width: 380px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  .gate-box { width: 100%; max-width: 360px; text-align: center; }
+  .gate-box .cat {
+    font-size: 2.2rem; margin-bottom: 8px;
   }
-  .gate-box h2 { font-size: 1.3rem; color: var(--accent); margin-bottom: 4px; }
-  .gate-box p.gate-sub { color: var(--dim); font-size: 0.8rem; margin-bottom: 22px; }
-  .gate-box label {
+  .gate-box h2 {
+    color: var(--accent); font-size: 1.2rem; margin-bottom: 6px;
+  }
+  .gate-box p.hint {
+    color: var(--dim); font-size: 0.8rem; margin-bottom: 24px;
+  }
+  .gate-status {
+    color: var(--dim); font-size: 0.85rem; letter-spacing: 1px;
+    padding: 20px 0;
+  }
+  #gate-form { display: none; }
+  #gate-form.show { display: block; }
+  .gate-field { margin-bottom: 14px; text-align: left; }
+  .gate-field label {
     display: block; font-size: 0.68rem; color: var(--dim);
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
   }
-  .gate-box input {
-    width: 100%;
-    background: #16131d; color: var(--text);
+  .gate-field input {
+    width: 100%; background: var(--panel); color: var(--text);
     border: 1px solid var(--border); border-radius: 6px;
-    padding: 11px 13px; font-family: inherit; font-size: 0.92rem;
-    margin-bottom: 16px; outline: none;
+    padding: 11px 13px; font-family: inherit; font-size: 0.9rem;
   }
-  .gate-box input:focus { border-color: var(--accent2); }
-  .gate-box button {
-    width: 100%;
-    background: var(--accent2); color: #121016; border: none;
-    padding: 12px; border-radius: 6px; font-family: inherit;
-    font-size: 0.9rem; font-weight: 700; cursor: pointer; letter-spacing: 1px;
+  .gate-field input:focus { outline: none; border-color: var(--accent2); }
+  .gate-error {
+    display: none; color: var(--bad); font-size: 0.78rem;
+    background: #2a1620; border: 1px solid var(--bad);
+    border-radius: 6px; padding: 8px 12px; margin-bottom: 14px;
   }
-  .gate-box button:hover { filter: brightness(1.1); }
-  .gate-box button:disabled { opacity: 0.5; cursor: wait; }
-  .gate-err {
-    display: none;
-    background: #2a1620; border: 1px solid #ff8a8a; color: #ff8a8a;
-    border-radius: 6px; padding: 10px 14px; font-size: 0.8rem;
-    margin-bottom: 16px;
+  .gate-error.show { display: block; }
+  .gate-btn {
+    width: 100%; background: var(--accent2); color: #121016;
+    border: none; border-radius: 6px; padding: 11px;
+    font-family: inherit; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 1px; cursor: pointer; margin-top: 6px;
   }
-  .gate-err.show { display: block; }
-  .gate-hint { color: var(--dim); font-size: 0.72rem; margin-top: 22px; text-align: center; }
+  .gate-btn:hover { filter: brightness(1.1); }
+  .gate-btn:disabled { opacity: 0.5; cursor: wait; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN GATE — shown until signed in -->
+<!-- ============ GATE ============ -->
 <div id="gate">
   <div class="gate-box">
+    <div class="cat">🐱</div>
     <h2>Savich Dashboard</h2>
-    <p class="gate-sub">Household sign-in — your data lives in the cloud now.</p>
-    <div class="gate-err" id="gate-err"></div>
-    <form id="gate-form">
-      <label for="gate-email">Email</label>
-      <input type="email" id="gate-email" autocomplete="username" required>
-      <label for="gate-pass">Password</label>
-      <input type="password" id="gate-pass" autocomplete="current-password" required>
-      <button type="submit" id="gate-btn">SIGN IN</button>
+    <p class="hint">Household sign-in — your data lives in the cloud now.</p>
+    <div class="gate-status" id="gate-status">Checking sign-in…</div>
+    <form id="gate-form" autocomplete="on">
+      <div class="gate-error" id="gate-error"></div>
+      <div class="gate-field">
+        <label for="gate-email">Email</label>
+        <input type="email" id="gate-email" autocomplete="username" required>
+      </div>
+      <div class="gate-field">
+        <label for="gate-pass">Password</label>
+        <input type="password" id="gate-pass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="gate-btn" id="gate-btn">SIGN IN</button>
     </form>
-    <p class="gate-hint">Accounts are created in<br>Supabase → Authentication → Users</p>
   </div>
 </div>
 
-<!-- DASHBOARD (revealed after login) -->
-<div id="dashboard" style="display:none;">
-  <h1>Savich Dashboard</h1>
+<!-- ============ DASHBOARD ============ -->
+<h1>Savich Dashboard</h1>
 
-  <h2 class="section">Guild Wars 2</h2>
-  <nav class="nav-grid">
-    <a href="gw2/trackers.html" class="nav-card">
-      <h3>Daily & Weekly Tracker</h3>
-      <p>The shit you don't wanna forget</p>
-    </a>
+<h2 class="section">Guild Wars 2</h2>
+<nav class="nav-grid">
+  <a href="gw2/trackers.html" class="nav-card">
+    <h3>Daily & Weekly Tracker</h3>
+    <p>The shit you don't wanna forget</p>
+  </a>
     <a href="gw2/timer.html" class="nav-card">
-      <h3>Event Timer</h3>
-      <p>This is how you don't forget</p>
-    </a>
-    <a href="gw2/misc.html" class="nav-card">
-      <h3>Misc. GW2 stuff</h3>
-      <p>Misc. stuff such as nodes, legendaries, recipe info, etc.</p>
-    </a>
-  </nav>
+    <h3>Event Timer</h3>
+    <p>This is how you don't forget</p>
+  </a>
+  <a href="gw2/misc.html" class="nav-card">
+    <h3>Misc. GW2 stuff</h3>
+    <p>Misc. stuff such as nodes, legendaries, recipe info, etc.</p>
+  </a>
+</nav>
 
-  <h2 class="section">Household &amp; Finances</h2>
-  <nav class="nav-grid">
-    <a href="home/vault.html" class="nav-card">
-      <h3>Vault Distribution</h3>
-      <p>SoFi vault transfers for extra income</p>
-    </a>
-    <a href="home/inventory.html" class="nav-card">
-      <h3>Household Inventory</h3>
-      <p>Pantry stock, supplies, and staples</p>
-    </a>
-    <a href="home/recipes.html" class="nav-card">
-      <h3>Savich Eatz</h3>
-      <p>Recipe Book</p>
-    </a>
-  </nav>
+<h2 class="section">Household &amp; Finances</h2>
+<nav class="nav-grid">
+  <a href="home/vault.html" class="nav-card">
+    <h3>Vault Distribution</h3>
+    <p>SoFi vault transfers for extra income</p>
+  </a>
+  <a href="home/inventory.html" class="nav-card">
+    <h3>Household Inventory</h3>
+    <p>Pantry stock, supplies, and staples</p>
+  </a>
+  <a href="home/recipes.html" class="nav-card">
+    <h3>Savich Eatz</h3>
+    <p>Recipe Book</p>
+  </a>
+</nav>
 
-  <h2 class="section">Personal Shit</h2>
-  <nav class="nav-grid">
-    <a href="home/bucket.html" class="nav-card">
-      <h3>Bucket List</h3>
-      <p>All the things you didn't know you needed to do until you did them!</p>
-    </a>
+<h2 class="section">Personal Shit</h2>
+<nav class="nav-grid">
+      <a href="home/bucket.html" class="nav-card">
+    <h3>Bucket List</h3>
+    <p>All the things you didn't know you needed to do until you did them!</p>
+  </a>
     <a href="home/bos.html" class="nav-card">
-      <h3>Book of Shadows</h3>
-      <p>Your book, your spells, your way!</p>
-    </a>
-  </nav>
+    <h3>Book of Shadows</h3>
+    <p>Your book, your spells, your way!</p>
+  </a>
+</nav>
+
+<div class="footer-note">
+  <span id="who">Signed in</span>
+  <button onclick="signOut()">Sign out</button>
 </div>
 
-<button class="theme-toggle" id="theme-toggle" onclick="toggleAccent()" style="display:none;">✦ Teal</button>
+<button class="theme-toggle" onclick="toggleAccent()">✦ Teal</button>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
 <script>
-  // ---- login gate ----
-  (async () => {
-    const { data } = await sb().auth.getSession();
-    if (data.session) showDashboard();
-    else document.getElementById("gate").classList.remove("hidden");
-
-    document.getElementById("gate-form").addEventListener("submit", async e => {
-      e.preventDefault();
-      const btn = document.getElementById("gate-btn");
-      const err = document.getElementById("gate-err");
-      err.classList.remove("show");
-      btn.disabled = true;
-      btn.textContent = "SIGNING IN…";
-      const { error } = await sb().auth.signInWithPassword({
-        email: document.getElementById("gate-email").value.trim(),
-        password: document.getElementById("gate-pass").value
-      });
-      if (error) {
-        err.textContent = error.message;
-        err.classList.add("show");
-        btn.disabled = false;
-        btn.textContent = "SIGN IN";
-        return;
-      }
-      showDashboard();
-    });
-  })();
-
-  function showDashboard() {
-    document.getElementById("gate").classList.add("hidden");
-    document.getElementById("dashboard").style.display = "block";
-    const t = document.getElementById("theme-toggle");
-    t.style.display = "block";
-    // pause so the button measures inside the visible layout
-    setTimeout(() => { const s = localStorage.getItem("savich-accent"); applyAccent(s === "pink" ? "pink" : "teal"); }, 0);
-  }
-
+  // ---------- accent theme (unchanged) ----------
   function applyAccent(mode) {
     document.body.setAttribute("data-accent", mode);
-    document.getElementById("theme-toggle").textContent =
+    document.querySelector(".theme-toggle").textContent =
       mode === "pink" ? "✦ Lavender" : "✦ Teal";
     localStorage.setItem("savich-accent", mode);
   }
@@ -263,6 +254,70 @@
     const current = document.body.getAttribute("data-accent") === "pink" ? "teal" : "pink";
     applyAccent(current);
   }
+  const saved = localStorage.getItem("savich-accent");
+  applyAccent(saved === "pink" ? "pink" : "teal");
+
+  // ---------- gate logic ----------
+  const gate = document.getElementById("gate");
+  const gateStatus = document.getElementById("gate-status");
+  const gateForm = document.getElementById("gate-form");
+  const gateError = document.getElementById("gate-error");
+  const gateBtn = document.getElementById("gate-btn");
+
+  async function signOut() {
+    try { await sb().auth.signOut(); } catch (e) {}
+    location.reload();
+  }
+
+  (async function initGate() {
+    try {
+      const { data, error } = await sb().auth.getSession();
+      const session = data && data.session;
+
+      if (session) {
+        // Already signed in — reveal dashboard, no form ever shown
+        const email = session.user && session.user.email
+          ? session.user.email : "";
+        document.getElementById("who").textContent =
+          "Signed in as " + email;
+        gate.classList.add("hidden");
+        return;
+      }
+
+      // Definitely not signed in — NOW show the form
+      gateStatus.style.display = "none";
+      gateForm.classList.add("show");
+    } catch (err) {
+      // Supabase unreachable — still show the form so retry is possible
+      gateStatus.style.display = "none";
+      gateForm.classList.add("show");
+      gateError.textContent = "Could not reach the cloud — check your connection.";
+      gateError.classList.add("show");
+    }
+  })();
+
+  gateForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    gateError.classList.remove("show");
+    gateBtn.disabled = true;
+    gateBtn.textContent = "SIGNING IN…";
+    try {
+      const email = document.getElementById("gate-email").value.trim();
+      const pass = document.getElementById("gate-pass").value;
+      const { error } = await sb().auth.signInWithPassword({
+        email: email, password: pass
+      });
+      if (error) throw error;
+      // success — full reload so everything re-initializes signed in
+      location.reload();
+    } catch (err) {
+      gateError.textContent =
+        err && err.message ? err.message : "Sign-in failed.";
+      gateError.classList.add("show");
+      gateBtn.disabled = false;
+      gateBtn.textContent = "SIGN IN";
+    }
+  });
 </script>
 
 </body>
