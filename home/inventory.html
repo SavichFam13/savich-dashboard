@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Household Inventory</title>
+<style>
+  :root {
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #f2eef7;
+    --accent: #c9a0ff;
+    --accent2: #5fd3c4;
+    --hot-pink: #e10ab2;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --good: #7ddba3;
+    --bad: #ff8a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 32px 20px;
+    max-width: 1340px;
+    margin: 0 auto;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
+  .back { color: var(--dim); text-decoration: none; font-size: 0.8rem; }
+  .back:hover { color: var(--accent); }
+  p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+
+  nav { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  nav button {
+    background: none; border: none; color: var(--dim);
+    padding: 10px 16px; font-family: inherit; font-size: 0.85rem;
+    cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  nav button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  .page { display: none; }
+  .page.visible { display: block; }
+
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 14px; border-radius: 5px;
+    font-family: inherit; font-size: 0.78rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent2); }
+  .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+
+  .add-form {
+    display: grid; grid-template-columns: 260px 165px 155px 145px;
+    gap: 12px; align-items: end;
+    margin-bottom: 26px; padding: 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .add-form label {
+    display: block; font-size: 0.66rem; color: var(--dim);
+    margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .add-form input, .add-form select {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 8px 10px; font-family: inherit;
+    font-size: 0.82rem; width: 100%;
+  }
+  .add-form input:focus, .add-form select:focus { outline: none; border-color: var(--accent2); }
+
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .columns .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .section-title {
+    font-size: 0.74rem; color: var(--hot-pink);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin: 0 0 10px 0; font-weight: 700;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
+  th {
+    text-align: left; padding: 7px 8px; color: var(--dim);
+    font-weight: 600; border-bottom: 1px solid var(--border);
+    background: var(--panel); font-size: 0.66rem; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td { padding: 5px 8px; border-bottom: 1px solid #26212e; vertical-align: middle; }
+  tr:nth-child(even) td { background: #171420; }
+
+  .item-cell { overflow-wrap: anywhere; }
+
+  select.store {
+    width: 100%; background: #16131d; color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 4px 6px; font-family: inherit; font-size: 0.75rem;
+  }
+  select.store:focus { outline: none; border-color: var(--accent2); }
+
+  .qty-controls { display: flex; align-items: center; gap: 4px; justify-content: center; }
+  .qty-btn {
+    width: 22px; height: 22px; min-width: 22px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 4px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 700; font-family: inherit;
+    line-height: 1;
+  }
+  .qty-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .qty-display {
+    min-width: 26px; text-align: center; font-weight: 700;
+    color: var(--accent2); font-variant-numeric: tabular-nums;
+  }
+  .btn-x {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 2px 7px;
+    font-size: 0.72rem; font-family: inherit;
+  }
+  .btn-x:hover { border-color: var(--bad); color: var(--bad); }
+
+  .empty { color: var(--dim); font-size: 0.78rem; padding: 14px 0; text-align: center; }
+
+  /* ---- grocery list ---- */
+  .grocery-item {
+    display: grid; grid-template-columns: 1fr 90px 148px;
+    gap: 12px; padding: 8px 12px; border-bottom: 1px solid #26212e;
+    align-items: center;
+  }
+  .grocery-item:nth-child(even) { background: #171420; }
+  .g-qty { color: var(--dim); font-size: 0.75rem; }
+  .actions-cell { display: flex; gap: 6px; justify-content: flex-end; }
+  .btn-mini { padding: 3px 9px; font-size: 0.69rem; }
+  .print-mark { display: none; }
+  .print-header { display: none; }
+
+  /* ---- modal ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--hot-pink);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ---- toast ---- */
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 110; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---- print ---- */
+  @media print {
+    body {
+      background: #fff; color: #000; padding: 0;
+      max-width: none; font-size: 12px;
+    }
+    .top, nav, .toolbar, .add-form, .modal-overlay, .toast,
+    #page-inventory, .actions-cell { display: none !important; }
+    #page-grocery { display: block !important; }
+    .print-header {
+      display: block; font-size: 16px; font-weight: 700;
+      margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 6px;
+    }
+    .print-mark { display: inline; margin-right: 8px; }
+    .section-title {
+      color: #000; border-bottom: 1px solid #000;
+      padding-bottom: 3px; margin-top: 16px;
+    }
+    .grocery-item {
+      grid-template-columns: 1fr 80px; color: #000;
+      border-bottom: 1px dotted #bbb; padding: 5px 0;
+    }
+    .grocery-item:nth-child(even) { background: none; }
+    .g-qty { color: #555; }
+  }
+
+  @media (max-width: 780px) {
+    .columns { grid-template-columns: 1fr; }
+    .add-form { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Household Inventory</h1>
+  <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+</div>
+<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</p>
+
+<nav>
+  <button id="tab-inventory" class="active">INVENTORY</button>
+  <button id="tab-grocery">GROCERY LIST</button>
+</nav>
+
+<!-- ============ INVENTORY ============ -->
+<div class="page visible" id="page-inventory">
+
+  <div class="toolbar">
+    <span style="font-size:0.79rem; color:var(--dim);" id="item-count">0 items</span>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" onclick="exportData()">Export Backup</button>
+      <label class="btn" style="cursor:pointer;">
+        Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+      </label>
+    </div>
+  </div>
+
+  <div class="add-form">
+    <div>
+      <label for="new-name">Item Name</label>
+      <input type="text" id="new-name" placeholder="e.g. A2 Milk (Kirkland)"
+             onkeydown="if(event.key==='Enter') addItem()">
+    </div>
+    <div>
+      <label for="new-store">Store</label>
+      <select id="new-store"></select>
+    </div>
+    <div>
+      <label for="new-category">Category</label>
+      <select id="new-category"></select>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="btn btn-primary" style="width:100%;" onclick="addItem()">Add Item</button>
+    </div>
+  </div>
+
+  <div class="columns" id="columns"></div>
+</div>
+
+<!-- ============ GROCERY LIST ============ -->
+<div class="page" id="page-grocery">
+  <div class="toolbar">
+    <span style="font-size:0.79rem; color:var(--dim);" id="grocery-count">0 items on list</span>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select id="grocery-filter" class="store" style="width:auto;"
+        onchange="setGroceryFilter(this.value)"></select>
+      <button class="btn btn-primary" onclick="printList()">Print List</button>
+      <button class="btn" onclick="zeroAll()">Zero All Quantities</button>
+    </div>
+  </div>
+
+  <div class="print-header">Grocery List &mdash; <span id="print-date"></span></div>
+  <div id="grocery-list"></div>
+</div>
+
+<!-- ============ MODAL + TOAST ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons">
+      <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==========================================================
+// CATEGORIES — the full list of category names
+// ==========================================================
+const CATEGORIES = [
+  "FRIDGE", "FREEZER", "PANTRY", "SPICE CABINET",
+  "DAMIEN", "CLEANING", "HYGIENE", "HOLIDAY"
+];
+
+// ==========================================================
+// COLUMN LAYOUT — each inner array is one on-screen column,
+// top to bottom. Move a category name to move its box.
+// ==========================================================
+const COLUMN_LAYOUT = [
+  ["FRIDGE", "PANTRY"],
+  ["FREEZER", "SPICE CABINET", "HOLIDAY"],
+  ["DAMIEN", "CLEANING", "HYGIENE"]
+];
+
+// ==========================================================
+// STORES — alphabetical everywhere automatically
+// ==========================================================
+const STORES = [
+  "Costco",
+  "Wegmans",
+  "Walmart",
+  "Amazon",
+  "Stuart's",
+  "Boulder",
+  "Bath & Body",
+  "Sleekshop",
+  "Lunar Tides"
+];
+STORES.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+
+// ==========================================================
+// STATE + STORAGE
+// ==========================================================
+const STORAGE_KEY = "savich-inventory-v1";
+const FILTER_KEY = "savich-grocery-filter";
+
+let inventory = loadStorage(STORAGE_KEY, []);
+let groceryFilter = localStorage.getItem(FILTER_KEY) || "ALL";
+
+function loadStorage(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v !== null && v !== undefined ? v : fallback;
+  } catch { return fallback; }
+}
+function saveStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+}
+
+function esc(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ==========================================================
+// BUILD THE COLUMNS
+// ==========================================================
+function buildColumns() {
+  const wrap = document.getElementById("columns");
+  wrap.innerHTML = "";
+
+  COLUMN_LAYOUT.forEach(stack => {
+    const cell = document.createElement("div");
+    cell.className = "stack";
+
+    stack.forEach(cat => {
+      const ci = CATEGORIES.indexOf(cat);
+      const box = document.createElement("div");
+      box.innerHTML =
+        '<div class="section-title">' + esc(cat) + "</div>" +
+        '<table><thead><tr>' +
+        '<th>Item</th>' +
+        '<th style="width:118px;">Store</th>' +
+        '<th style="width:92px; text-align:center;">Qty</th>' +
+        '<th style="width:34px;"></th>' +
+        "</tr></thead><tbody id=\"body-" + ci + '"></tbody></table>' +
+        '<div class="empty" id="empty-' + ci + '" style="display:none;">No items yet.</div>';
+      cell.appendChild(box);
+    });
+
+    wrap.appendChild(cell);
+  });
+}
+
+// ==========================================================
+// RENDER INVENTORY — alphabetized within each column
+// ==========================================================
+function renderInventory() {
+  CATEGORIES.forEach((cat, ci) => {
+    const tbody = document.getElementById("body-" + ci);
+    const emptyEl = document.getElementById("empty-" + ci);
+    tbody.innerHTML = "";
+
+    // Keep the true index in the master list so buttons hit the right row.
+    const rows = inventory
+      .map((item, gi) => ({ item, gi }))
+      .filter(r => r.item.category === cat)
+      .sort((a, b) =>
+        a.item.name.localeCompare(b.item.name, "en", { sensitivity: "base" }));
+
+    emptyEl.style.display = rows.length === 0 ? "block" : "none";
+
+    rows.forEach(({ item, gi }) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="item-cell">' + esc(item.name) + "</td>" +
+        '<td><select class="store" onchange="updateStore(' + gi + ', this.value)">' +
+          STORES.map(s =>
+            '<option value="' + esc(s) + '"' +
+            (s === item.store ? " selected" : "") + ">" + esc(s) + "</option>"
+          ).join("") +
+        "</select></td>" +
+        '<td><div class="qty-controls">' +
+          '<button class="qty-btn" onclick="adjustQty(' + gi + ', -1)">&minus;</button>' +
+          '<span class="qty-display">' + item.qty + "</span>" +
+          '<button class="qty-btn" onclick="adjustQty(' + gi + ', 1)">+</button>' +
+        "</div></td>" +
+        '<td style="text-align:center;">' +
+          '<button class="btn-x" onclick="confirmDelete(' + gi + ')">&#10005;</button>' +
+        "</td>";
+      tbody.appendChild(tr);
+    });
+  });
+
+  const total = inventory.length;
+  document.getElementById("item-count").textContent =
+    total + " item" + (total === 1 ? "" : "s");
+}
+
+// ==========================================================
+// ROW ACTIONS
+// ==========================================================
+function updateStore(gi, val) {
+  inventory[gi].store = val;
+  saveStorage();
+  renderGrocery();
+}
+
+function adjustQty(gi, delta) {
+  inventory[gi].qty = Math.max(0, inventory[gi].qty + delta);
+  saveStorage();
+  renderInventory();
+  renderGrocery();
+}
+
+async function confirmDelete(gi) {
+  const item = inventory[gi];
+  const ok = await askConfirm(
+    "Remove this item?",
+    item.name + "\nStore: " + item.store + "\n\nThis deletes it from the inventory permanently.",
+    true
+  );
+  if (!ok) return;
+  inventory.splice(gi, 1);
+  saveStorage();
+  renderInventory();
+  renderGrocery();
+  showToast("Item removed.");
+}
+
+// ==========================================================
+// ADD ITEM
+// ==========================================================
+function addItem() {
+  const name = document.getElementById("new-name").value.trim();
+  const store = document.getElementById("new-store").value;
+  const category = document.getElementById("new-category").value;
+
+  if (!name) { showToast("Enter an item name first."); return; }
+
+  inventory.push({ category: category, name: name, store: store, qty: 0 });
+  saveStorage();
+
+  document.getElementById("new-name").value = "";
+  document.getElementById("new-name").focus();
+
+  renderInventory();
+  renderGrocery();
+  showToast("Added to " + category + ".");
+}
+
+// ==========================================================
+// GROCERY LIST — everything with qty above zero,
+// filtered by the store dropdown, alphabetized
+// ==========================================================
+function setGroceryFilter(val) {
+  groceryFilter = val;
+  localStorage.setItem(FILTER_KEY, val);
+  renderGrocery();
+}
+
+function renderGrocery() {
+  const container = document.getElementById("grocery-list");
+
+  const entries = inventory
+    .map((item, gi) => ({ item, gi }))
+    .filter(r => r.item.qty > 0)
+    .filter(r => groceryFilter === "ALL" || r.item.store === groceryFilter);
+
+  const grouped = {};
+  entries.forEach(r => {
+    if (!grouped[r.item.store]) grouped[r.item.store] = [];
+    grouped[r.item.store].push(r);
+  });
+
+  Object.keys(grouped).forEach(store => {
+    grouped[store].sort((a, b) =>
+      a.item.name.localeCompare(b.item.name, "en", { sensitivity: "base" }));
+  });
+
+  const storeNames = Object.keys(grouped).sort();
+
+  if (storeNames.length === 0) {
+    container.innerHTML =
+      '<div class="empty">Nothing on the list yet. Raise an item\'s quantity ' +
+      "above zero on the Inventory tab and it will show up here, grouped by store.</div>";
+    document.getElementById("grocery-count").textContent = "0 items on list";
+    return;
+  }
+
+  let html = "";
+  let total = 0;
+
+  storeNames.forEach(store => {
+    html += '<div class="section-title">' + esc(store) + "</div>";
+    grouped[store].forEach(({ item, gi }) => {
+      total++;
+      html +=
+        '<div class="grocery-item">' +
+          '<span><span class="print-mark">&#9744;</span>' + esc(item.name) + "</span>" +
+          '<span class="g-qty">Qty: ' + item.qty + "</span>" +
+          '<div class="actions-cell">' +
+            '<button class="btn btn-mini" onclick="buyOne(' + gi + ')">&minus;1</button>' +
+            '<button class="btn btn-mini" onclick="buyAll(' + gi + ')">ALL</button>' +
+          "</div>" +
+        "</div>";
+    });
+  });
+
+  container.innerHTML = html;
+  document.getElementById("grocery-count").textContent =
+    total + " item" + (total === 1 ? "" : "s") + " on list";
+}
+
+function buyOne(gi) {
+  inventory[gi].qty = Math.max(0, inventory[gi].qty - 1);
+  saveStorage();
+  renderInventory();
+  renderGrocery();
+}
+
+function buyAll(gi) {
+  inventory[gi].qty = 0;
+  saveStorage();
+  renderInventory();
+  renderGrocery();
+}
+
+async function zeroAll() {
+  const count = inventory.filter(i => i.qty > 0).length;
+  if (count === 0) { showToast("Nothing to clear."); return; }
+
+  const ok = await askConfirm(
+    "Zero all quantities?",
+    count + " item" + (count === 1 ? "" : "s") +
+    " will be set to zero and the grocery list will empty.",
+    true
+  );
+  if (!ok) return;
+
+  inventory.forEach(i => i.qty = 0);
+  saveStorage();
+  renderInventory();
+  renderGrocery();
+  showToast("All quantities cleared.");
+}
+
+// ==========================================================
+// PRINT
+// ==========================================================
+function printList() {
+  const d = new Date();
+  document.getElementById("print-date").textContent =
+    (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+  switchTab("grocery");
+  window.print();
+}
+
+// ==========================================================
+// BACKUP / RESTORE
+// ==========================================================
+function exportData() {
+  const blob = new Blob([JSON.stringify(inventory, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "inventory-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Keep it somewhere safe.");
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) {
+        showToast("That file isn't a valid backup.");
+        return;
+      }
+      const ok = await askConfirm(
+        "Replace current inventory?",
+        "This overwrites everything currently on this page with the contents of the backup file.",
+        true
+      );
+      if (!ok) return;
+      inventory = data;
+      saveStorage();
+      renderInventory();
+      renderGrocery();
+      showToast("Backup restored.");
+    } catch (err) {
+      showToast("Couldn't read that file.");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+// ==========================================================
+// MODAL
+// ==========================================================
+let modalResolve = null;
+
+function askConfirm(title, message, destructive) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-yes")
+      .classList.toggle("destructive", !!destructive);
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-yes").onclick = () => closeModal(true);
+document.getElementById("modal-no").onclick = () => closeModal(false);
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(false);
+  }
+});
+
+// ==========================================================
+// TOAST
+// ==========================================================
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// ==========================================================
+// TABS + INIT
+// ==========================================================
+document.getElementById("tab-inventory").onclick = () => switchTab("inventory");
+document.getElementById("tab-grocery").onclick = () => switchTab("grocery");
+
+function switchTab(name) {
+  document.querySelectorAll("nav button")
+    .forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  document.querySelectorAll(".page")
+    .forEach(p => p.classList.remove("visible"));
+  document.getElementById("page-" + name).classList.add("visible");
+}
+
+function init() {
+  // Store filter dropdown (All Stores + each store)
+  document.getElementById("grocery-filter").innerHTML =
+    '<option value="ALL">All Stores</option>' +
+    STORES.map(s => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
+  document.getElementById("grocery-filter").value = groceryFilter;
+
+  // Add-form dropdowns
+  document.getElementById("new-store").innerHTML =
+    STORES.map(s => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
+  document.getElementById("new-category").innerHTML =
+    [...CATEGORIES]
+      .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+      .map(c => '<option value="' + esc(c) + '">' + esc(c) + "</option>").join("");
+
+  buildColumns();
+  renderInventory();
+  renderGrocery();
+}
+
+init();
+</script>
+
+</body>
+</html>
