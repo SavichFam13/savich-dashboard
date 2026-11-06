@@ -36,6 +36,8 @@
   .back { color: var(--dim); text-decoration: none; font-size: 0.8rem; }
   .back:hover { color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
 
   nav { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
   nav button {
@@ -232,9 +234,12 @@
 
 <div class="top">
   <h1>Household Inventory</h1>
-  <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+  <div style="display:flex; gap:14px; align-items:baseline;">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+  </div>
 </div>
-<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</p>
+<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping! <span style="opacity:0.6;">(shared household data — cloud synced)</span></p>
 
 <nav>
   <button id="tab-inventory" class="active">INVENTORY</button>
@@ -246,7 +251,7 @@
 
   <div class="toolbar">
     <span style="font-size:0.79rem; color:var(--dim);" id="item-count">0 items</span>
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px;" id="admin-tools">
       <button class="btn" onclick="exportData()">Export Backup</button>
       <label class="btn" style="cursor:pointer;">
         Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
@@ -306,28 +311,29 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // ==========================================================
-// CATEGORIES — the full list of category names
+// HOUSEHOLD INVENTORY — CLOUD EDITION
+// Scope: SHARED (both accounts see the same inventory)
+//   - add items: everyone
+//   - edit qty / store / buy-one / buy-all / zero-all: everyone
+//   - DELETE items, Import/Export backups: admin only
+//     (database-enforced via RLS; UI hides the buttons too)
 // ==========================================================
+
 const CATEGORIES = [
   "FRIDGE", "FREEZER", "PANTRY", "SPICE CABINET",
   "DAMIEN", "CLEANING", "HYGIENE", "HOLIDAY"
 ];
 
-// ==========================================================
-// COLUMN LAYOUT — each inner array is one on-screen column,
-// top to bottom. Move a category name to move its box.
-// ==========================================================
 const COLUMN_LAYOUT = [
   ["FRIDGE", "PANTRY"],
   ["FREEZER", "SPICE CABINET", "HOLIDAY"],
   ["DAMIEN", "CLEANING", "HYGIENE"]
 ];
 
-// ==========================================================
-// STORES — alphabetical everywhere automatically
-// ==========================================================
 const STORES = [
   "Costco",
   "Wegmans",
@@ -341,23 +347,42 @@ const STORES = [
 ];
 STORES.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 
-// ==========================================================
-// STATE + STORAGE
-// ==========================================================
-const STORAGE_KEY = "savich-inventory-v1";
-const FILTER_KEY = "savich-grocery-filter";
+// ---------- state ----------
+let inventory = [];      // rows: {id, owner, name, category, store, qty}
+let groceryFilter = localStorage.getItem("savich-grocery-filter") || "ALL";
+let IS_ADMIN = false;
 
-let inventory = loadStorage(STORAGE_KEY, []);
-let groceryFilter = localStorage.getItem(FILTER_KEY) || "ALL";
-
-function loadStorage(key, fallback) {
-  try {
-    const v = JSON.parse(localStorage.getItem(key));
-    return v !== null && v !== undefined ? v : fallback;
-  } catch { return fallback; }
+// ---------- cloud helpers ----------
+async function ensureAuth() {
+  if (typeof requireAuth === "function") return await requireAuth();
+  const { data } = await sb().auth.getSession();
+  if (!data || !data.session) {
+    location.href = "../auth.html?next=" + encodeURIComponent(location.pathname);
+    throw new Error("not signed in");
+  }
 }
-function saveStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+
+async function loadRows() {
+  const { data, error } = await sb()
+    .from("inventory_items").select("*")
+    .eq("owner", "shared")
+    .order("id", { ascending: true });
+  if (error) throw error;
+  inventory = data || [];
+}
+
+async function updateRow(id, fields) {
+  const { error } = await sb()
+    .from("inventory_items").update(fields).eq("id", id);
+  if (error) throw error;
+  const row = inventory.find(r => r.id === id);
+  if (row) Object.assign(row, fields);
+}
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
 }
 
 function esc(str) {
@@ -386,8 +411,8 @@ function buildColumns() {
         '<th>Item</th>' +
         '<th style="width:118px;">Store</th>' +
         '<th style="width:92px; text-align:center;">Qty</th>' +
-        '<th style="width:34px;"></th>' +
-        "</tr></thead><tbody id=\"body-" + ci + '"></tbody></table>' +
+        '<th style="width:34px;" class="del-col"></th>' +
+        "</tr></thead><tbody id=\"body-" + ci + '\"></tbody></table>' +
         '<div class="empty" id="empty-' + ci + '" style="display:none;">No items yet.</div>';
       cell.appendChild(box);
     });
@@ -405,32 +430,32 @@ function renderInventory() {
     const emptyEl = document.getElementById("empty-" + ci);
     tbody.innerHTML = "";
 
-    // Keep the true index in the master list so buttons hit the right row.
     const rows = inventory
-      .map((item, gi) => ({ item, gi }))
-      .filter(r => r.item.category === cat)
+      .filter(r => r.category === cat)
       .sort((a, b) =>
-        a.item.name.localeCompare(b.item.name, "en", { sensitivity: "base" }));
+        a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 
     emptyEl.style.display = rows.length === 0 ? "block" : "none";
 
-    rows.forEach(({ item, gi }) => {
+    rows.forEach(item => {
       const tr = document.createElement("tr");
       tr.innerHTML =
         '<td class="item-cell">' + esc(item.name) + "</td>" +
-        '<td><select class="store" onchange="updateStore(' + gi + ', this.value)">' +
+        '<td><select class="store" onchange="updateStore(' + item.id + ', this.value)">' +
           STORES.map(s =>
             '<option value="' + esc(s) + '"' +
             (s === item.store ? " selected" : "") + ">" + esc(s) + "</option>"
           ).join("") +
         "</select></td>" +
         '<td><div class="qty-controls">' +
-          '<button class="qty-btn" onclick="adjustQty(' + gi + ', -1)">&minus;</button>' +
+          '<button class="qty-btn" onclick="adjustQty(' + item.id + ', -1)">&minus;</button>' +
           '<span class="qty-display">' + item.qty + "</span>" +
-          '<button class="qty-btn" onclick="adjustQty(' + gi + ', 1)">+</button>' +
+          '<button class="qty-btn" onclick="adjustQty(' + item.id + ', 1)">+</button>' +
         "</div></td>" +
-        '<td style="text-align:center;">' +
-          '<button class="btn-x" onclick="confirmDelete(' + gi + ')">&#10005;</button>' +
+        '<td style="text-align:center;" class="del-cell">' +
+          (IS_ADMIN
+            ? '<button class="btn-x" onclick="confirmDelete(' + item.id + ')">&#10005;</button>'
+            : "") +
         "</td>";
       tbody.appendChild(tr);
     });
@@ -442,64 +467,95 @@ function renderInventory() {
 }
 
 // ==========================================================
-// ROW ACTIONS
+// ROW ACTIONS (cloud writes; updates are allowed for everyone)
 // ==========================================================
-function updateStore(gi, val) {
-  inventory[gi].store = val;
-  saveStorage();
+async function updateStore(id, val) {
+  try { await updateRow(id, { store: val }); setSync(true); }
+  catch (e) { console.error(e); setSync(false); }
   renderGrocery();
 }
 
-function adjustQty(gi, delta) {
-  inventory[gi].qty = Math.max(0, inventory[gi].qty + delta);
-  saveStorage();
+let pendingQtyTimers = {};
+async function adjustQty(id, delta) {
+  const row = inventory.find(r => r.id === id);
+  if (!row) return;
+  row.qty = Math.max(0, row.qty + delta);
   renderInventory();
   renderGrocery();
+
+  // debounce rapid +/- clicks into one cloud write
+  clearTimeout(pendingQtyTimers[id]);
+  pendingQtyTimers[id] = setTimeout(async () => {
+    try { await updateRow(id, { qty: row.qty }); setSync(true); }
+    catch (e) { console.error(e); setSync(false); }
+  }, 350);
 }
 
-async function confirmDelete(gi) {
-  const item = inventory[gi];
+async function confirmDelete(id) {
+  if (!IS_ADMIN) {
+    showToast("Only the household admin can remove items.");
+    return;
+  }
+  const item = inventory.find(r => r.id === id);
+  if (!item) return;
   const ok = await askConfirm(
     "Remove this item?",
-    item.name + "\nStore: " + item.store + "\n\nThis deletes it from the inventory permanently.",
+    item.name + "\nStore: " + item.store + "\n\nThis deletes it from the shared inventory permanently.",
     true
   );
   if (!ok) return;
-  inventory.splice(gi, 1);
-  saveStorage();
-  renderInventory();
-  renderGrocery();
-  showToast("Item removed.");
+  try {
+    const { error } = await sb().from("inventory_items").delete().eq("id", id);
+    if (error) throw error;
+    inventory = inventory.filter(r => r.id !== id);
+    renderInventory();
+    renderGrocery();
+    setSync(true);
+    showToast("Item removed.");
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Could not delete item.");
+  }
 }
 
 // ==========================================================
-// ADD ITEM
+// ADD ITEM (everyone)
 // ==========================================================
-function addItem() {
+async function addItem() {
   const name = document.getElementById("new-name").value.trim();
   const store = document.getElementById("new-store").value;
   const category = document.getElementById("new-category").value;
 
   if (!name) { showToast("Enter an item name first."); return; }
 
-  inventory.push({ category: category, name: name, store: store, qty: 0 });
-  saveStorage();
+  try {
+    const { data, error } = await sb().from("inventory_items")
+      .insert([{ owner: "shared", name: name, store: store, category: category, qty: 0 }])
+      .select();
+    if (error) throw error;
+    if (data && data[0]) inventory.push(data[0]);
 
-  document.getElementById("new-name").value = "";
-  document.getElementById("new-name").focus();
+    document.getElementById("new-name").value = "";
+    document.getElementById("new-name").focus();
 
-  renderInventory();
-  renderGrocery();
-  showToast("Added to " + category + ".");
+    renderInventory();
+    renderGrocery();
+    setSync(true);
+    showToast("Added to " + category + ".");
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Could not add item.");
+  }
 }
 
 // ==========================================================
-// GROCERY LIST — everything with qty above zero,
-// filtered by the store dropdown, alphabetized
+// GROCERY LIST — qty above zero, grouped by store
 // ==========================================================
 function setGroceryFilter(val) {
   groceryFilter = val;
-  localStorage.setItem(FILTER_KEY, val);
+  localStorage.setItem("savich-grocery-filter", val);
   renderGrocery();
 }
 
@@ -507,19 +563,18 @@ function renderGrocery() {
   const container = document.getElementById("grocery-list");
 
   const entries = inventory
-    .map((item, gi) => ({ item, gi }))
-    .filter(r => r.item.qty > 0)
-    .filter(r => groceryFilter === "ALL" || r.item.store === groceryFilter);
+    .filter(r => r.qty > 0)
+    .filter(r => groceryFilter === "ALL" || r.store === groceryFilter);
 
   const grouped = {};
   entries.forEach(r => {
-    if (!grouped[r.item.store]) grouped[r.item.store] = [];
-    grouped[r.item.store].push(r);
+    if (!grouped[r.store]) grouped[r.store] = [];
+    grouped[r.store].push(r);
   });
 
   Object.keys(grouped).forEach(store => {
     grouped[store].sort((a, b) =>
-      a.item.name.localeCompare(b.item.name, "en", { sensitivity: "base" }));
+      a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
   });
 
   const storeNames = Object.keys(grouped).sort();
@@ -537,15 +592,15 @@ function renderGrocery() {
 
   storeNames.forEach(store => {
     html += '<div class="section-title">' + esc(store) + "</div>";
-    grouped[store].forEach(({ item, gi }) => {
+    grouped[store].forEach(item => {
       total++;
       html +=
         '<div class="grocery-item">' +
           '<span><span class="print-mark">&#9744;</span>' + esc(item.name) + "</span>" +
           '<span class="g-qty">Qty: ' + item.qty + "</span>" +
           '<div class="actions-cell">' +
-            '<button class="btn btn-mini" onclick="buyOne(' + gi + ')">&minus;1</button>' +
-            '<button class="btn btn-mini" onclick="buyAll(' + gi + ')">ALL</button>' +
+            '<button class="btn btn-mini" onclick="buyOne(' + item.id + ')">&minus;1</button>' +
+            '<button class="btn btn-mini" onclick="buyAll(' + item.id + ')">ALL</button>' +
           "</div>" +
         "</div>";
     });
@@ -556,18 +611,16 @@ function renderGrocery() {
     total + " item" + (total === 1 ? "" : "s") + " on list";
 }
 
-function buyOne(gi) {
-  inventory[gi].qty = Math.max(0, inventory[gi].qty - 1);
-  saveStorage();
-  renderInventory();
-  renderGrocery();
-}
+async function buyOne(id) { await adjustQty(id, -1); }
 
-function buyAll(gi) {
-  inventory[gi].qty = 0;
-  saveStorage();
+async function buyAll(id) {
+  const row = inventory.find(r => r.id === id);
+  if (!row) return;
+  row.qty = 0;
   renderInventory();
   renderGrocery();
+  try { await updateRow(id, { qty: 0 }); setSync(true); }
+  catch (e) { console.error(e); setSync(false); }
 }
 
 async function zeroAll() {
@@ -577,16 +630,25 @@ async function zeroAll() {
   const ok = await askConfirm(
     "Zero all quantities?",
     count + " item" + (count === 1 ? "" : "s") +
-    " will be set to zero and the grocery list will empty.",
+    " will be set to zero and the grocery list will empty (for BOTH of you — this is shared).",
     true
   );
   if (!ok) return;
 
-  inventory.forEach(i => i.qty = 0);
-  saveStorage();
-  renderInventory();
-  renderGrocery();
-  showToast("All quantities cleared.");
+  try {
+    for (const item of inventory.filter(i => i.qty > 0)) {
+      item.qty = 0;
+      await updateRow(item.id, { qty: 0 });
+    }
+    renderInventory();
+    renderGrocery();
+    setSync(true);
+    showToast("All quantities cleared.");
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Could not clear all quantities.");
+  }
 }
 
 // ==========================================================
@@ -601,10 +663,13 @@ function printList() {
 }
 
 // ==========================================================
-// BACKUP / RESTORE
+// BACKUP / RESTORE (admin only — restore deletes + rewrites all)
 // ==========================================================
 function exportData() {
-  const blob = new Blob([JSON.stringify(inventory, null, 2)],
+  const dump = inventory.map(r => ({
+    category: r.category, name: r.name, store: r.store, qty: r.qty
+  }));
+  const blob = new Blob([JSON.stringify(dump, null, 2)],
     { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -616,34 +681,53 @@ function exportData() {
   showToast("Backup downloaded. Keep it somewhere safe.");
 }
 
-function importData(e) {
+async function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (!Array.isArray(data)) {
-        showToast("That file isn't a valid backup.");
-        return;
-      }
-      const ok = await askConfirm(
-        "Replace current inventory?",
-        "This overwrites everything currently on this page with the contents of the backup file.",
-        true
-      );
-      if (!ok) return;
-      inventory = data;
-      saveStorage();
-      renderInventory();
-      renderGrocery();
-      showToast("Backup restored.");
-    } catch (err) {
-      showToast("Couldn't read that file.");
-    }
-  };
-  reader.readAsText(file);
+  const text = await file.text();
   e.target.value = "";
+
+  let data;
+  try { data = JSON.parse(text); } catch { showToast("Couldn't read that file."); return; }
+  if (!Array.isArray(data)) { showToast("That file isn't a valid backup."); return; }
+
+  const ok = await askConfirm(
+    "Replace shared inventory?",
+    "This DELETES every item currently in the cloud inventory and replaces them with the " +
+    data.length + " items from the backup file. Both accounts will see the result.",
+    true
+  );
+  if (!ok) return;
+
+  try {
+    const { error: delErr } = await sb()
+      .from("inventory_items").delete().eq("owner", "shared");
+    if (delErr) throw delErr;
+
+    const rows = data
+      .filter(i => i && i.name && i.category)
+      .map(i => ({
+        owner: "shared",
+        name: String(i.name),
+        store: String(i.store || ""),
+        category: String(i.category),
+        qty: Number(i.qty) || 0
+      }));
+    if (rows.length) {
+      const { error: insErr } = await sb()
+        .from("inventory_items").insert(rows);
+      if (insErr) throw insErr;
+    }
+    await loadRows();
+    renderInventory();
+    renderGrocery();
+    setSync(true);
+    showToast("Backup restored to the cloud.");
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Import failed.");
+  }
 }
 
 // ==========================================================
@@ -692,7 +776,7 @@ function showToast(message) {
 }
 
 // ==========================================================
-// TABS + INIT
+// TABS
 // ==========================================================
 document.getElementById("tab-inventory").onclick = () => switchTab("inventory");
 document.getElementById("tab-grocery").onclick = () => switchTab("grocery");
@@ -706,14 +790,15 @@ function switchTab(name) {
   document.getElementById("page-" + name).classList.add("visible");
 }
 
-function init() {
-  // Store filter dropdown (All Stores + each store)
+// ==========================================================
+// INIT
+// ==========================================================
+(async function init() {
+  // dropdowns (always needed)
   document.getElementById("grocery-filter").innerHTML =
     '<option value="ALL">All Stores</option>' +
     STORES.map(s => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
   document.getElementById("grocery-filter").value = groceryFilter;
-
-  // Add-form dropdowns
   document.getElementById("new-store").innerHTML =
     STORES.map(s => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
   document.getElementById("new-category").innerHTML =
@@ -724,9 +809,32 @@ function init() {
   buildColumns();
   renderInventory();
   renderGrocery();
-}
 
-init();
+  // auth gate
+  try { await ensureAuth(); } catch (e) { return; }
+
+  // admin check → decides delete buttons + backup visibility
+  try {
+    const { data, error } = await sb().rpc("is_admin");
+    IS_ADMIN = !error && data === true;
+  } catch { IS_ADMIN = false; }
+  if (!IS_ADMIN) {
+    document.getElementById("admin-tools").style.display = "none";
+  }
+
+  // load shared inventory from the cloud
+  try {
+    await loadRows();
+    setSync(true);
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not load inventory from the cloud.");
+  }
+
+  renderInventory();
+  renderGrocery();
+})();
 </script>
 
 </body>
