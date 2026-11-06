@@ -603,11 +603,20 @@ function openInfo(task, evt, isWeekly) {
   const ts = loggedStamp(task.id, now, isWeekly);
   const ok = typeof ts === "number" && !isNaN(ts);
   if (ok) {
-    let stampTxt = "done @ " + fmtClock(ts);
+    let stampTxt;
+    if (isWeekly) {
+      const d = new Date(ts);
+      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      stampTxt = "done " + days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() +
+                 " @ " + fmtClock(ts);
+    } else {
+      stampTxt = "done @ " + fmtClock(ts);
+    }
     if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
     if (ev) stampTxt += "  (slot time, not click time)";
     line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
-  } else if (ev) {
+    } else if (ev) {
     const nx = evNextMs(ev, now);
     let nextTxt = "next @ " + fmtClock(nx);
     if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
@@ -786,14 +795,14 @@ function renderWeeklyChips(now) {
     chip.type = "button";
     chip.className = "chip" + (ts !== undefined ? " logged" : "") + (missing ? " warn" : "");
 
-    let inner = '<span class="dot" style="background:#148eb4"></span>' + t.name;
-    if (ts !== undefined) {
-      inner += ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + fmtClock(ts) + '</span>';
-    } else if (missing) {
-      inner += ' <span class="warn-flag">no objective for wk ' + wk + '</span>';
-    }
-    chip.innerHTML = inner;
-    chip.title = tooltipFor(t, true, now);
+let inner = '<span class="dot" style="background:#148eb4"></span>' + t.name;
+if (ts !== undefined) {
+  inner += ' <span class="tick">\u2713</span>';
+} else if (missing) {
+  inner += ' <span class="warn-flag">no objective for wk ' + wk + '</span>';
+}
+chip.innerHTML = inner;
+chip.title = tooltipFor(t, true, now);
 
     chip.onclick = e => {
       e.preventDefault();
