@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Book</title>
+<style>
+  :root {
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #f2eef7;
+    --accent: #c9a0ff;
+    --accent2: #5fd3c4;
+    --hot-pink: #e10ab2;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --good: #7ddba3;
+    --bad: #ff8a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 13px; line-height: 1.65;
+    padding: 32px 20px; max-width: 1060px; margin: 0 auto;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
+  .back-link { color: var(--dim); text-decoration: none; font-size: 0.8rem; }
+  .back-link:hover { color: var(--accent); }
+  button.back {
+    color: var(--dim); font-size: 0.8rem; background: none;
+    border: none; font-family: inherit; cursor: pointer;
+    padding: 0; margin-bottom: 14px; display: inline-block;
+  }
+  button.back:hover { color: var(--accent); }
+  p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+
+  .view { display: none; }
+  .view.visible { display: block; }
+
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+  }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 14px; border-radius: 5px;
+    font-family: inherit; font-size: 0.78rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent2); }
+  .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; border: none; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-danger:hover { border-color: var(--bad); color: var(--bad); }
+
+  input.search {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 8px 12px; font-family: inherit;
+    font-size: 0.82rem; width: 300px;
+  }
+  input.search:focus { outline: none; border-color: var(--accent2); }
+
+  .toc-heading {
+    font-size: 0.72rem; color: var(--dim); letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .toc-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 16px; padding: 9px 12px; border-bottom: 1px solid #26212e;
+    cursor: pointer;
+  }
+  .toc-row:hover { background: #1d1926; }
+  .toc-name:hover { color: var(--accent2); }
+  .toc-meta { color: var(--dim); font-size: 0.73rem; white-space: nowrap; }
+  .empty { color: var(--dim); font-size: 0.8rem; padding: 22px 0; text-align: center; }
+
+  .recipe-title { font-size: 1.25rem; color: var(--accent); margin-bottom: 8px; line-height: 1.35; }
+  .yield-line { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; }
+  .yield-line b { color: var(--text); }
+
+  .scale-bar {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .scale-label { font-size: 0.66rem; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; }
+  .scale-btn {
+    background: #16131d; border: 1px solid var(--border); color: var(--text);
+    border-radius: 5px; padding: 5px 12px; font-family: inherit;
+    font-size: 0.78rem; cursor: pointer; min-width: 46px;
+  }
+  .scale-btn:hover { border-color: var(--accent2); }
+  .scale-btn.active { background: var(--accent2); color: #121016; font-weight: 700; }
+  .scale-input {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 5px 8px; font-family: inherit;
+    font-size: 0.78rem; width: 62px;
+  }
+  .scale-input:focus { outline: none; border-color: var(--accent2); }
+
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    align-items: start;
+  }
+  .sec { margin-bottom: 22px; }
+  .sec-title {
+    font-size: 0.74rem; color: var(--hot-pink); text-transform: uppercase;
+    letter-spacing: 1.5px; font-weight: 700; margin-bottom: 9px;
+  }
+  ul.list { list-style: none; }
+  ul.list li { padding-left: 16px; position: relative; margin-bottom: 3px; }
+  ul.list li::before { content: "\2022"; position: absolute; left: 2px; color: var(--dim); }
+  ol.steps { list-style: none; counter-reset: step; }
+  ol.steps li { padding-left: 26px; position: relative; margin-bottom: 7px; counter-increment: step; }
+  ol.steps li::before { content: counter(step) "."; position: absolute; left: 0; color: var(--accent2); font-weight: 700; }
+  .qty { color: var(--accent2); font-weight: 700; }
+  .nutrition {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px; margin-bottom: 22px; font-size: 0.8rem;
+  }
+  .nutrition b { color: var(--accent2); }
+  .detail-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 160px 160px 160px; gap: 14px; margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 0.66rem; color: var(--dim);
+    letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px;
+  }
+  .field input, .field textarea {
+    width: 100%; background: #16131d; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 8px 10px; font-family: inherit; font-size: 0.82rem;
+  }
+  .field textarea { resize: vertical; line-height: 1.6; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent2); }
+  .hint { font-size: 0.68rem; color: var(--dim); margin-top: 4px; }
+  .form-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 430px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 { font-size: 0.96rem; color: var(--hot-pink); margin-bottom: 12px; line-height: 1.4; }
+  .modal-box p { font-size: 0.81rem; color: var(--dim); line-height: 1.6; margin-bottom: 22px; white-space: pre-line; }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
+
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 110; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .print-header { display: none; }
+  @media print {
+    body { background: #fff; color: #000; padding: 0; max-width: none; font-size: 12px; }
+    .top, .toolbar, .scale-bar, .detail-actions, .modal-overlay, .toast,
+    #view-index, #view-edit, button.back { display: none !important; }
+    #view-recipe { display: block !important; }
+    .print-header { display: block !important; font-size: 11px; color: #444; margin-bottom: 14px; }
+    .recipe-title { color: #000; border-bottom: 2px solid #000; padding-bottom: 6px; }
+    .sec-title { color: #000; border-bottom: 1px solid #999; padding-bottom: 2px; }
+    .qty, ol.steps li::before, .nutrition b { color: #000; }
+    .nutrition { border: 1px solid #999; }
+    .two-col { grid-template-columns: 1fr 1fr; gap: 20px; }
+  }
+
+  @media (max-width: 860px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .form-grid { grid-template-columns: 1fr; }
+    input.search { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Recipe Book</h1>
+  <a href="../index.html" class="back-link">&larr; Back to Dashboard</a>
+</div>
+<p class="sub">Homemade Alytastic recipes that are gluten free & nightshade free</p>
+
+<!-- ============ INDEX ============ -->
+<div class="view visible" id="view-index">
+  <div class="toolbar">
+    <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
+           oninput="setSearch(this.value)">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="newRecipe()">+ New Recipe</button>
+      <button class="btn" onclick="exportData()">Export Backup</button>
+      <label class="btn" style="cursor:pointer;">
+        Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+      </label>
+    </div>
+  </div>
+  <div class="toc-heading">Table of Contents</div>
+  <div id="recipe-list"></div>
+</div>
+
+<!-- ============ RECIPE DETAIL ============ -->
+<div class="view" id="view-recipe">
+  <button class="back" onclick="showView('index')">&larr; Table of Contents</button>
+  <div class="print-header" id="print-header"></div>
+  <div id="recipe-body"></div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div class="view" id="view-edit">
+  <button class="back" onclick="cancelEdit()">&larr; Cancel</button>
+  <h2 class="recipe-title" id="editor-heading" style="margin-bottom:20px;">New Recipe</h2>
+
+  <div class="form-grid">
+    <div class="field">
+      <label for="f-name">Recipe Name</label>
+      <input type="text" id="f-name" placeholder="Bacon, Jalapeño, Sausage &amp; Cheese Soup">
+    </div>
+    <div class="field">
+      <label for="f-servings">Base Servings</label>
+      <input type="number" id="f-servings" step="1" min="0" placeholder="e.g. 6">
+      <div class="hint">The scaling anchor</div>
+    </div>
+    <div class="field">
+      <label for="f-calories">Calories / Serving</label>
+      <input type="number" id="f-calories" step="1" min="0" placeholder="optional">
+    </div>
+    <div class="field">
+      <label for="f-carbs">Carbs / Serving (g)</label>
+      <input type="number" id="f-carbs" step="0.1" min="0" placeholder="optional">
+    </div>
+  </div>
+
+  <div class="field" style="margin-bottom:18px;">
+    <label for="f-yield">Yield (as written)</label>
+    <input type="text" id="f-yield" placeholder="e.g. Serves 6 / makes 12 biscuits">
+  </div>
+
+  <div class="field" style="margin-bottom:18px;">
+    <label for="f-ingredients">Ingredients</label>
+    <textarea id="f-ingredients" rows="9" placeholder="One ingredient per line. Any of these work:
+½ cup heavy cream
+1/2 cup heavy cream
+1 1/2 tsp salt
+½–¾ cup diced jalapeños"></textarea>
+    <div class="hint">One per line, lead with the amount. Fractions, decimals, and ½-style characters all scale.</div>
+  </div>
+
+  <div class="field" style="margin-bottom:18px;">
+    <label for="f-equipment">Equipment</label>
+    <textarea id="f-equipment" rows="4" placeholder="One per line"></textarea>
+  </div>
+
+  <div class="field" style="margin-bottom:18px;">
+    <label for="f-instructions">Instructions</label>
+    <textarea id="f-instructions" rows="9" placeholder="One step per line"></textarea>
+  </div>
+
+  <div class="field" style="margin-bottom:18px;">
+    <label for="f-notes">Notes</label>
+    <textarea id="f-notes" rows="4" placeholder="One note per line"></textarea>
+    <div class="hint">Each line becomes its own bulleted note.</div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button>
+    <button class="btn" onclick="cancelEdit()">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ MODAL + TOAST ============ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons">
+      <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==========================================================
+// STATE + STORAGE
+// ==========================================================
+const STORAGE_KEY = "savich-recipes-v1";
+let recipes = loadStorage(STORAGE_KEY, []);
+let searchTerm = "";
+let currentId = null;   // recipe being viewed
+let editId = null;      // recipe being edited (null = new)
+let scale = 1;          // current ingredient multiplier
+
+function loadStorage(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v !== null && v !== undefined ? v : fallback;
+  } catch { return fallback; }
+}
+function saveStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+}
+function esc(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ==========================================================
+// VIEWS
+// ==========================================================
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("visible"));
+  document.getElementById("view-" + name).classList.add("visible");
+  window.scrollTo(0, 0);
+}
+
+// ==========================================================
+// INDEX (Table of Contents) — searchable
+// ==========================================================
+function setSearch(term) {
+  searchTerm = term.trim().toLowerCase();
+  renderList();
+}
+
+function renderList() {
+  const wrap = document.getElementById("recipe-list");
+  wrap.innerHTML = "";
+
+  let shown = recipes;
+  if (searchTerm) {
+    shown = recipes.filter(r =>
+      r.name.toLowerCase().includes(searchTerm) ||
+      (r.ingredients || []).some(i => i.toLowerCase().includes(searchTerm)));
+  }
+
+  shown = [...shown].sort((a, b) =>
+    a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+
+  if (shown.length === 0) {
+    wrap.innerHTML = recipes.length === 0
+      ? '<div class="empty">No recipes yet. Click "+ New Recipe" to add your first one.</div>'
+      : '<div class="empty">No recipes match "' + esc(searchTerm) + '".</div>';
+    return;
+  }
+
+  shown.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "toc-row";
+    row.onclick = () => openRecipe(r.id);
+    const meta = [];
+    if (r.servings) meta.push(r.servings + " servings");
+    if (r.calories) meta.push(r.calories + " cal");
+    row.innerHTML =
+      '<span class="toc-name">' + esc(r.name) + "</span>" +
+      '<span class="toc-meta">' + esc(meta.join(" \u00B7 ")) + "</span>";
+    wrap.appendChild(row);
+  });
+}
+
+// ==========================================================
+// AMOUNT HANDLING
+// Understands: ½ ¼ ¾ ⅓ ⅔ ⅛ ⅜ ⅝ ⅞ glyphs (incl. 1½),
+// "1/2", "1 1/2", "0.5", "2", and ranges like "½–¾" or "1-2".
+// ==========================================================
+const GLYPH_MAP = [
+  [/(\d)\u00BD/g, "$1 1/2"], [/\u00BD/g, "1/2"],
+  [/(\d)\u00BC/g, "$1 1/4"], [/\u00BC/g, "1/4"],
+  [/(\d)\u00BE/g, "$1 3/4"], [/\u00BE/g, "3/4"],
+  [/(\d)\u2153/g, "$1 1/3"], [/\u2153/g, "1/3"],
+  [/(\d)\u2154/g, "$1 2/3"], [/\u2154/g, "2/3"],
+  [/(\d)\u215B/g, "$1 1/8"], [/\u215B/g, "1/8"],
+  [/(\d)\u215C/g, "$1 3/8"], [/\u215C/g, "3/8"],
+  [/(\d)\u215D/g, "$1 5/8"], [/\u215D/g, "5/8"],
+  [/(\d)\u215E/g, "$1 7/8"], [/\u215E/g, "7/8"]
+];
+
+function normalizeGlyphs(line) {
+  let s = line;
+  GLYPH_MAP.forEach(pair => { s = s.replace(pair[0], pair[1]); });
+  return s;
+}
+
+const AMT = "(?:\\d+(?:\\.\\d+)?(?:\\s+\\d+\\/\\d+)?|\\d+\\/\\d+)";
+const RANGE_RE = new RegExp("^(" + AMT + ")\\s*[\u2013\u2014-]\\s*(" + AMT + ")\\s+(.*)$");
+const SINGLE_RE = new RegExp("^(" + AMT + ")(?:\\s+(.*))?$");
+
+function evalAmt(str) {
+  let num = 0, found = false;
+  str.trim().split(/\s+/).forEach(p => {
+    if (/^\d+\/\d+$/.test(p)) {
+      const bits = p.split("/");
+      num += Number(bits[0]) / Number(bits[1]); found = true;
+    } else if (/^\d+(\.\d+)?$/.test(p)) {
+      num += Number(p); found = true;
+    }
+  });
+  return (found && num > 0) ? num : null;
+}
+
+function parseAmount(line) {
+  const s = normalizeGlyphs(line);
+
+  // Range: "1/2 - 3/4 cup" (dash, en dash, or em dash)
+  let m = s.match(RANGE_RE);
+  if (m) {
+    const lo = evalAmt(m[1]), hi = evalAmt(m[2]);
+    if (lo && hi) return { low: lo, high: hi, rest: m[3] };
+  }
+
+  // Single amount
+  m = s.match(SINGLE_RE);
+  if (m) {
+    const n = evalAmt(m[1]);
+    if (n) return { num: n, rest: m[2] || "" };
+  }
+  return null;
+}
+
+// Display glyphs for common fractions, decimals for oddballs
+const DISPLAY_GLYPHS = [
+  [0.125, "\u215B"], [0.25, "\u00BC"], [1/3, "\u2153"], [0.375, "\u215C"],
+  [0.5, "\u00BD"], [0.625, "\u215D"], [2/3, "\u2154"], [0.75, "\u00BE"],
+  [0.875, "\u215E"]
+];
+
+function formatAmount(n) {
+  if (Math.abs(n - Math.round(n)) < 0.001) return String(Math.round(n));
+  const whole = Math.floor(n);
+  const frac = n - whole;
+  for (let i = 0; i < DISPLAY_GLYPHS.length; i++) {
+    if (Math.abs(frac - DISPLAY_GLYPHS[i][0]) < 0.002) {
+      return whole > 0 ? whole + DISPLAY_GLYPHS[i][1] : DISPLAY_GLYPHS[i][1];
+    }
+  }
+  return String(Math.round(n * 100) / 100);
+}
+
+function scaleLine(line, mult) {
+  const parsed = parseAmount(line);
+  if (!parsed) return { html: esc(line), raw: line };
+
+  if (parsed.low !== undefined) {
+    const lo = formatAmount(parsed.low * mult);
+    const hi = formatAmount(parsed.high * mult);
+    return {
+      html: '<span class="qty">' + esc(lo) + "\u2013" + esc(hi) + "</span> " + esc(parsed.rest)
+    };
+  }
+  return {
+    html: '<span class="qty">' + esc(formatAmount(parsed.num * mult)) + "</span> " + esc(parsed.rest)
+  };
+}
+
+// ==========================================================
+// RECIPE DETAIL
+// ==========================================================
+function openRecipe(id) {
+  currentId = id;
+  scale = 1;
+  renderRecipe();
+  showView("recipe");
+}
+
+function setScale(mult) {
+  scale = mult;
+  renderRecipe();
+}
+
+function setScaleCustom(val) {
+  const n = parseFloat(val);
+  if (Number.isFinite(n) && n > 0) {
+    scale = n;
+    renderRecipe();
+  }
+}
+
+function renderRecipe() {
+  const r = recipes.find(x => x.id === currentId);
+  if (!r) { showView("index"); return; }
+
+  const body = document.getElementById("recipe-body");
+  let html = "";
+
+  html += '<div class="recipe-title">' + esc(r.name) + "</div>";
+
+  const yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
+  if (yieldText) html += '<div class="yield-line"><b>Yield:</b> ' + esc(yieldText) + "</div>";
+
+  // Nutrition — per serving, unchanged by scaling
+  if (r.calories || r.carbs) {
+    const bits = [];
+    if (r.calories) bits.push("<b>" + r.calories + "</b> calories");
+    if (r.carbs) bits.push("<b>" + r.carbs + " g</b> carbs");
+    html += '<div class="nutrition">Per serving (as written): ' + bits.join(" \u00B7 ") + "</div>";
+  }
+
+  // Scale bar
+  const effServ = r.servings ? Math.round(r.servings * scale * 10) / 10 : null;
+  const servText = effServ ? "&nbsp;\u00B7&nbsp;makes about <b>" + effServ + "</b> serving" +
+    (effServ === 1 ? "" : "s") : "";
+  html += '<div class="scale-bar"><span class="scale-label">Batch Size</span>' +
+    ["0.5", "1", "2", "3"].map(m =>
+      '<button class="scale-btn' + (String(scale) === m ? " active" : "") + '" onclick="setScale(' + m + ')">' +
+      (m === "0.5" ? "&frac12;&times;" : m + "&times;") + "</button>").join("") +
+    '<input type="number" class="scale-input" step="0.5" min="0.25" value="' + scale + '" ' +
+    'onchange="setScaleCustom(this.value)" onfocus="this.select()">' +
+    '<span style="font-size:0.72rem; color:var(--dim);">multiplier' + servText + "</span></div>";
+
+  // ===== two-column layout: ingredients/equipment | instructions/notes =====
+  html += '<div class="two-col">';
+  html += '<div>';  // LEFT column
+
+  if ((r.ingredients || []).length) {
+    html += '<div class="sec"><div class="sec-title">Ingredients</div><ul class="list">';
+    r.ingredients.forEach(line => {
+      html += "<li>" + scaleLine(line, scale).html + "</li>";
+    });
+    html += "</ul></div>";
+  }
+
+  if ((r.equipment || []).length) {
+    html += '<div class="sec"><div class="sec-title">Equipment</div><ul class="list">';
+    r.equipment.forEach(line => { html += "<li>" + esc(line) + "</li>"; });
+    html += "</ul></div>";
+  }
+
+  html += '</div>';   // end LEFT column
+  html += '<div>';    // RIGHT column
+
+  if ((r.instructions || []).length) {
+    html += '<div class="sec"><div class="sec-title">Instructions</div><ol class="steps">';
+    r.instructions.forEach(line => { html += "<li>" + esc(line) + "</li>"; });
+    html += "</ol></div>";
+  }
+
+  // Notes — one bulleted line per note
+  if (r.notes && r.notes.trim()) {
+    html += '<div class="sec"><div class="sec-title">Notes</div><ul class="list">';
+    r.notes.split("\n")
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+      .forEach(line => { html += "<li>" + esc(line) + "</li>"; });
+    html += "</ul></div>";
+  }
+
+  html += '</div>';   // end RIGHT column
+  html += '</div>';   // end two-col
+
+  html += '<div class="detail-actions">' +
+    '<button class="btn btn-primary" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
+    '<button class="btn" onclick="printRecipe()">Print</button>' +
+    '<button class="btn btn-danger" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
+    "</div>";
+
+  body.innerHTML = html;
+}
+
+function printRecipe() {
+  const d = new Date();
+  document.getElementById("print-header").textContent =
+    "Savich Recipe Book \u2014 " +
+    (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
+  window.print();
+}
+
+// ==========================================================
+// EDITOR
+// ==========================================================
+function newRecipe() {
+  editId = null;
+  document.getElementById("editor-heading").textContent = "New Recipe";
+  ["f-name", "f-servings", "f-calories", "f-carbs", "f-yield",
+   "f-ingredients", "f-equipment", "f-instructions", "f-notes"]
+    .forEach(id => { document.getElementById(id).value = ""; });
+  showView("edit");
+  document.getElementById("f-name").focus();
+}
+
+function editRecipe(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  editId = id;
+  document.getElementById("editor-heading").textContent = "Edit: " + r.name;
+  document.getElementById("f-name").value = r.name || "";
+  document.getElementById("f-servings").value = r.servings || "";
+  document.getElementById("f-calories").value = r.calories || "";
+  document.getElementById("f-carbs").value = r.carbs || "";
+  document.getElementById("f-yield").value = r.yield || "";
+  document.getElementById("f-ingredients").value = (r.ingredients || []).join("\n");
+  document.getElementById("f-equipment").value = (r.equipment || []).join("\n");
+  document.getElementById("f-instructions").value = (r.instructions || []).join("\n");
+  document.getElementById("f-notes").value = r.notes || "";
+  showView("edit");
+}
+
+function cancelEdit() {
+  if (editId) { openRecipe(editId); }
+  else { showView("index"); }
+}
+
+function saveRecipe() {
+  const name = document.getElementById("f-name").value.trim();
+  if (!name) { showToast("Give the recipe a name first."); return; }
+
+  const split = id =>
+    document.getElementById(id).value.split("\n")
+      .map(l => l.trim()).filter(l => l.length > 0);
+
+  const data = {
+    name: name,
+    servings: Number(document.getElementById("f-servings").value) || null,
+    calories: Number(document.getElementById("f-calories").value) || null,
+    carbs: Number(document.getElementById("f-carbs").value) || null,
+    yield: document.getElementById("f-yield").value.trim(),
+    ingredients: split("f-ingredients"),
+    equipment: split("f-equipment"),
+    instructions: split("f-instructions"),
+    notes: document.getElementById("f-notes").value.trim()
+  };
+
+  if (editId) {
+    const idx = recipes.findIndex(x => x.id === editId);
+    recipes[idx] = Object.assign({ id: editId }, data);
+    showToast("Recipe updated.");
+    renderList();
+    openRecipe(editId);
+  } else {
+    const id = Date.now();
+    recipes.push(Object.assign({ id: id }, data));
+    showToast("Recipe saved.");
+    renderList();
+    openRecipe(id);
+  }
+  saveStorage();
+}
+
+async function deleteRecipe(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  const ok = await askConfirm(
+    "Delete this recipe?",
+    r.name + "\n\nThis permanently removes it from the book.",
+    true
+  );
+  if (!ok) return;
+  recipes = recipes.filter(x => x.id !== id);
+  saveStorage();
+  renderList();
+  showView("index");
+  showToast("Recipe deleted.");
+}
+
+// ==========================================================
+// BACKUP / RESTORE
+// ==========================================================
+function exportData() {
+  const blob = new Blob([JSON.stringify(recipes, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "recipe-book-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Keep it somewhere safe.");
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) { showToast("That file isn't a valid backup."); return; }
+      const ok = await askConfirm(
+        "Replace all recipes?",
+        "This overwrites the book with the contents of the backup file.",
+        true
+      );
+      if (!ok) return;
+      recipes = data;
+      saveStorage();
+      renderList();
+      showView("index");
+      showToast("Backup restored.");
+    } catch (err) { showToast("Couldn't read that file."); }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+// ==========================================================
+// MODAL
+// ==========================================================
+let modalResolve = null;
+
+function askConfirm(title, message, destructive) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-yes")
+      .classList.toggle("destructive", !!destructive);
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-yes").onclick = () => closeModal(true);
+document.getElementById("modal-no").onclick = () => closeModal(false);
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(false);
+  }
+});
+
+// ==========================================================
+// TOAST
+// ==========================================================
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// ==========================================================
+// INIT
+// ==========================================================
+renderList();
+</script>
+
+</body>
+</html>
