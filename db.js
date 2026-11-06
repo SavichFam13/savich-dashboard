@@ -12,8 +12,8 @@
 // ============================================================
 
 // ---- PASTE YOUR VALUES HERE (Settings → API in Supabase) ----
-const SUPABASE_URL  = "https://abcdefghij.supabase.co";   // e.g. https://abcxyz.supabase.co
-const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";  // the long eyJ... string
+const SUPABASE_URL  = "https://pgmlomrttcznxmoonkgl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
 
 // ============================================================
 let _sb = null;
