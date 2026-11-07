@@ -19,7 +19,7 @@
   }
   .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; }
   .nav-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
     text-decoration: none; padding: 6px 14px; border-radius: 8px;
@@ -27,9 +27,6 @@
   }
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .sync-tag { font-size: 0.72rem; font-weight: 700; color: var(--dim); letter-spacing: 0.5px; }
-  .sync-tag.ok { color: var(--good); }
-  .sync-tag.err { color: var(--bad); }
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 20px; }
 
   .stats-line { color: var(--accent2); font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
@@ -133,6 +130,10 @@
   }
   .backup-row input[type="file"] { display: none; }
 
+  .sync-status { color: var(--dim); font-size: 0.72rem; margin-top: 6px; }
+  .sync-status.ok { color: var(--good); }
+  .sync-status.err { color: var(--bad); }
+
   .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
   .filter-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
@@ -189,8 +190,6 @@
     z-index: 210; max-width: 90vw; text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .loading-msg { color: var(--dim); font-size: 0.85rem; padding: 40px 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -198,7 +197,6 @@
 <div class="top">
   <h1>Home Instance Nodes</h1>
   <nav class="nav-bar">
-    <span class="sync-tag" id="sync-tag">connecting&hellip;</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
     <a href="trackers.html" class="nav-btn">Trackers</a>
@@ -208,48 +206,50 @@
 
 <p class="sub">Left-click = toggle owned &middot; Right-click = details popup. Popup can store a chat-link code per node &mdash; click "copy code", paste into GW2 chat, click the link.</p>
 
-<div id="content-wrap">
-  <div class="loading-msg">Loading your nodes from the cloud&hellip;</div>
+<div class="stats-line" id="stats"></div>
+<div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
+
+<div class="filter-row">
+  <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
+  <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
+  <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
 </div>
 
-<div id="real-content" style="display:none;">
-  <div class="stats-line" id="stats"></div>
-  <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
+<div id="groups"></div>
 
-  <div class="filter-row">
-    <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
-    <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
-    <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
-  </div>
+<div class="add-row">
+  <select id="new-group">
+    <option value="Packs & Racks">Packs & Racks</option>
+    <option value="Mining (Trading Post)">Mining (TP)</option>
+    <option value="Logging (Trading Post)">Logging (TP)</option>
+    <option value="Harvesting (Trading Post)">Harvesting (TP)</option>
+    <option value="Currency Vendor Nodes">Currency Vendors</option>
+    <option value="Achievement &amp; Festival Unlocks">Achievements &amp; Festivals</option>
+    <option value="Expedition Contracts (Mail Delivery)">Contracts</option>
+    <option value="Custom">Custom</option>
+  </select>
+  <input type="text" id="new-name" placeholder="Node name">
+  <button onclick="addNode()">+ Add Node</button>
+</div>
 
-  <div id="groups"></div>
+<!-- CLOUD SYNC (per-user, private GitHub Gist) -->
+<div class="backup-row">
+  <button class="backup-btn" id="btn-connect" onclick="cloudConnect()">Connect Cloud Sync</button>
+  <button class="backup-btn" id="btn-push" onclick="cloudPush(true)" style="display:none;">Push Now</button>
+  <button class="backup-btn" id="btn-pull" onclick="cloudPull()" style="display:none;">Pull Now</button>
+  <button class="backup-btn destructive" id="btn-disconnect" onclick="cloudDisconnect()" style="display:none;">Disconnect</button>
+</div>
+<div class="sync-status" id="sync-status"></div>
+<div class="backup-label" id="sync-hint">Cloud sync stores your data in YOUR OWN secret GitHub Gist (private, per user). Create a token at github.com/settings/tokens with the "gist" scope, then connect.</div>
 
-  <div class="add-row">
-    <select id="new-group">
-      <option value="Packs & Racks">Packs & Racks</option>
-      <option value="Mining (Trading Post)">Mining (TP)</option>
-      <option value="Logging (Trading Post)">Logging (TP)</option>
-      <option value="Harvesting (Trading Post)">Harvesting (TP)</option>
-      <option value="Currency Vendor Nodes">Currency Vendors</option>
-      <option value="Achievement &amp; Festival Unlocks">Achievements &amp; Festivals</option>
-      <option value="Expedition Contracts (Mail Delivery)">Contracts</option>
-      <option value="Custom">Custom</option>
-    </select>
-    <input type="text" id="new-name" placeholder="Node name">
-    <button onclick="addNode()">+ Add Node</button>
-  </div>
-
-  <!-- BACKUP / RESTORE -->
-  <div class="backup-row">
-    <button class="backup-btn" onclick="exportState()">Export Backup</button>
-    <label class="backup-btn" style="cursor:pointer;">
-      Import Backup
-      <input type="file" accept=".json" onchange="importState(event)">
-    </label>
-    <span class="backup-label">Saves everything: owned nodes, custom nodes &amp; saved map codes &mdash; to YOUR account only</span>
-  </div>
-
-  <p class="note">Saved to your personal account in the cloud. Your wife's node list is separate and invisible to you, and vice versa.</p>
+<!-- BACKUP / RESTORE -->
+<div class="backup-row">
+  <button class="backup-btn" onclick="exportState()">Export Backup</button>
+  <label class="backup-btn" style="cursor:pointer;">
+    Import Backup
+    <input type="file" accept=".json" onchange="importState(event)">
+  </label>
+  <span class="backup-label">Saves everything: owned nodes, custom nodes &amp; saved map codes</span>
 </div>
 
 <!-- POPUP PANEL -->
@@ -271,121 +271,731 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../db.js"></script>
 <script>
 // =====================================================================
-// AUTH + CLOUD — personal scope: owner = your user id.
-// The row in app_data is keyed ("gw2-nodes", <your-id>), and the RLS
-// policies from schema v3.4 mean nobody else can read or write it.
+// LOCAL CACHE SHIM (offline fallback + instant loads)
+// Cloud is the source of truth once connected.
 // =====================================================================
-const KEY = "gw2-nodes";
-let USER_ID = null;
-
-function sb() { return window._sb_lite || window.sb(); }
-
-async function ensureAuth() {
-  if (typeof requireAuth === "function") return await requireAuth();
-  const s = window.sb ? window.sb() : null;
-  const { data } = await s.auth.getSession();
-  if (data && data.session) return data.session.user;
-  location.href = "../auth.html?next=gw2/nodes.html";
-  return null;
-}
-
-function setSync(ok, msg) {
-  const el = document.getElementById("sync-tag");
-  if (ok) { el.textContent = "cloud synced \u2713"; el.className = "sync-tag ok"; }
-  else { el.textContent = msg || "offline \u2014 not saving"; el.className = "sync-tag err"; }
-}
-
-async function cloudLoad() {
-  const { data, error } = await sb().from("app_data")
-    .select("value").eq("key", KEY).eq("owner", USER_ID).maybeSingle();
-  if (error) throw error;
-  return data ? data.value : null;
-}
-
-async function cloudWrite(newState) {
-  const { error } = await sb().from("app_data")
-    .upsert({ key: KEY, owner: USER_ID, value: newState },
-            { onConflict: "key,owner" });
-  if (error) throw error;
-}
-
-// local mirror: lets the page render instantly on reload & acts as a fallback
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
 
 // =====================================================================
-// STATE
-// state: { owned: {name:true}, custom: [{group,name,details}], locs: {name:"[&...] text"} }
+// CLOUD SYNC LAYER — per-user private GitHub Gist
+// Files:
+//   gw2-nodes-cloud-token  -> { token }        (this device only)
+//   gw2-nodes-cloud-gist   -> { gistId }       (this device only)
+// The gist itself holds one file "gw2-nodes-data.json" with the state.
 // =====================================================================
-let state = { owned: {}, custom: [], locs: {} };
-let filter = "all";
+const TOKEN_KEY  = "gw2-nodes-cloud-token";
+const GIST_KEY   = "gw2-nodes-cloud-gist";
+const DATA_FILE  = "gw2-nodes-data.json";
 
-function normalize(s) {
-  if (!s || typeof s !== "object") s = {};
+let cloudToken = Store.get(TOKEN_KEY) || null;
+let cloudGist  = Store.get(GIST_KEY)  || null;
+let pushTimer  = null;
+
+function cloudStatus(msg, cls) {
+  const el = document.getElementById("sync-status");
+  el.textContent = msg || "";
+  el.className = "sync-status" + (cls ? " " + cls : "");
+}
+
+function refreshCloudUI() {
+  const on = !!(cloudToken && cloudGist);
+  document.getElementById("btn-connect").style.display    = on ? "none" : "";
+  document.getElementById("btn-push").style.display       = on ? "" : "none";
+  document.getElementById("btn-pull").style.display       = on ? "" : "none";
+  document.getElementById("btn-disconnect").style.display = on ? "" : "none";
+  document.getElementById("sync-hint").style.display      = on ? "none" : "";
+  if (on) cloudStatus("Cloud sync active — changes push automatically.", "ok");
+}
+
+async function ghFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({
+    "Accept": "application/vnd.github+json",
+    "Authorization": "Bearer " + cloudToken
+  }, opts.headers || {});
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error("GitHub API " + res.status);
+  return res.json();
+}
+
+async function cloudConnect() {
+  const token = prompt(
+    "Paste a GitHub personal access token with the 'gist' scope.\n" +
+    "Create one at github.com/settings/tokens.\n\n" +
+    "It is stored only in THIS browser and used only to sync to your own private gist."
+  );
+  if (!token) return;
+  cloudToken = token.trim();
+  Store.set(TOKEN_KEY, cloudToken);
+
+  cloudStatus("Connecting…");
+  try {
+    const me = await ghFetch("https://api.github.com/user");
+    // look for an existing data gist among user's gists
+    const gists = await ghFetch("https://api.github.com/gists?per_page=100");
+    const mine = (gists || []).find(g => g.files && g.files[DATA_FILE]);
+    if (mine) {
+      cloudGist = mine.id;
+    } else {
+      const created = await ghFetch("https://api.github.com/gists", {
+        method: "POST",
+        body: JSON.stringify({
+          description: "GW2 Home Instance Nodes data (private sync)",
+          public: false,
+          files: { [DATA_FILE]: { content: JSON.stringify(state, null, 2) } }
+        })
+      });
+      cloudGist = created.id;
+    }
+    Store.set(GIST_KEY, cloudGist);
+    refreshCloudUI();
+    showToast("Cloud sync connected for " + (me.login || "your account") + ".");
+  } catch (err) {
+    cloudStatus("Connect failed: " + err.message, "err");
+    cloudDisconnect(true);
+  }
+}
+
+function cloudDisconnect(silent) {
+  cloudToken = null; cloudGist = null;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(GIST_KEY);
+  refreshCloudUI();
+  if (!silent) showToast("Disconnected. Local data is kept.");
+}
+
+// merge strategy: newest updatedAt wins per top-level section
+function mergeStates(local, remote) {
+  const out = {};
+  for (const k of ["owned", "custom", "locs"]) {
+    const l = local[k] || {}, r = remote[k] || {};
+    if (local.updatedAt && remote.updatedAt && local.updatedAt[k] >= remote.updatedAt[k]) out[k] = l;
+    else if (remote.updatedAt) out[k] = r;
+    else out[k] = Object.assign({}, r, l); // no timestamps: local wins on conflicts
+  }
+  return out;
+}
+
+async function cloudPush(manual) {
+  if (!(cloudToken && cloudGist)) return;
+  try {
+    cloudStatus("Pushing…");
+    await ghFetch("https://api.github.com/gists/" + cloudGist, {
+      method: "PATCH",
+      body: JSON.stringify({ files: { [DATA_FILE]: { content: JSON.stringify(state, null, 2) } } })
+    });
+    state.updatedAt = stampNow();
+    cloudStatus("Synced to cloud ✓", "ok");
+    if (manual) showToast("Pushed to your private gist.");
+  } catch (err) {
+    cloudStatus("Push failed: " + err.message, "err");
+  }
+}
+
+function stampNow() {
+  return { owned: Date.now(), custom: Date.now(), locs: Date.now() };
+}
+
+async function cloudPull(manual) {
+  if (!(cloudToken && cloudGist)) return;
+  try {
+    cloudStatus("Pulling…");
+    const g = await ghFetch("https://api.github.com/gists/" + cloudGist);
+    const f = g.files && g.files[DATA_FILE];
+    if (!f) throw new Error("no data file in gist");
+    const remote = JSON.parse(f.content);
+    const merged = mergeStates(state, remote);
+    state = normalizeState(merged);
+    save(false); // cache locally without triggering another push loop
+    render();
+    cloudStatus("Synced from cloud ✓", "ok");
+    if (manual) showToast("Pulled from your private gist.");
+  } catch (err) {
+    cloudStatus("Pull failed: " + err.message, "err");
+  }
+}
+
+// debounced auto-push after every local save
+function schedulePush() {
+  if (!(cloudToken && cloudGist)) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => cloudPush(false), 3000);
+}
+
+// pull once on page load when connected
+window.addEventListener("load", () => {
+  refreshCloudUI();
+  if (cloudToken && cloudGist) cloudPull(false);
+});
+
+// =====================================================================
+// YOUR NODE GROUPS (kept exactly as-is)
+// =====================================================================
+const NODE_GROUPS = {
+    "Packs & Racks": [
+    "Basic Ore Node Pack", "Basic Lumber Node Pack", "Basic Harvesting Node Pack",
+    "Basic Cloth Rack", "Basic Leather Rack", "Advanced Cloth Rack", "Advanced Leather Rack"
+  ],
+  "Mining (Trading Post)": [
+    "Iron Mining Node", "Platinum Mining Node", "Mithril Mining Node",
+    "Orichalcum Mining Node"
+  ],
+  "Logging (Trading Post)": [
+    "Hard Wood Logging Node", "Elder Wood Logging Node", "Ancient Wood Logging Node"
+  ],
+  "Harvesting (Trading Post)": [
+    "Omnomberry Bush", "Flaxseed Harvesting Node", "Lotus Harvesting Node",
+    "Orrian Truffle Harvesting Node", "Snow truffle node", "Ghost Pepper Node"
+  ],
+  "Currency Vendor Nodes": [
+    "Bloodstone Crystal Node", "Brandstone Node", "Jade Fragment Node",
+    "Mistonium Node", "Mistborn Mote Node", "Difluorite Crystal Cluster Node", "Fire Orchid Node",
+    "Petrified Wood Node", "Winterberry Bush Node", "Orrian Oyster Node", "Mursaat Obsidian Node",
+    "Dragon Crystal Node", "Eternal Ice Shard Node", "Hatched Chili Pepper Node",
+    "Honey Flower Node", "Lowland Pine Sapling Node", "Charged Titan Ore Node", "Prismaticite Node"
+  ],
+  "Achievement & Festival Unlocks": [
+    "Aurillium Node", "Gift of Quartz", "Gift of Candy Corn",
+    "Greater Gift of Candy Corn", "Gift of Magnanimity", "Found Bandit Chest",
+    "Garden Plot Deed", "Enchanted Treasure Chest", "Krait Obelisk Shard",
+    "Bauble Gathering System", "Exalted Chest", "Crystallized Supply Cache Voucher",
+    "Dragon Pi\u00F1ata", "Airship Cargo Voucher", 
+    "Gift of Sprockets", "Rotted Titan Amber Node", "Salvage Pile Node", "Supply Cache",
+    "Titan Heatstone Node", "Winterberry Bush Node", "Feline Dispersing Emitter", "Feline Holoscepter", "Feline Water Pistol"
+  ],
+  "Expedition Contracts (Mail Delivery)": [
+    "Black Lion Industry Contract", "Black Lion Hunters Contract",
+    "Season 3 Expedition Contract", "Season 4 Expedition Contract",
+    "End of Dragons Expedition Contract", "Secrets of the Obscure Expedition Contract",
+    "Janthir Wilds Expedition Contract", "Visions of Eternity Expedition Board"
+  ]
+};
+
+// =====================================================================
+// YOUR DETAILS INFO DICTIONARY (kept exactly as-is)
+// =====================================================================
+const INFO = {
+  "Basic Ore Node Pack":        { src: "Gem Store (800 gems)", drops: "Copper, Silver & Gold ore nodes" },
+  "Basic Lumber Node Pack":     { src: "Gem Store (800 gems)", drops: "Green, Soft & Seasoned wood nodes" },
+  "Basic Harvesting Node Pack": { src: "Gem Store (800 gems)", drops: "Herbs, Root plants, & Vegetables nodes" },
+  "Basic Cloth Rack":           { src: "Gem Store (800 gems)", drops: "Jute, Wool & Cotton scraps daily" },
+  "Basic Leather Rack":         { src: "Gem Store (800 gems)", drops: "Rawhide, Thin & Coarse leather sections daily" },
+  "Advanced Cloth Rack":        { src: "Trading Post or Black Lion Chest", drops: "Linen, Silk & Gossamer scraps daily" },
+  "Advanced Leather Rack":      { src: "Trading Post or Black Lion Chest", drops: "Rugged, Thick & Hardened leather sections daily" },
+  "Orichalcum Mining Node":     { src: "Trading Post or Black Lion Chest", drops: "Orichalcum ore" },
+  "Platinum Mining Node":       { src: "Trading Post or Black Lion Chest", drops: "Platinum ore" },
+  "Mithril Mining Node":        { src: "Trading Post or Black Lion Chest", drops: "Mithril ore" },
+  "Iron Mining Node":           { src: "Trading Post or Black Lion Chest", drops: "Iron ore" },
+  "Ancient Wood Logging Node":  { src: "Trading Post or Black Lion Chest", drops: "Ancient wood logs" },
+  "Elder Wood Logging Node":    { src: "Trading Post or Black Lion Chest", drops: "Elder wood logs" },
+  "Hard Wood Logging Node":     { src: "Trading Post or Black Lion Chest", drops: "Hard wood logs" },
+  "Orrian Truffle Harvesting Node": { src: "Trading Post or Black Lion Chest", drops: "Orrian truffles + pigments" },
+  "Lotus Harvesting Node":      { src: "Trading Post or Black Lion Chest", drops: "Lotus roots + pigments" },
+  "Flaxseed Harvesting Node":   { src: "Trading Post or Black Lion Chest", drops: "Flax seeds, fiber & blossoms" },
+  "Omnomberry Bush":            { src: "Trading Post or Black Lion Chest", drops: "Omnomberrys daily" },
+  "Bloodstone Crystal Node":    { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Blood rubies + bloodstone dust" },
+  "Fire Orchid Node":           { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fire orchid blossoms + empyreal fragments" },
+  "Petrified Wood Node":        { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Petrified wood + empyreal fragments" },
+  "Winterberry Bush Node":      { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fresh winterberries" },
+  "Orrian Oyster Node":         { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Orrian pearls + dragonite ore" },
+  "Brandstone Node":            { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Kralkatite ore, rose quartz" },
+  "Jade Fragment Node":         { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Jade shards + bloodstone dust" },
+  "Difluorite Crystal Cluster Node": { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Difluorite crystals + empyreal fragments" },
+  "Mistonium Node":             { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Lumps of mistonium + dragonite ore" },
+  "Dragon Crystal Node":         { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Branded mass, dragonite ore, serpentite jewels" },
+  "Hatched Chili Pepper Node":  { src: "Must have IBS: 5,000 Volatile Magic + 60g", drops: "Hatched chilis" },
+  "Eternal Ice Shard Node":     { src: "Must have IBS: 245,000 Karma + 50g", drops: "Eternal ice shards" },
+  "Honey Flower Node":         { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Honey flowers" },
+  "Lowland Pine Sapling Node":  { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Lowland pine logs" },
+  "Charged Titan Ore Node":     { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Charged titan ore" },
+  "Mistborn Mote Node":         { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Mistborn motes + empyreal fragments" },
+  "Greater Gift of Candy Corn":  { src: "Must have Gift of Candy Corn + 5 Candy Corn Cobs", drops: "Candy corn" },
+  "Black Lion Industry Contract":  { src: "Gem Store (1,000 gems)", drops: "Daily box of basic resources" },
+  "Black Lion Hunters Contract":   { src: "Gem Store (1,200 gems)", drops: "Daily box of trophies" },
+  "Season 3 Expedition Contract":  { src: "Gem Store (1,000 gems)", drops: "Daily box of Living World Season 3 materials" },
+  "Season 4 Expedition Contract": { src: "Gem Store (1,000 gems)", drops: "Daily box of Living World Season 4 materials" },
+  "End of Dragons Expedition Contract": { src: "Gem Store (1,000 gems)", drops: "Daily box of End of Dragons materials" },
+  "Secrets of the Obscure Expedition Contract": { src: "Gem Store (1,000 gems)", drops: "Daily box of Secrets of the Obscure materials" },
+  "Janthir Wilds Expedition Contract": { src: "Gem Store (1,000 gems)", drops: "Daily box of Janthir Wilds materials" },
+  "Visions of Eternity Expedition Board": { src: "Gem Store (1,000 gems)", drops: "Daily box of Visions of Eternity materials" },
+  "Found Bandit Chest":         { src: "Achievement: Point of No Return", drops: "Various items"},
+  "Aurillium Node":             { src: "Achievement: No Mask Left Behind", drops: "Lumps of aurillium" },
+  "Krait Obelisk Shard":        { src: "Mastery: The Nightmare Unveiled (LWS1); or Laurel Merchant (25 laurels + 15g)", drops: "Commune for XP + charged quartz" },
+  "Garden Plot Deed":           { src: "Achievement: Gourmet Training", drops: "Ascended herbs for cooking" },
+  "Gift of Quartz":             { src: "Achievement: Bazaar Ambassador", drops: "Quartz crystals + charged quartz" },
+  "Gift of Candy Corn":         { src: "Achievement: You, Back in the Box", drops: "Candy corn" },
+  "Dragon Pi\u00F1ata": { src: "Dragon Bash Festival: 10 Jorbreakers", drops: "Zhaitaffy" },
+  "Exalted Chest":     { src: "Exalted Mastery: 250 Lumps of Aurillium", drops: "Various loot (needs Exalted Key)" },
+  "Enchanted Treasure Chest":   { src: "Achievement: Treasure Hunter", drops: "Various loot" },
+  "Bauble Gathering System":    { src: "Super Adventure Box Festival: 32 Bauble Bubbles", drops: "Baubles" },
+  "Gift of Magnanimity":         { src: "Wintersday Festival + Achievement: For the Children!", drops: "Wintersday Gifts"},
+  "Snow truffle node":          { src: "Trading Post or Black Lion Chest", drops: "Snow truffles" },
+  "Ghost Pepper Node":          { src: "Trading Post or Black Lion Chest", drops: "Ghost peppers" },
+  "Mursaat Obsidian Node":      { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Mursaat obsidian" },
+  "Prismaticite Node":          { src: "245,000 Karma + 50g", drops: "Prismaticite" },
+  "Titan Heatstone Node":       { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Titan heatstone" },
+  "Rotted Titan Amber Node":    { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Rotted titan amber" },
+  "Salvage Pile Node":          { src: "Must have IBS: 245,000 Karma + 50g", drops: "Salvageable items" },
+  "Supply Cache":               { src: "10,000 volatile magic + 50g", drops: "Supply items" },
+  "Airship Cargo Voucher": { src: "Itzel Mastery: 250 Airship parts", drops: "Airship cargo" },
+  "Crystallized Supply Cache Voucher": { src: "Nuhoch Mastery: 250 LeyLine Crystals", drops: "Crystallized supply cache" },
+  "Gift of Sprockets":          { src: "Laurel Merchant: 20 Laurels + 15g", drops: "Provisioning items" },
+  "Feline Dispersing Emitter":  { src: "Holomancer Netto: 10 coin", drops: "Toy" },
+  "Feline Holoscepter":         { src: "Holomancer Netto: + 30 coin", drops: "Toy" },
+  "Feline Water Pistol":        { src: "Holomancer Netto: + 2g", drops: "Toy" }
+};
+
+// =====================================================================
+// LOCATION SEEDS — map + NPC hints. Codes users add live in the cloud
+// state (state.locs) and override these, so refreshing this seed list
+// never loses codes.
+// =====================================================================
+const LOC = {
+  "Bloodstone Crystal Node": "Bloodstone Fen — Natto (near Zealot's Overlook Waypoint)",
+  "Winterberry Bush Node":   "Bitterfrost Frontier — Slooshoo, upstairs at Sorrow's Eclipse Sanctuary",
+  "Fire Orchid Node":       "Draconis Mons — Supplymaster Hanjo",
+  "Petrified Wood Node":    "Ember Bay — Scholar Surra",
+  "Orrian Oyster Node":     "Siren's Landing — Provisioner Anlana",
+  "Jade Fragment Node":     "Lake Doric — Quartermaster Hitchens",
+  "Mistonium Node":         "Jahai Bluffs — Trader Hyacinth",
+  "Mistborn Mote Node":     "Dragonfall — Crystal Bloom Quartermaster",
+  "Difluorite Crystal Cluster Node": "Sandswept Isles — Ethall",
+  "Hatched Chili Pepper Node": "Domain of Istan — Rally Provisioner",
+  "Honey Flower Node":      "Janthir Wilds — Deft Lahar",
+  "Lowland Pine Sapling Node": "Janthir Wilds — Deft Lahar",
+  "Charged Titan Ore Node": "Janthir Wilds — Deft Lahar",
+  "Mursaat Obsidian Node":  "Janthir Wilds — Deft Lahar",
+  "Titan Heatstone Node":   "Janthir Wilds — Deft Lahar",
+  "Rotted Titan Amber Node": "Janthir Wilds — Deft Lahar",
+  "Exalted Chest": "Auric Basin — Exalted Mastery Vendor",
+  "Airship Cargo Voucher": "Verdant Brink — Itzel Mastery Vendor",
+  "Crystallized Supply Cache Voucher": "Tangled Depths — Nuhoch Mastery Vendor",
+  "Krait Obelisk Shard":    "Laurel Merchant (big cities)",
+  "Gift of Sprockets":      "Laurel Merchant (big cities)",
+  "Supply Cache":           "Domain of Kourna — Nalar",
+  "Prismaticite Node":      "Tactician Erlandson",
+  "Eternal Ice Shard Node": "Frostgorge Sound — Anette Eymundrdottir",
+  "Snow truffle node":      "Transference Converter, Drojtar's Hollow Complex"
+};
+
+const KEY = "gw2-nodes";
+// state: { owned: {name:true}, custom: [{group,name,details}], locs: {name:"[&...] text"}, updatedAt?: {...} }
+function normalizeState(s) {
+  s = s || {};
   if (!s.owned || typeof s.owned !== "object") s.owned = {};
   if (!Array.isArray(s.custom)) s.custom = [];
   if (!s.locs || typeof s.locs !== "object") s.locs = {};
   return s;
 }
+let state = normalizeState(Store.get(KEY));
+let filter = "all";
 
-// debounce: rapid ticking spams fewer cloud writes
-let saveTimer = null;
-function save(immediate) {
-  Store.set(KEY, state); // always keep the local mirror current
-  clearTimeout(saveTimer);
-  const write = async () => {
-    try { await cloudWrite(state); setSync(true); }
-    catch (err) { console.error(err); setSync(false); }
-  };
-  if (immediate) write(); else saveTimer = setTimeout(write, 400);
+function save(alsoCloud) {
+  Store.set(KEY, state);
+  if (alsoCloud !== false) schedulePush();
 }
 
 // =====================================================================
-// STARTUP — sign in, load cloud, auto-migrate this browser's old data
+// BACKUP / RESTORE
 // =====================================================================
-(async function init() {
-  try {
-    const user = await ensureAuth();
-    if (!user) return; // redirected to login
-    USER_ID = user.id;
+function isValidNodeState(data) {
+  return data && typeof data === "object" && !Array.isArray(data) &&
+    typeof data.owned === "object" && data.owned !== null &&
+    Array.isArray(data.custom) &&
+    (data.locs === undefined || (typeof data.locs === "object" && data.locs !== null));
+}
 
-    const cloud = await cloudLoad();
-    if (cloud) {
-      state = normalize(cloud);
-      setSync(true);
-    } else {
-      // First cloud visit on this browser: adopt the existing
-      // localStorage data (old page's saved progress) automatically.
-      const local = normalize(Store.get(KEY));
-      const hasSomething =
-        Object.keys(local.owned).length || local.custom.length ||
-        Object.keys(local.locs).length;
-      state = hasSomething ? local : { owned: {}, custom: [], locs: {} };
-      if (hasSomething) {
-        try {
-          await cloudWrite(state);
-          setSync(true);
-          setTimeout(() => showToast("Existing node list migrated to your account \u2713"), 600);
-        } catch (e) { setSync(false); }
-      } else {
-        setSync(true);
+function exportState() {
+  const ownedCount = Object.keys(state.owned).length;
+  const customCount = (state.custom || []).length;
+  const locCount = Object.keys(state.locs || {}).length;
+  if (ownedCount === 0 && customCount === 0 && locCount === 0) {
+    showToast("Nothing to back up yet — no owned nodes, custom nodes, or saved codes.");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(state, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "gw2-nodes-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Keep it somewhere safe.");
+}
+
+function importState(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!isValidNodeState(data)) {
+        showToast("That file isn't a valid nodes backup. It should be a gw2-nodes export.");
+        e.target.value = "";
+        return;
       }
+      const ownedN = Object.keys(data.owned || {}).length;
+      const customN = (data.custom || []).length;
+      const locN = Object.keys(data.locs || {}).length;
+      const curOwned = Object.keys(state.owned).length;
+      const ok = await askConfirm(
+        "Restore backup over current data?",
+        "Backup: " + ownedN + " owned, " + customN + " custom nodes, " + locN + " saved codes\n" +
+        "Current: " + curOwned + " owned, " +
+        (state.custom || []).length + " custom nodes, " +
+        Object.keys(state.locs || {}).length + " saved codes\n\n" +
+        "This replaces everything with the backup contents.",
+        true
+      );
+      if (!ok) { e.target.value = ""; return; }
+      state = normalizeState(data);
+      save(); // pushes to cloud too if connected
+      render();
+      showToast("Backup restored.");
+    } catch (err) {
+      showToast("Couldn't read that file.");
     }
-  } catch (err) {
-    console.error(err);
-    // couldn't reach cloud or no db.js — fall back to localStorage so the
-    // page still works (saves stay local only, tag shows offline)
-    state = normalize(Store.get(KEY));
-    setSync(false, "offline \u2014 using this browser");
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+// =====================================================================
+// POPUP FUNCTIONS
+// =====================================================================
+function infoFor(node) {
+  const cust = (state.custom || []).find(c => c.name === node.name);
+  if (cust && cust.details) {
+    return { src: cust.details, drops: "", custom: true };
+  }
+  const i = INFO[node.name];
+  if (i) return { src: i.src, drops: i.drops, custom: false };
+  return null;
+}
+
+function locFor(node) {
+  // user-saved code/text wins over the seed
+  return (state.locs && state.locs[node.name]) || LOC[node.name] || null;
+}
+
+function codeIn(text) {
+  const m = text && text.match(/\[&[A-Za-z0-9+/]+={0,2}\]/);
+  return m ? m[0] : null;
+}
+
+function openInfo(node, evt) {
+  const panel = document.getElementById("info-panel");
+  document.getElementById("info-name").textContent = node.name;
+  const lines = document.getElementById("info-lines");
+  lines.innerHTML = "";
+
+  function line(lab, val) {
+    const div = document.createElement("div");
+    div.className = "info-line";
+    div.innerHTML = '<span class="lab">' + lab + ':</span> <b>' + esc(val) + '</b>';
+    lines.appendChild(div);
+    return div;
+  }
+  function smallBtn(label, cls, onClick) {
+    const btn = document.createElement("button");
+    btn.className = "info-btn" + (cls ? " " + cls : "");
+    btn.textContent = label;
+    btn.onclick = onClick;
+    return btn;
   }
 
-  document.getElementById("content-wrap").innerHTML = "";
-  document.getElementById("real-content").style.display = "";
-  render();
-})();
+  const info = infoFor(node);
+  if (info) {
+    if (info.src) line(info.custom ? "Details" : "How to get it", info.src);
+    if (info.drops) line("Daily gathering", info.drops);
+  } else {
+    line("Details", "Not yet documented");
+  }
+  line("Status", state.owned[node.name] ? "OWNED ✓" : "Still needed");
+
+  // ---------- LOCATION LINE (copy-code + inline edit) ----------
+  const curLoc = locFor(node);
+  const code = codeIn(curLoc);
+  const locDiv = document.createElement("div");
+  locDiv.className = "info-line";
+  if (code) locDiv.classList.add("has-code");
+
+  const lab = document.createElement("span");
+  lab.className = "lab";
+  lab.textContent = "Location: ";
+  locDiv.appendChild(lab);
+
+  const val = document.createElement("b");
+  val.innerHTML = esc(curLoc || "not set");
+  if (code) {
+    val.innerHTML = esc(curLoc.replace(code, "")) +
+      ' <span class="info-code">' + esc(code) + "</span>";
+  }
+  locDiv.appendChild(val);
+
+  if (code) {
+    locDiv.appendChild(smallBtn("copy code", "copycode", function () {
+      const btn = this;
+      navigator.clipboard.writeText(code).then(function () {
+        btn.textContent = "copied!";
+        showToast("Map code copied — paste it into GW2 chat.");
+        setTimeout(function () { btn.textContent = "copy code"; }, 1200);
+      });
+    }));
+  }
+
+  const editBtn = smallBtn(curLoc ? "edit" : "+ add code", "plain", function () {
+    // INLINE EDITOR — no browser dialogs, so nothing can be blocked
+    locDiv.innerHTML = "";
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "info-input";
+    inp.placeholder = "paste code like [&BLgEAAA=] + optional note";
+    inp.value = curLoc || "";
+    locDiv.appendChild(inp);
+
+    const saveBtn = smallBtn("save", "copycode", function () {
+      const v = inp.value.trim();
+      if (v) state.locs[node.name] = v;
+      else delete state.locs[node.name];
+      save();
+      openInfo(node, evt); // redraw popup with the new value
+    });
+    locDiv.appendChild(saveBtn);
+
+    const cancelBtn = smallBtn("cancel", "plain", function () {
+      openInfo(node, evt);
+    });
+    locDiv.appendChild(cancelBtn);
+
+    // Enter key saves, Escape cancels (careful: outer Escape handler closes panel)
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); saveBtn.click(); }
+      if (e.key === "Escape") { e.stopPropagation(); cancelBtn.click(); }
+    });
+
+    inp.focus();
+  });
+  locDiv.appendChild(editBtn);
+
+  lines.appendChild(locDiv);
+  // ------------------------------------------------------
+
+  // Delete button for custom nodes
+  if (node.custom) {
+    const btn = document.createElement("button");
+    btn.className = "info-del";
+    btn.textContent = "delete this custom node";
+    btn.onclick = () => {
+      confirmAndRemove(node.name);
+    };
+    lines.appendChild(btn);
+  }
+
+  panel.classList.add("open");
+  // only reposition when opened from a chip (not when reopening after edit)
+  const t = evt && evt.currentTarget;
+  const isChip = t && t.classList && t.classList.contains("chip");
+  if (isChip) {
+    const r = t.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const pw = panel.offsetWidth, ph = panel.offsetHeight;
+    let y = r.bottom + 10;
+    if (y + ph > vh - 14) y = Math.max(14, r.top - ph - 10);
+    let x = r.left;
+    if (x + pw > vw - 14) x = Math.max(14, vw - pw - 14);
+    panel.style.left = x + "px";
+    panel.style.top = y + "px";
+  }
+}
+function closeInfo() {
+  document.getElementById("info-panel").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeInfo(); });
+document.addEventListener("click", e => {
+  const panel = document.getElementById("info-panel");
+  if (panel.classList.contains("open") && !panel.contains(e.target))
+    closeInfo();
+}, true);
+
+// =====================================================================
+// RENDER
+// =====================================================================
+function allNodes() {
+  const out = [];
+  for (const g in NODE_GROUPS)
+    for (const n of NODE_GROUPS[g]) out.push({ group: g, name: n, custom: false });
+  for (const c of (state.custom || []))
+    out.push({ group: c.group, name: c.name, custom: true, details: c.details || "" });
+  return out;
+}
+
+function render() {
+  const nodes = allNodes();
+  const ownedCount = nodes.filter(n => state.owned[n.name]).length;
+  const pct = nodes.length ? Math.round(ownedCount / nodes.length * 100) : 0;
+
+  document.getElementById("stats").textContent =
+    ownedCount + " of " + nodes.length + " nodes owned (" + pct + "%)";
+  const bar = document.getElementById("bar");
+  bar.style.width = pct + "%";
+  bar.className = "progress-inner" + (pct === 100 ? " full" : "");
+
+  const groups = {};
+  for (const n of nodes) {
+    if (filter === "needed" && state.owned[n.name]) continue;
+    if (filter === "owned" && !state.owned[n.name]) continue;
+    (groups[n.group] = groups[n.group] || []).push(n);
+  }
+
+  const wrap = document.getElementById("groups");
+  wrap.innerHTML = "";
+  for (const g in groups) {
+    const ownedInGroup = groups[g].filter(n => state.owned[n.name]).length;
+    const h = document.createElement("div");
+    h.className = "section-title";
+    h.innerHTML = "<span>" + esc(g) + "</span><span class='section-count'>" +
+      ownedInGroup + " / " + groups[g].length + " owned</span>";
+    wrap.appendChild(h);
+    const roster = document.createElement("div");
+    roster.className = "roster";
+    for (const n of groups[g]) {
+      const b = document.createElement("button");
+      const info = infoFor(n);
+      b.className = "chip" + (state.owned[n.name] ? " owned" : "") + (info ? " has-info" : "");
+      b.innerHTML = (state.owned[n.name] ? "<span class='tick'>&#10003;</span> " : "") +
+                    "<span class='nm'>" + esc(n.name) + "</span>";
+
+      // Hover tooltip
+      if (info) {
+        b.title = (info.src ? "How: " + info.src + "\n" : "") +
+                  (info.drops ? "Gives: " + info.drops + "\n" : "") +
+                  "Right-click for details";
+      } else {
+        b.title = "Right-click for details";
+      }
+
+      b.onclick = () => toggle(n.name);
+      b.oncontextmenu = (e) => { e.preventDefault(); openInfo(n, e); };
+      roster.appendChild(b);
+    }
+    wrap.appendChild(roster);
+  }
+
+  for (const [id, f] of [["f-all","all"],["f-needed","needed"],["f-owned","owned"]])
+    document.getElementById(id).className = "filter-btn" + (filter === f ? " on" : "");
+}
+
+function toggle(name) {
+  if (state.owned[name]) delete state.owned[name];
+  else state.owned[name] = true;
+  save(); render();
+}
+
+function addNode() {
+  const nameEl = document.getElementById("new-name");
+  const group = document.getElementById("new-group").value;
+  const name = nameEl.value.trim();
+  if (!name) { showToast("Type a node name first."); return; }
+  state.custom = state.custom || [];
+  state.custom.push({ group: group === "Custom" ? "Custom" : group, name: name, details: "" });
+  nameEl.value = "";
+  save(); render();
+  showToast("Added \"" + name + "\".");
+}
+
+async function confirmAndRemove(name) {
+  const ok = await askConfirm(
+    "Remove custom node?",
+    "\"" + name + "\"\n\nThis deletes it from the list permanently.",
+    true
+  );
+  if (!ok) return;
+  state.custom = (state.custom || []).filter(c => c.name !== name);
+  if (state.owned[name]) delete state.owned[name];
+  save(); render();
+  closeInfo();
+  showToast("Custom node removed.");
+}
+
+function setFilter(f) { filter = f; render(); }
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// =====================================================================
+// MODAL — askConfirm but with any number of choices.
+// Each choice: { label, value, primary?, destructive? }
+// Resolves with the chosen value (null if cancelled/escaped/backdrop).
+// =====================================================================
+let modalResolve = null;
+
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
+
+// =====================================================================
+// TOAST
+// =====================================================================
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+refreshCloudUI();
+render();
+</script>
+
+</body>
+</html>
