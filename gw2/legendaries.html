@@ -19,7 +19,7 @@
   }
   .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
   .nav-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
     text-decoration: none; padding: 6px 14px; border-radius: 8px;
@@ -28,6 +28,8 @@
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
 
   /* ---- add form ---- */
   .add-card {
@@ -173,6 +175,7 @@
 <div class="top">
   <h1>Legendary Workshop</h1>
   <nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
     <a href="trackers.html" class="nav-btn">Trackers</a>
@@ -180,7 +183,7 @@
   </nav>
 </div>
 
-<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Newest projects at the top; progress counts every ingredient.</p>
+<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Newest projects at the top; progress counts every ingredient. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
 
 <div class="add-card">
   <h2>Start a new legendary</h2>
@@ -195,7 +198,7 @@
 
 <div class="leg-list" id="leg-list"></div>
 
-<p class="note">Data stored locally (key: gw2-legendaries). New legendaries appear at the top; parent items auto-check when all ingredients are done.</p>
+<p class="note">Saved to your own cloud row automatically — every ingredient check, added step, and project syncs to your account only. Parent items auto-check when all ingredients are done.</p>
 
 <!-- ================= THEMED MODAL ================= -->
 <div class="confirm-overlay" id="modal-overlay">
@@ -212,14 +215,57 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // =====================================================================
-// STORE SHIM (v1 = localStorage; future v2 can swap in a cloud backend)
+// STORE SHIM — per-user local cache (fast loads, offline fallback).
+// Cloud (Supabase user_state) is the source of truth; cache is keyed
+// by user id so two accounts on the same device never mix.
 // =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
+
+// =====================================================================
+// STATE + PER-USER SYNC (createUserSync lives in db.js)
+// state shape: legs = [ {id, name, kind, phases:[...]} ]
+// One section ("legs") since the whole page is one array.
+// =====================================================================
+const KEY = "gw2-legendaries";
+let legs = [];
+let USER_ID = null;
+
+const sync = createUserSync({
+  key: KEY,
+  sections: ["legs"],
+  loadLocal: () => Store.get(KEY + ":" + USER_ID),
+  saveLocal: (s) => Store.set(KEY + ":" + USER_ID, s),
+  getState: () => ({ legs: legs }),
+  setState: (s) => { legs = normalizeLegs(s && s.legs); },
+  onRender: () => render(),
+  setOnline: (ok, msg) => setSync(ok, msg)
+});
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+
+// migrate old formats gracefully (same normalization the old page did)
+function normalizeLegs(arr) {
+  return (Array.isArray(arr) ? arr : [])
+    .filter(l => l && (l.phases || l.steps))
+    .map(l => {
+      if (!l.phases) l.phases = [{ title: "Steps", sub: "", items: l.steps }];
+      l.phases.forEach(p => { if (typeof p.open !== "boolean") p.open = false; });
+      return l;
+    });
+}
+
+function save(immediate) { sync.save(immediate); }
 
 // =====================================================================
 // THEMED MODAL — replaces native confirm() / prompt() so popups match
@@ -250,7 +296,6 @@ function askModal(opts) {
     inputRow.classList.remove("show");
     input.value = "";
   }
-
   modalCb = opts.onYes || null;
   ov.classList.add("open");
   if (opts.inputLabel !== undefined) setTimeout(() => input.focus(), 50);
@@ -730,9 +775,6 @@ const NAME_MATCH = [
   { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" }
 ];
 
-const KEY = "gw2-legendaries";
-let legs = Store.get(KEY) || [];
-
 function snapshot(phases) {
   return JSON.parse(JSON.stringify(phases)).map(p => ({
     title: p.title,
@@ -746,25 +788,6 @@ function snapshot(phases) {
     })
   }));
 }
-
-// migrate old formats gracefully
-legs = (Array.isArray(legs) ? legs : []).filter(l => l && (l.phases || l.steps)).map(l => {
-  if (!l.phases) l.phases = [{ title: "Steps", sub: "", items: l.steps }];
-  l.phases.forEach(p => { if (typeof p.open !== "boolean") p.open = false; });
-  return l;
-});
-
-// Seeded example so the layout is visible on first load; delete it freely.
-if (legs.length === 0 && !Store.get("gw2-legendaries-seeded-v3")) {
-  legs = [{
-    id: "seed", name: "Vision (example)", kind: TEMPLATES.vision.label,
-    phases: snapshot(TEMPLATES.vision.phases)
-  }];
-  legs[0].phases[0].open = true;
-  Store.set("gw2-legendaries-seeded-v3", true);
-}
-
-function save() { Store.set(KEY, legs); }
 
 // ---------- progress helpers ----------
 function isDone(it) {
@@ -834,7 +857,7 @@ function addLegend() {
   save(); render();
 }
 
-// delete now goes through the themed modal instead of native confirm()
+// delete goes through the themed modal
 function delLegend(li) {
   askModal({
     title: "Remove " + legs[li].name + "?",
@@ -858,7 +881,7 @@ function toggleAt(li, pi, path, checked) {
   save(); render();
 }
 
-// add-step now goes through the themed modal instead of native prompt()
+// add-step goes through the themed modal
 function addStepTo(li, pi) {
   askModal({
     title: "Add a step",
@@ -967,8 +990,50 @@ function render() {
   });
 }
 
-save();
-render();
+// =====================================================================
+// INIT — auth gate, migrate old localStorage data, then render.
+// The old page kept data under "gw2-legendaries" (plus a seed flag).
+// On first load we adopt it into THIS user's cloud row; the second
+// account gets its own empty workshop (their old device-local data
+// stays available on whichever browser had it).
+// =====================================================================
+(async function init() {
+  const session = await requireAuth();   // bounces to login if needed
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+
+  // legacy migration: old un-scoped localStorage key → this user's cloud
+  const legacy = Store.get(KEY);
+  const local = Store.get(KEY + ":" + USER_ID);
+
+  await sync.init();
+
+  // if the user has nothing anywhere, adopt whatever the old key held
+  const nowLocal = Store.get(KEY + ":" + USER_ID) || null;
+  const remoteEmpty = (legs || []).length === 0;
+  if (remoteEmpty && !nowLocal && legacy && legacy.length) {
+    legs = normalizeLegs(legacy);
+    save(true);           // push adopted legacy data to the cloud NOW
+    render();
+  }
+
+  // Seeded example: only for a user who truly has nothing
+  if ((legs || []).length === 0) {
+    const seedFlag = "gw2-legendaries-seeded-v3:" + USER_ID;
+    if (!Store.get(seedFlag)) {
+      legs = [{
+        id: "seed", name: "Vision (example)", kind: TEMPLATES.vision.label,
+        phases: snapshot(TEMPLATES.vision.phases)
+      }];
+      legs[0].phases[0].open = true;
+      Store.set(seedFlag, true);
+      save(true);
+      render();
+    }
+  }
+
+  render();
+})();
 </script>
 
 </body>
