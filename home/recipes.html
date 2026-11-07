@@ -38,6 +38,8 @@
   }
   button.back:hover { color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
 
   .view { display: none; }
   .view.visible { display: block; }
@@ -55,6 +57,9 @@
   .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; border: none; }
   .btn-primary:hover { filter: brightness(1.1); }
   .btn-danger:hover { border-color: var(--bad); color: var(--bad); }
+
+  /* read-only account: anything tagged owner-only vanishes entirely */
+  body.read-only .owner-only { display: none !important; }
 
   input.search {
     background: #16131d; color: var(--text); border: 1px solid var(--border);
@@ -206,9 +211,12 @@
 
 <div class="top">
   <h1>Recipe Book</h1>
-  <a href="../index.html" class="back-link">&larr; Back to Dashboard</a>
+  <div style="display:flex; gap:12px; align-items:baseline; flex-wrap:wrap;">
+    <span class="sync-note" id="sync-note">syncing&hellip;</span>
+    <a href="../index.html" class="back-link">&larr; Back to Dashboard</a>
+  </div>
 </div>
-<p class="sub">Homemade Alytastic recipes that are gluten free & nightshade free</p>
+<p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
 
 <!-- ============ INDEX ============ -->
 <div class="view visible" id="view-index">
@@ -216,9 +224,9 @@
     <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
            oninput="setSearch(this.value)">
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="newRecipe()">+ New Recipe</button>
+      <button class="btn btn-primary owner-only" onclick="newRecipe()">+ New Recipe</button>
       <button class="btn" onclick="exportData()">Export Backup</button>
-      <label class="btn" style="cursor:pointer;">
+      <label class="btn owner-only" style="cursor:pointer;">
         Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
       </label>
     </div>
@@ -242,7 +250,7 @@
   <div class="form-grid">
     <div class="field">
       <label for="f-name">Recipe Name</label>
-      <input type="text" id="f-name" placeholder="Bacon, Jalapeño, Sausage &amp; Cheese Soup">
+      <input type="text" id="f-name" placeholder="Bacon, Jalape&ntilde;o, Sausage &amp; Cheese Soup">
     </div>
     <div class="field">
       <label for="f-servings">Base Servings</label>
@@ -267,11 +275,11 @@
   <div class="field" style="margin-bottom:18px;">
     <label for="f-ingredients">Ingredients</label>
     <textarea id="f-ingredients" rows="9" placeholder="One ingredient per line. Any of these work:
-½ cup heavy cream
+&#189; cup heavy cream
 1/2 cup heavy cream
 1 1/2 tsp salt
-½–¾ cup diced jalapeños"></textarea>
-    <div class="hint">One per line, lead with the amount. Fractions, decimals, and ½-style characters all scale.</div>
+&#189;&#8211;&#190; cup diced jalape&ntilde;os"></textarea>
+    <div class="hint">One per line, lead with the amount. Fractions, decimals, and &#189;-style characters all scale.</div>
   </div>
 
   <div class="field" style="margin-bottom:18px;">
@@ -309,16 +317,30 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // ==========================================================
-// STATE + STORAGE
+// SHARED CLOUD SYNC — same mechanism as vaults + inventory:
+// one shared blob (owner "shared") in the app_data table.
+// This page does NOT use user_state/createUserSync.
+//
+// >>> HAND-EDIT THIS ONE LINE: put YOUR login email here. <<<
+// Only this account gets the New/Edit/Delete/Import buttons.
+// Everyone else signs in and gets a read-only book, but the
+// batch-size scaling buttons still work for them (visual only).
+const OWNER_EMAIL = "YOUR_EMAIL_HERE@example.com";
 // ==========================================================
-const STORAGE_KEY = "savich-recipes-v1";
+
+const STORAGE_KEY = "savich-recipes-v1";   // local cache, unchanged key
+const CLOUD_BLOB_KEY = "recipes";         // app_data row key, owner "shared"
 let recipes = loadStorage(STORAGE_KEY, []);
 let searchTerm = "";
 let currentId = null;   // recipe being viewed
 let editId = null;      // recipe being edited (null = new)
 let scale = 1;          // current ingredient multiplier
+let isOwner = false;
+let cloudReady = false;
 
 function loadStorage(key, fallback) {
   try {
@@ -326,9 +348,32 @@ function loadStorage(key, fallback) {
     return v !== null && v !== undefined ? v : fallback;
   } catch { return fallback; }
 }
-function saveStorage() {
+
+// Every existing saveStorage() call site now also pushes the
+// whole book to the shared cloud blob.
+async function saveStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+  if (!cloudReady) return;
+  try {
+    await saveBlob(CLOUD_BLOB_KEY, "shared", recipes);
+    setSyncNote(true);
+  } catch (err) {
+    setSyncNote(false, "offline \u2014 changes NOT saved");
+  }
 }
+
+function setSyncNote(ok, msg) {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = msg || (ok ? "cloud synced \u2713" : "offline");
+  el.classList.toggle("live", !!ok);
+}
+
+function requireOwner(action) {
+  if (!isOwner) { showToast("Read-only access \u2014 ask the chef."); return false; }
+  return true;
+}
+
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -389,8 +434,8 @@ function renderList() {
 
 // ==========================================================
 // AMOUNT HANDLING
-// Understands: ½ ¼ ¾ ⅓ ⅔ ⅛ ⅜ ⅝ ⅞ glyphs (incl. 1½),
-// "1/2", "1 1/2", "0.5", "2", and ranges like "½–¾" or "1-2".
+// Understands: 1/2 1/4 3/4 1/3 2/3 1/8 3/8 5/8 7/8 glyphs (incl. 11/2),
+// "1/2", "1 1/2", "0.5", "2", and ranges like "1/21/33/4" or "1-2".
 // ==========================================================
 const GLYPH_MAP = [
   [/(\d)\u00BD/g, "$1 1/2"], [/\u00BD/g, "1/2"],
@@ -577,9 +622,9 @@ function renderRecipe() {
   html += '</div>';   // end two-col
 
   html += '<div class="detail-actions">' +
-    '<button class="btn btn-primary" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
+    '<button class="btn btn-primary owner-only" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
     '<button class="btn" onclick="printRecipe()">Print</button>' +
-    '<button class="btn btn-danger" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
+    '<button class="btn btn-danger owner-only" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
     "</div>";
 
   body.innerHTML = html;
@@ -597,6 +642,7 @@ function printRecipe() {
 // EDITOR
 // ==========================================================
 function newRecipe() {
+  if (!requireOwner()) return;
   editId = null;
   document.getElementById("editor-heading").textContent = "New Recipe";
   ["f-name", "f-servings", "f-calories", "f-carbs", "f-yield",
@@ -607,6 +653,7 @@ function newRecipe() {
 }
 
 function editRecipe(id) {
+  if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
   if (!r) return;
   editId = id;
@@ -629,6 +676,7 @@ function cancelEdit() {
 }
 
 function saveRecipe() {
+  if (!requireOwner()) return;
   const name = document.getElementById("f-name").value.trim();
   if (!name) { showToast("Give the recipe a name first."); return; }
 
@@ -665,6 +713,7 @@ function saveRecipe() {
 }
 
 async function deleteRecipe(id) {
+  if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
   if (!r) return;
   const ok = await askConfirm(
@@ -697,6 +746,7 @@ function exportData() {
 }
 
 function importData(e) {
+  if (!requireOwner()) { e.target.value = ""; return; }
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -767,9 +817,39 @@ function showToast(message) {
 }
 
 // ==========================================================
-// INIT
+// INIT — sign in, decide owner/read-only, load shared cloud
+// book, then render. First ever load migrates the existing
+// localStorage book up to the cloud automatically.
 // ==========================================================
-renderList();
+(async function init() {
+  // Instant paint from the local cache so the page is never blank.
+  renderList();
+
+  const session = await requireAuth();
+  if (!session) return;
+
+  const email = ((session.user && session.user.email) || "").toLowerCase();
+  isOwner = email === OWNER_EMAIL.trim().toLowerCase();
+  if (!isOwner) document.body.classList.add("read-only");
+
+  try {
+    const cloud = await loadBlob(CLOUD_BLOB_KEY, "shared");
+    if (Array.isArray(cloud) && cloud.length) {
+      recipes = cloud;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+      renderList();
+    } else {
+      // One-time migration: first owner visit pushes the existing
+      // localStorage book (if any) up to the shared cloud row.
+      if (isOwner && recipes.length) await saveBlob(CLOUD_BLOB_KEY, "shared", recipes);
+    }
+    cloudReady = true;
+    setSyncNote(true);
+  } catch (err) {
+    // Cloud unreachable: the local cache still works, page is usable.
+    setSyncNote(false, "offline \u2014 changes NOT saved");
+  }
+})();
 </script>
 
 </body>

@@ -1021,8 +1021,8 @@ function render() {
     const seedFlag = "gw2-legendaries-seeded-v3:" + USER_ID;
     if (!Store.get(seedFlag)) {
       legs = [{
-        id: "seed", name: "Vision (example)", kind: TEMPLATES.vision.label,
-        phases: snapshot(TEMPLATES.vision.phases)
+        id: "seed", name: "Vision (example)", kind: TEMPLATES.Vision.label,
+        phases: snapshot(TEMPLATES.Vision.phases)
       }];
       legs[0].phases[0].open = true;
       Store.set(seedFlag, true);
