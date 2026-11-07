@@ -355,7 +355,7 @@ async function saveStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   if (!cloudReady) return;
   try {
-    await saveBlob(CLOUD_BLOB_KEY, "shared", recipes);
+    await saveBlob(CLOUD_BLOB_KEY, recipes);
     setSyncNote(true);
   } catch (err) {
     setSyncNote(false, "offline \u2014 changes NOT saved");
@@ -833,7 +833,7 @@ function showToast(message) {
   if (!isOwner) document.body.classList.add("read-only");
 
   try {
-    const cloud = await loadBlob(CLOUD_BLOB_KEY, "shared");
+    const cloud = await loadBlob(CLOUD_BLOB_KEY);
     if (Array.isArray(cloud) && cloud.length) {
       recipes = cloud;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
@@ -841,7 +841,7 @@ function showToast(message) {
     } else {
       // One-time migration: first owner visit pushes the existing
       // localStorage book (if any) up to the shared cloud row.
-      if (isOwner && recipes.length) await saveBlob(CLOUD_BLOB_KEY, "shared", recipes);
+      if (isOwner && recipes.length) await saveBlob(CLOUD_BLOB_KEY, recipes);
     }
     cloudReady = true;
     setSyncNote(true);
