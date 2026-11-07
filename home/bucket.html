@@ -63,7 +63,9 @@
     text-decoration: none;
   }
   .back-link:hover { text-decoration: underline; }
-  .backup-btns { display: flex; gap: 8px; }
+  .backup-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
+  .sync-note.live { color: var(--lf-teal); }
   .backup-btn {
     background: var(--panel);
     border: 1px solid var(--accent2);
@@ -314,6 +316,7 @@
   <div class="top">
     <a class="back-link" href="../index.html">← back to the mothership</a>
     <div class="backup-btns">
+      <span class="sync-note" id="sync-note">checking account…</span>
       <button class="backup-btn" onclick="exportData()">Back dat data up</button>
       <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
@@ -366,8 +369,14 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
-const KEY = "savichBucket";
+// Per-user cloud row in user_state. This is a plain bucket-list blob,
+// not part of any GW2 daily/weekly tracker structure.
+const KEY = "savich-bucket";
+const LEGACY_KEY = "savichBucket";
+let USER_ID = null;
 
 let data = {
   twist: [
@@ -380,16 +389,48 @@ let data = {
   classic: []
 };
 
-function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.twist) && Array.isArray(parsed.classic)) data = parsed;
-    }
-  } catch (e) {}
+// Normalize the two independent lists while preserving each item's fields.
+function normalizeBucketState(value) {
+  const source = value && typeof value === "object" ? value : {};
+  return {
+    twist: Array.isArray(source.twist) ? source.twist : [],
+    classic: Array.isArray(source.classic) ? source.classic : []
+  };
 }
-function save() { localStorage.setItem(KEY, JSON.stringify(data)); }
+
+const Store = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem(key)); }
+    catch (e) { return null; }
+  },
+  set(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+// Same per-user sync engine as Nodes and History.
+// The cloud record "savich-bucket" stores { twist: [...], classic: [...] }.
+const sync = createUserSync({
+  key: KEY,
+  sections: ["twist", "classic"],
+  loadLocal: () => Store.get(KEY + ":" + USER_ID) || data,
+  saveLocal: state => Store.set(KEY + ":" + USER_ID, state),
+  getState: () => data,
+  setState: state => { data = normalizeBucketState(state); },
+  onRender: () => renderAll(),
+  setOnline: (ok, message) => setSync(ok, message)
+});
+
+function save(immediate) {
+  sync.save(!!immediate);
+}
+
+function setSync(ok, message) {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = ok ? (message || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
 
 const icons = ["✨","⭐","💖","🌈","🦋","🌸","🌟","🍭","💫"];
 
@@ -528,8 +569,8 @@ function importData(e) {
         true
       );
       if (!ok) return;
-      data = parsed;
-      save();
+      data = normalizeBucketState(parsed);
+      save(true);
       renderAll();
       showToast("Backup restored.");
     } catch (err) {
@@ -621,8 +662,39 @@ function renderAll() {
   render("classic", "classicList");
   renderStats();
 }
-load();
+// Render the existing starter content immediately, then load the signed-in
+// account's cache/cloud state. The legacy browser key is adopted once by the
+// first account that opens this upgraded page, then removed to prevent leakage
+// into another account on the same browser.
 renderAll();
+
+(async function initBucketSync() {
+  try {
+    const session = await requireAuth();
+    if (!session) return;
+
+    USER_ID = session.user && session.user.id;
+    if (!USER_ID) throw new Error("Signed-in session has no user ID");
+
+    const userCacheKey = KEY + ":" + USER_ID;
+    const existingUserCache = Store.get(userCacheKey);
+    const legacy = Store.get(LEGACY_KEY);
+
+    if (!existingUserCache && legacy &&
+        Array.isArray(legacy.twist) && Array.isArray(legacy.classic)) {
+      Store.set(userCacheKey, normalizeBucketState(legacy));
+    }
+
+    // Never leave the old unscoped key available to a different account.
+    if (legacy !== null) localStorage.removeItem(LEGACY_KEY);
+
+    await sync.init();
+    renderAll();
+  } catch (error) {
+    console.error("Bucket List account sync initialization failed:", error);
+    setSync(false, "cloud connection error");
+  }
+})();
 </script>
 </body>
 </html>
