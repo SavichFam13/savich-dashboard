@@ -947,9 +947,9 @@ function render() {
   const now = Date.now();
   document.getElementById("clock-now").textContent = fmtClock(now);
 
-  const dMeta = renderDailyChips(now);
+  renderDailyChips(now);
   document.getElementById("daily-meta").innerHTML =
-    dMeta + " \u00B7 resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
+    "resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
 
   renderGhosts(now);
 
