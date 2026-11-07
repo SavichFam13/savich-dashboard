@@ -2,6 +2,17 @@
 // db.js — shared cloud layer for the Savich Dashboard
 // Put this file at the ROOT of your site folder.
 //
+// CHANGE IN THIS VERSION (fix for ghost logs vanishing):
+// The daily/carry sections hold {epoch, done:{tid:ts}} maps that
+// BOTH timer.html and trackers.html write to. The old merge picked
+// the whole section from whichever side saved most recently, so
+// any tid only one page knew about (misc metas, ad-hoc & holiday
+// logs — the "ghost" chips) got silently erased by the other
+// page's next push. The merge now understands the {epoch, done}
+// shape:
+//   - same epoch  → union both done maps (nothing gets dropped)
+//   - newer epoch → that day's state wins outright (day rolled)
+//
 // Every page includes it like this:
 //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 //   <script src="/db.js"></script>
@@ -31,17 +42,16 @@ const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
 //     using (auth.uid() = user_id);
 //   create policy "insert own state" on user_state
 //     for insert with check (auth.uid() = user_id);
-//   create policy "update own state"  on user_state for update
-//     using (auth.uid() = user_id) with check (auth.uid() = user_id);
-//   create policy "delete own state"  on user_state for delete
-//     using (auth.uid() = user_id);
+//   create policy "update own state"  on user_state
+//     for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+//   create policy "delete own state"  on user_state
+//     for delete using (auth.uid() = user_id);
 //
 // RLS makes the database itself enforce that each signed-in
 // account can only ever read/write its OWN rows. Frontend bugs
 // or console tampering cannot cross accounts.
 // ============================================================
 
-// ============================================================
 let _sb = null;
 function sb() {
   if (!_sb) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -76,10 +86,15 @@ async function signOut() {
   location.href = "/auth.html";
 }
 
+// ============================================================
+// SHARED BLOB STORAGE — the app_data table (one row per page-key)
+// Used by pages whose data is shared by BOTH household accounts.
+//   key    text primary key   (e.g. "savich-vault-config")
+//   data   jsonb              (whatever JSON the page saves)
+// ============================================================
 async function loadBlob(key, fallback = null) {
   const { data, error } = await sb()
-    .from("app_data").select("data")
-    .eq("owner", "shared").eq("key", key).maybeSingle();
+    .from("app_data").select("data").eq("key", key).maybeSingle();
   if (error) {
     console.error("loadBlob failed for " + key + ":", error.message);
     return fallback;
@@ -90,7 +105,7 @@ async function loadBlob(key, fallback = null) {
 async function saveBlob(key, value) {
   const { error } = await sb()
     .from("app_data")
-    .upsert({ key: key, owner: "shared", data: value });
+    .upsert({ key: key, data: value }, { onConflict: "key" });
   if (error) {
     console.error("saveBlob failed for " + key + ":", error.message);
     throw error;
@@ -164,6 +179,34 @@ async function peekUserStamp(key) {
 }
 
 // ============================================================
+// SPECIAL MERGE — {epoch, done} maps (gw2 daily/carry state).
+// Both timer.html and trackers.html write the same cloud row,
+// each with its own in-memory copy. Taking the whole section
+// from one side loses the other side's tids (ghost chips!),
+// so we merge the tid maps instead:
+//   - different epochs → the newer DAY wins outright (never mix days)
+//   - same epoch      → union of both done maps
+// Note: with a union, an un-log done on one device can reappear
+// if the other device hasn't synced since — it merges away once
+// both sides have pulled, which the 60s polls / focus checks do.
+// ============================================================
+function isEpochDone(v) {
+  return v && typeof v === "object" && !Array.isArray(v) &&
+         typeof v.epoch === "number" &&
+         v.done && typeof v.done === "object" && !Array.isArray(v.done);
+}
+
+function mergeEpochDone(lv, rv) {
+  if (!isEpochDone(lv)) return rv;
+  if (!isEpochDone(rv)) return lv;
+  if (lv.epoch > rv.epoch) return lv;      // local day is newer
+  if (rv.epoch > lv.epoch) return rv;      // remote day is newer
+  const done = { ...lv.done };             // same day → union, keep both sides' tids
+  for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
+  return { epoch: lv.epoch, done: done };
+}
+
+// ============================================================
 // USER SYNC CONTROLLER — a reusable per-page sync engine.
 // Wrap your page's state in it once; it handles debounced pushes,
 // background polls (every 60s + on tab focus), and offline flags.
@@ -172,7 +215,7 @@ async function peekUserStamp(key) {
 //     key: "gw2-nodes",
 //     loadLocal:  () => Store.get("gw2-nodes:" + uid),
 //     saveLocal: (s) => Store.set("gw2-nodes:" + uid, s),
-//     onRemote:  (s) => { state = s; render(); },   // newer cloud data arrived
+//     onRender:  (s) => { state = s; render(); },   // newer cloud data arrived
 //     setOnline: (ok) => setSync(ok)                // status label hook
 //   });
 //
@@ -182,9 +225,13 @@ async function peekUserStamp(key) {
 //   sync.save(true);        // push immediately (imports, restores)
 //
 // Merge strategy: cloud-vs-local is decided per top-level state
-// section using state.updatedAt[field] timestamps (epoch ms),
-// so a stale device can never clobber newer edits from another
-// device. Empty section only adopts the non-empty side.
+// section using state.updatedAt[field] timestamps (epoch ms), so
+// a stale device can never clobber newer edits from another
+// device. Sections shaped like {epoch, done} (the shared daily /
+// carry rows written by BOTH timer.html and trackers.html) are
+// instead merged tid-by-tid — union within the same day, newest
+// day wins across days — so neither page can erase the other's
+// ghost-chip logs again.
 // ============================================================
 function createUserSync(opts) {
   // ---- required opts ----
@@ -222,6 +269,12 @@ function createUserSync(opts) {
     return false;
   }
 
+  function mergeSectionValue(f, lv, rv, lt, rt) {
+    // Shared {epoch, done} rows: union tid maps instead of picking a side.
+    if (isEpochDone(lv) || isEpochDone(rv)) return mergeEpochDone(lv, rv);
+    return rt > lt ? rv : lv;
+  }
+
   function merge(local, remote) {
     const out = {};
     const fields = sections ||
@@ -237,7 +290,7 @@ function createUserSync(opts) {
       if (isEmpty(lv) && isEmpty(rv)) out[f] = lv || rv;
       else if (isEmpty(lv)) out[f] = rv;
       else if (isEmpty(rv)) out[f] = lv;
-      else out[f] = rt > lt ? rv : lv;
+      else out[f] = mergeSectionValue(f, lv, rv, lt, rt);
     }
     return out;
   }
@@ -359,7 +412,7 @@ function createUserSync(opts) {
 // ============================================================
 async function listRows(table, { orderBy = null, ascending = true, eq = null } = {}) {
   let q = sb().from(table).select("*");
-  if (eq) for (const col in eq) q = q.eq(col, eq[col]);
+  if (eq) for (const col in eq) q = q.eq(col, col);
   if (orderBy) q = q.order(orderBy, { ascending });
   const { data, error } = await q;
   if (error) { console.error("listRows:", error.message); return []; }
@@ -376,7 +429,7 @@ async function insertRows(table, objs) {
   // bulk insert — handy for importing a year of dailies or a pile of inventory
   const { data, error } = await sb().from(table).insert(objs).select();
   if (error) throw error;
-  return data || [];
+  return data;
 }
 
 async function updateRow(table, id, patch) {

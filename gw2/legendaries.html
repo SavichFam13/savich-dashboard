@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Legendary Workshop</title>
 <style>
@@ -1075,18 +1076,21 @@ function autoMatch() {
   tplSel.classList.remove("matched");
   if (!name) return;
   for (const m of NAME_MATCH) {
-    if (m.keys.some(k => name.includes(k))) {
+    // compare case-insensitively on BOTH sides — this is the fix
+    if (m.keys.some(k => name.includes(String(k).toLowerCase()))) {
       tplSel.value = m.tpl;
       tplSel.classList.add("matched");
       updHint();
-      matchNote.innerHTML = "&#10003; Recognized \"" + m.keys[0].charAt(0).toUpperCase() +
-        m.keys[0].slice(1) + "\" — loaded its template. Change it here if that's not what you meant.";
+      matchNote.innerHTML = "&#10003; Recognized &quot;" + m.tpl +
+        "&quot; — loaded its template. Change it here if that's not what you meant.";
       matchNote.classList.add("show");
       return;
     }
   }
 }
 nameEl.addEventListener("input", autoMatch);
+nameEl.addEventListener("change", autoMatch);   // catches autofill/IME oddities
+nameEl.addEventListener("keyup", autoMatch);    // belt-and-braces fallback
 tplSel.onchange = () => {
   tplSel.classList.remove("matched");
   matchNote.classList.remove("show");
@@ -1098,12 +1102,17 @@ updHint();
 function addLegend() {
   const name = nameEl.value.trim();
   if (!name) return;
-  autoMatch();
+  autoMatch();                    // re-sync dropdown to the typed name
   const tpl = TEMPLATES[tplSel.value];
+  if (!tpl) return;               // never add from a broken dropdown state
   const phases = snapshot(tpl.phases);
   phases[0].open = true;
   legs.unshift({ id: "l" + Date.now(), name: name, kind: tpl.label, phases: phases });
   nameEl.value = "";
+  // reset the form so the next entry can't inherit this template by accident
+  matchNote.classList.remove("show");
+  tplSel.classList.remove("matched");
+  updHint();
   save(); render();
 }
 
