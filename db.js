@@ -76,15 +76,10 @@ async function signOut() {
   location.href = "/auth.html";
 }
 
-// ============================================================
-// SHARED BLOB STORAGE — the app_data table (one row per page-key)
-// Used by pages whose data is shared by BOTH household accounts.
-//   key    text primary key   (e.g. "savich-vault-config")
-//   data   jsonb              (whatever JSON the page saves)
-// ============================================================
 async function loadBlob(key, fallback = null) {
   const { data, error } = await sb()
-    .from("app_data").select("data").eq("key", key).maybeSingle();
+    .from("app_data").select("data")
+    .eq("owner", "shared").eq("key", key).maybeSingle();
   if (error) {
     console.error("loadBlob failed for " + key + ":", error.message);
     return fallback;
@@ -95,7 +90,7 @@ async function loadBlob(key, fallback = null) {
 async function saveBlob(key, value) {
   const { error } = await sb()
     .from("app_data")
-    .upsert({ key: key, data: value }, { onConflict: "key" });
+    .upsert({ key: key, owner: "shared", data: value });
   if (error) {
     console.error("saveBlob failed for " + key + ":", error.message);
     throw error;
