@@ -42,6 +42,9 @@
   .clock { color: var(--dim); font-size: 0.95rem; margin-bottom: 14px; }
   .clock b { color: var(--text); }
 
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
+
   /* ---- chips ---- */
   .roster {
     display: flex; flex-wrap: wrap; gap: 10px;
@@ -128,7 +131,7 @@
   .flash-msg.show { display: block; }
 /* ---- nav bar ---- */
 .nav-bar {
-  display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline;
 }
 .nav-btn {
   background: var(--panel);
@@ -149,7 +152,7 @@
   background: var(--accent);
   color: var(--bg);
   border-color: var(--accent);
-}  
+}
 </style>
 </head>
 <body>
@@ -157,6 +160,7 @@
 <div class="top">
   <h1>Event Timers!</h1>
   <nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="trackers.html" class="nav-btn">Event Trackers</a>
     <a href="misc.html" class="nav-btn">Misc</a>
@@ -197,6 +201,8 @@
 
 <div class="flash-msg" id="flash-msg"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // =====================================================================
 // EVENTS
@@ -352,47 +358,84 @@ const ADHOC = [
 ];
 
 // =====================================================================
-// TRACKER BRIDGE - same localStorage key and shape as trackers.html:
-//   { epoch: <days since epoch UTC>, done: { tid: timestampMs } }
+// TRACKER BRIDGE — per-user cloud sync.
+//
+// Cloud row ("gw2-tracker-daily" in user_state) holds BOTH halves:
+//   daily : { epoch: <days since epoch UTC>, done: { tid: ts } }
+//   carry : { epoch, done }            (rollover bucket, may be absent)
+//
+// The OLD shared localStorage keys (gw2-tracker-daily /
+// gw2-tracker-daily-carry) are still WRITTEN on every change so the
+// not-yet-converted trackers.html keeps working on this device — but
+// they are only READ once, during first-run legacy migration, so the
+// two household accounts never absorb each other's logs.
+//
 // Timed chips store the LAST SLOT TIME, not the click time.
 // =====================================================================
-const KEY_DAILY = "gw2-tracker-daily";
-
-// rollover carry — same bucket trackers.html reads at the daily reset
-const KEY_CARRY = "gw2-tracker-daily-carry";
+const LOCAL_DAILY = "gw2-tracker-daily";
+const LOCAL_CARRY = "gw2-tracker-daily-carry";
 const ROLLOVER_MINS = { furby: 40, dragonstand: 90, island: 45, joras: 40 };
 
-function logWithRollover(ev, nowMs) {
-  const slotMs   = prevSlotMs(ev, nowMs);      // keeps this page's 5-min early-click grace
-  const creditMs = slotMs + ROLLOVER_MINS[ev.tid] * 60000;
-  if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
-    toggleLog(ev, nowMs);                       // same-day credit — business as usual
-    return;
-  }
-  let carry = null;                             // crosses UTC midnight → park for the new day
-  try { carry = JSON.parse(localStorage.getItem(KEY_CARRY)); } catch (e) { carry = null; }
-  const newEp = dailyEpoch(creditMs);
-  if (!carry || carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
-  if (carry.done[ev.tid] !== undefined) {
-    delete carry.done[ev.tid];
-    flash("\u2716 unqueued: " + ev.short);
-  } else {
-    carry.done[ev.tid] = slotMs;
-    flash("\u2714 " + ev.short + " finishes after reset \u2014 logged for the NEW day");
-  }
-  localStorage.setItem(KEY_CARRY, JSON.stringify(carry));
+const Store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+let USER_ID = null;
+
+// ---- in-memory per-user state ----
+let daily = { epoch: -1, done: {} };
+let carry = null;   // rollover bucket: { epoch, done }
+
+function normDaily(s) {
+  if (!s || typeof s !== "object" || typeof s.epoch !== "number" ||
+      !s.done || typeof s.done !== "object") return { epoch: -1, done: {} };
+  return { epoch: s.epoch, done: { ...s.done } };
+}
+function normCarry(s) {
+  if (!s || typeof s !== "object" || typeof s.epoch !== "number" ||
+      !s.done || typeof s.done !== "object") return null;
+  return { epoch: s.epoch, done: { ...s.done } };
+}
+
+const sync = createUserSync({
+  key: "gw2-tracker-daily",
+  sections: ["daily", "carry"],
+  loadLocal: () => Store.get("gw2-tracker-daily-cache:" + USER_ID),
+  saveLocal: s => Store.set("gw2-tracker-daily-cache:" + USER_ID, s),
+  getState: () => ({ daily: daily, carry: carry || { epoch: -1, done: {} } }),
+  setState: s => {
+    daily = normDaily(s && s.daily);
+    carry = normCarry(s && s.carry);
+  },
+  onRender: () => render(),
+  setOnline: (ok, msg) => setSync(ok, msg)
+});
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
 }
 
 function dailyEpoch(nowMs) { return Math.floor(nowMs / 86400000); }
 
 function getDailyState(nowMs) {
-  let s;
-  try { s = JSON.parse(localStorage.getItem(KEY_DAILY)); } catch (e) { s = null; }
-  if (!s || s.epoch !== dailyEpoch(nowMs)) s = { epoch: dailyEpoch(nowMs), done: {} };
-  if (!s.done) s.done = {};
-  return s;
+  const ep = dailyEpoch(nowMs);
+  if (daily.epoch !== ep) daily = { epoch: ep, done: {} };
+  return daily;
 }
-function saveDailyState(s) { localStorage.setItem(KEY_DAILY, JSON.stringify(s)); }
+
+function saveDailyState(s) {
+  daily = s;
+  sync.save();                                              // per-user cloud row
+  Store.set(LOCAL_DAILY, s);   // bridge: keeps un-converted trackers.html in step
+}
+
+function saveCarryState() {
+  sync.save();
+  if (carry) Store.set(LOCAL_CARRY, carry);   // bridge for trackers.html
+}
 
 function isLogged(tid, nowMs) {
   return getDailyState(nowMs).done[tid] !== undefined;
@@ -413,10 +456,28 @@ function toggleLog(ev, nowMs) {
 function prevSlotMs(ev, nowMs) {
   if (!ev.interval && !ev.daily) return nowMs;   // ad-hoc: stamp NOW
   const mu = minutesUntil(ev, nowMs);
-  if (mu <= 5) return nowMs + mu * 60000;   // NEW: early click → upcoming slot
+  if (mu <= 5) return nowMs + mu * 60000;   // early click → upcoming slot
   return nowMs - minutesSince(ev, nowMs) * 60000;
 }
 
+function logWithRollover(ev, nowMs) {
+  const slotMs   = prevSlotMs(ev, nowMs);      // keeps this page's 5-min early-click grace
+  const creditMs = slotMs + ROLLOVER_MINS[ev.tid] * 60000;
+  if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
+    toggleLog(ev, nowMs);                       // same-day credit — business as usual
+    return;
+  }
+  const newEp = dailyEpoch(creditMs);          // crosses UTC midnight → park for the new day
+  if (!carry || carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
+  if (carry.done[ev.tid] !== undefined) {
+    delete carry.done[ev.tid];
+    flash("\u2716 unqueued: " + ev.short);
+  } else {
+    carry.done[ev.tid] = slotMs;
+    flash("\u2714 " + ev.short + " finishes after reset \u2014 logged for the NEW day");
+  }
+  saveCarryState();
+}
 
 // =====================================================================
 // TIMER ENGINE
@@ -679,8 +740,43 @@ function render() {
   renderSchedule(now);
 }
 
-render();
-setInterval(render, 1000);
+// =====================================================================
+// INIT — auth gate, cloud pull, roll the day forward, one-time legacy
+// migration of the old shared localStorage keys, then start ticking.
+// =====================================================================
+(async function init() {
+  const session = await requireAuth();   // bounces to login if needed
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+
+  await sync.init();
+
+  const today = dailyEpoch(Date.now());
+  let dirty = false;
+
+  // roll the cloud copy forward if it's from a previous day
+  if (daily.epoch !== today) { daily = { epoch: today, done: {} }; dirty = true; }
+
+  // one-time legacy migration: adopt the old SHARED localStorage keys into
+  // this user's cloud row. Whoever signs in first on a device carries the
+  // shared history up; afterwards the shared keys are write-only bridges.
+  const migKey = "gw2-timer-migrated:" + USER_ID;
+  if (!Store.get(migKey)) {
+    const ld = Store.get(LOCAL_DAILY);
+    if (ld && ld.epoch === today && ld.done) {
+      for (const k in ld.done) if (daily.done[k] === undefined) daily.done[k] = ld.done[k];
+      dirty = true;
+    }
+    const lc = Store.get(LOCAL_CARRY);
+    if (lc && (!carry || lc.epoch >= carry.epoch)) { carry = normCarry(lc); dirty = true; }
+    Store.set(migKey, true);
+  }
+
+  if (dirty) sync.save(true);
+
+  render();
+  setInterval(render, 1000);
+})();
 </script>
 
 </body>
