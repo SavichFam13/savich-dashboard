@@ -262,7 +262,8 @@
 <script>
 // =====================================================================
 // STORE SHIM — per-user local cache (fast loads, offline fallback).
-// Cloud (Supabase) is the source of truth; cache is keyed by user id.
+// Cloud (Supabase user_state) is the source of truth; the cache is
+// keyed by user id so two accounts on the same device never mix.
 // =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
@@ -270,133 +271,40 @@ const Store = {
 };
 
 // =====================================================================
-// CLOUD SYNC — Supabase, PER-USER (not shared).
-// Table: user_state (user_id, key, data jsonb, updated_at), RLS so
-// each signed-in account only ever sees its own rows. Same sign-in
-// as the rest of the dashboard; every change auto-saves to the cloud.
+// STATE + PER-USER SYNC ENGINE (createUserSync lives in db.js)
 // =====================================================================
 const STATE_KEY = "gw2-nodes";
 let USER_ID = null;
-let CACHE_KEY = null;         // localStorage cache for THIS user
-let lastCloudStamp = 0;       // server updated_at of the row we last saw/pushed
-let pushTimer = null;
-let pushInFlight = false;
-let online = false;
 
-async function ensureAuth() {
-  if (typeof requireAuth === "function") return await requireAuth();
-  const { data } = await sb().auth.getSession();
-  if (!data || !data.session) {
-    location.href = "../auth.html?next=" + encodeURIComponent(location.pathname);
-    throw new Error("not signed in");
-  }
-  return data.session;
+// state: { owned: {name:true}, custom: [{group,name,details}], locs: {name:"[&...] text"} }
+function normalizeState(s) {
+  s = s || {};
+  if (!s.owned || typeof s.owned !== "object") s.owned = {};
+  if (!Array.isArray(s.custom)) s.custom = [];
+  if (!s.locs || typeof s.locs !== "object") s.locs = {};
+  return s;
 }
+let state = { owned: {}, custom: [], locs: {} };
+let filter = "all";
+
+const sync = createUserSync({
+  key: STATE_KEY,
+  sections: ["owned", "custom", "locs"],
+  loadLocal: () => Store.get(STATE_KEY + ":" + USER_ID),
+  saveLocal: (s) => Store.set(STATE_KEY + ":" + USER_ID, s),
+  getState: () => state,
+  setState: (s) => { state = normalizeState(s); },
+  onRender: () => render(),
+  setOnline: (ok, msg) => setSync(ok, msg)
+});
+
+function save(immediate) { sync.save(immediate); }
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
-function sectionStamp(sec) {
-  state.updatedAt = state.updatedAt || {};
-  state.updatedAt[sec] = Date.now();
-}
-
-// one row per user per page-key, holding the whole state as JSON
-async function cloudLoad() {
-  const { data, error } = await sb()
-    .from("user_state")
-    .select("data, updated_at")
-    .eq("user_id", USER_ID)
-    .eq("key", STATE_KEY)
-    .maybeSingle();
-  if (error) throw error;
-  if (data) lastCloudStamp = Date.parse(data.updated_at) || 0;
-  return data ? data.data : null;
-}
-
-async function cloudSave() {
-  pushInFlight = true;
-  try {
-    const { data, error } = await sb()
-      .from("user_state")
-      .upsert({
-        user_id: USER_ID,
-        key: STATE_KEY,
-        data: state,
-        updated_at: new Date().toISOString()
-      })
-      .select("updated_at")
-      .single();
-    if (error) throw error;
-    if (data && data.updated_at) lastCloudStamp = Date.parse(data.updated_at);
-    online = true;
-    setSync(true);
-  } catch (err) {
-    console.error(err);
-    online = false;
-    setSync(false);
-  } finally {
-    pushInFlight = false;
-  }
-}
-
-function scheduleSave(immediate) {
-  Store.set(CACHE_KEY, state);        // local cache always, instantly
-  clearTimeout(pushTimer);
-  pushTimer = setTimeout(cloudSave, immediate ? 0 : 1500);
-}
-
-// merge local cache vs cloud by per-section timestamps so a stale
-// device can't clobber newer edits made on another device
-function isEmpty(sec) {
-  if (!sec) return true;
-  if (Array.isArray(sec)) return sec.length === 0;
-  return Object.keys(sec).length === 0;
-}
-function mergeStates(a, b) {
-  const out = {};
-  const defs = { owned: {}, custom: [], locs: {} };
-  for (const k of ["owned", "custom", "locs"]) {
-    const at = (a.updatedAt && a.updatedAt[k]) || 0;
-    const bt = (b.updatedAt && b.updatedAt[k]) || 0;
-    const av = (k === "custom") ? (a.custom || []) : (a.owned || a.locs);
-    const bv = (k === "custom") ? (b.custom || []) : (b.owned || b.locs);
-    if (isEmpty(av) && isEmpty(bv)) out[k] = defs[k];
-    else if (isEmpty(av)) out[k] = bv;
-    else if (isEmpty(bv)) out[k] = av;
-    else out[k] = bt > at ? bv : av;
-  }
-  return out;
-}
-
-// background sync check: pull if another device pushed newer data
-async function syncCheck() {
-  if (!online || pushInFlight || document.hidden) return;
-  try {
-    const { data, error } = await sb()
-      .from("user_state")
-      .select("updated_at")
-      .eq("user_id", USER_ID)
-      .eq("key", STATE_KEY)
-      .maybeSingle();
-    if (error) throw error;
-    const stamp = data ? (Date.parse(data.updated_at) || 0) : 0;
-    if (stamp > lastCloudStamp) {
-      const remote = await cloudLoad();
-      if (remote) {
-        state = normalizeState(mergeStates(state, remote));
-        Store.set(CACHE_KEY, state);
-        render();
-        setSync(true, "synced from cloud ✓");
-      }
-    }
-  } catch (e) { /* transient — next poll will retry */ }
-}
-setInterval(syncCheck, 60000);
-document.addEventListener("visibilitychange", syncCheck);
 
 // =====================================================================
 // NODE GROUPS (kept exactly as-is)
@@ -429,7 +337,7 @@ const NODE_GROUPS = {
     "Greater Gift of Candy Corn", "Gift of Magnanimity", "Found Bandit Chest",
     "Garden Plot Deed", "Enchanted Treasure Chest", "Krait Obelisk Shard",
     "Bauble Gathering System", "Exalted Chest", "Crystallized Supply Cache Voucher",
-    "Dragon Pi\u00F1ata", "Airship Cargo Voucher", 
+    "Dragon Pi\u00F1ata", "Airship Cargo Voucher",
     "Gift of Sprockets", "Rotted Titan Amber Node", "Salvage Pile Node", "Supply Cache",
     "Titan Heatstone Node", "Winterberry Bush Node", "Feline Dispersing Emitter", "Feline Holoscepter", "Feline Water Pistol"
   ],
@@ -548,22 +456,6 @@ const LOC = {
   "Snow truffle node":      "Transference Converter, Drojtar's Hollow Complex"
 };
 
-// state: { owned: {name:true}, custom: [{group,name,details}], locs: {name:"[&...] text"}, updatedAt?: {...} }
-function normalizeState(s) {
-  s = s || {};
-  if (!s.owned || typeof s.owned !== "object") s.owned = {};
-  if (!Array.isArray(s.custom)) s.custom = [];
-  if (!s.locs || typeof s.locs !== "object") s.locs = {};
-  return s;
-}
-let state = { owned: {}, custom: [], locs: {} };
-let filter = "all";
-
-function save(immediate) {
-  Store.set(CACHE_KEY, state);
-  if (USER_ID) scheduleSave(immediate);
-}
-
 // =====================================================================
 // BACKUP / RESTORE
 // =====================================================================
@@ -621,7 +513,6 @@ function importState(e) {
       );
       if (!ok) { e.target.value = ""; return; }
       state = normalizeState(data);
-      sectionStamp("owned"); sectionStamp("custom"); sectionStamp("locs");
       save(true); // push to cloud right away
       render();
       showToast("Backup restored.");
@@ -731,7 +622,6 @@ function openInfo(node, evt) {
       const v = inp.value.trim();
       if (v) state.locs[node.name] = v;
       else delete state.locs[node.name];
-      sectionStamp("locs");
       save();
       openInfo(node, evt); // redraw popup with the new value
     });
@@ -767,7 +657,7 @@ function openInfo(node, evt) {
   }
 
   panel.classList.add("open");
-  // only reposition when opened from a chip (not when reopening after edit)
+  // only reposition when opened from a chip (not when reopened after edit)
   const t = evt && evt.currentTarget;
   const isChip = t && t.classList && t.classList.contains("chip");
   if (isChip) {
@@ -863,7 +753,6 @@ function render() {
 function toggle(name) {
   if (state.owned[name]) delete state.owned[name];
   else state.owned[name] = true;
-  sectionStamp("owned");
   save(); render();
 }
 
@@ -875,7 +764,6 @@ function addNode() {
   state.custom = state.custom || [];
   state.custom.push({ group: group === "Custom" ? "Custom" : group, name: name, details: "" });
   nameEl.value = "";
-  sectionStamp("custom");
   save(); render();
   showToast("Added \"" + name + "\".");
 }
@@ -889,8 +777,6 @@ async function confirmAndRemove(name) {
   if (!ok) return;
   state.custom = (state.custom || []).filter(c => c.name !== name);
   if (state.owned[name]) delete state.owned[name];
-  sectionStamp("custom");
-  sectionStamp("owned");
   save(); render();
   closeInfo();
   showToast("Custom node removed.");
@@ -964,50 +850,23 @@ function showToast(message) {
 }
 
 // =====================================================================
-// INIT — sign in (redirects to auth if needed), load personal cloud
-// state, merge with local cache, migrate old local-only data once.
+// INIT
 // =====================================================================
 (async function init() {
   render(); // show structure immediately while auth check runs
 
-  let session;
-  try { session = await ensureAuth(); }
-  catch (e) { return; } // redirecting to sign-in
+  const session = await requireAuth(); // bounces to login if needed
+  if (!session) return;
   USER_ID = session.user && session.user.id;
-  CACHE_KEY = STATE_KEY + ":" + USER_ID;
 
-  const cached = Store.get(CACHE_KEY);
-  const legacy = Store.get(STATE_KEY); // pre-cloud single-user data
-  let local = cached ? normalizeState(cached)
-                     : (legacy ? normalizeState(legacy) : normalizeState(null));
-
-  try {
-    const remote = await cloudLoad();
-    if (remote) {
-      state = normalizeState(mergeStates(local, remote));
-    } else {
-      // no cloud row yet: adopt local (migration), stamp everything so
-      // later merges have sane timestamps
-      state = local;
-      if (!state.updatedAt) state.updatedAt = { owned: 0, custom: 0, locs: 0 };
-    }
-    online = true;
-    setSync(true);
-  } catch (err) {
-    console.error(err);
-    online = false;
-    state = local;
-    setSync(false);
-    showToast("Could not reach the cloud — showing local data.");
-  }
-
-  Store.set(CACHE_KEY, state);
+  // migrate old single-user localStorage data to this user's cache once
+  const legacy = Store.get(STATE_KEY);
   if (legacy) {
-    // migrate old key once, then keep the per-user copy only
-    state.updatedAt = state.updatedAt || { owned: 0, custom: 0, locs: 0 };
-    save(true);
+    Store.set(STATE_KEY + ":" + USER_ID, legacy);
     localStorage.removeItem(STATE_KEY);
   }
+
+  const ok = await sync.init();
   render();
 })();
 </script>

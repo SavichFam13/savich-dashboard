@@ -614,7 +614,7 @@ function openInfo(task, evt, isWeekly) {
       stampTxt = "done @ " + fmtClock(ts);
     }
     if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
-    if (ev) stampTxt += "  (slot time, not click time)";
+    if (ev) stampTxt += "  (yesterday)";
     line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
     } else if (ev) {
     const nx = evNextMs(ev, now);
@@ -685,7 +685,7 @@ function renderDailyChips(now) {
       if (t.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
       inner += ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + stampTxt + '</span>';
       if (dailyEpoch(ts) < dailyEpoch(now)) {
-        inner += ' <span class="chip-cd" style="color:var(--accent2)">(overnight)</span>';
+        inner += ' <span class="chip-cd" style="color:var(--accent2)">(yesterday)</span>';
     }  
     } else if (ev) {
       const nowMin = now / 60000;
