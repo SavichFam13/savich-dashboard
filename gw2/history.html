@@ -19,7 +19,7 @@
   }
   .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
   .nav-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
     text-decoration: none; padding: 6px 14px; border-radius: 8px;
@@ -28,6 +28,8 @@
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
 
   .year-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
   .year-btn {
@@ -139,12 +141,15 @@
 <div class="top">
   <h1>Dailies History</h1>
   <nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
     <a href="trackers.html" class="nav-btn">Trackers</a>
     <a href="misc.html" class="nav-btn">Misc</a>
   </nav>
 </div>
+
+<p class="sub">Your archived daily completions, by year. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
 
 <div class="year-row" id="year-row"></div>
 
@@ -177,14 +182,61 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // =====================================================================
-// STORE SHIM (v1 = localStorage; future v2 can swap in a cloud backend)
+// STORE SHIM — per-user local cache (fast loads, offline fallback).
+// Cloud (Supabase user_state) is the source of truth; cache is keyed
+// by user id so two accounts on the same device never mix.
 // =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
+
+// =====================================================================
+// STATE + PER-USER SYNC (createUserSync lives in db.js)
+//
+// state = { logs: { "2026": { "2026-11-04": { taskId: ts } }, ... } }
+// One cloud row (key "gw2-daily-log") holds every year at once, so
+// cross-device sync covers all years without per-year polling.
+// =====================================================================
+const KEY = "gw2-daily-log";
+let USER_ID = null;
+let currentYear = null;
+
+// state held in `logs` — normalized so setState can't get junk
+let logs = {};        // { year: { date: { taskId: ts } } }
+
+function normalizeLogs(l) {
+  const out = {};
+  if (l && typeof l === "object" && !Array.isArray(l)) {
+    for (const y in l) {
+      if (/^\d{4}$/.test(y) && l[y] && typeof l[y] === "object") out[y] = l[y];
+    }
+  }
+  return out;
+}
+
+const sync = createUserSync({
+  key: KEY,
+  sections: ["logs"],
+  loadLocal: () => Store.get(KEY + ":" + USER_ID),
+  saveLocal: (s) => Store.set(KEY + ":" + USER_ID, s),
+  getState: () => ({ logs: logs }),
+  setState: (s) => { logs = normalizeLogs(s && s.logs); },
+  onRender: () => render(),
+  setOnline: (ok, msg) => setSync(ok, msg)
+});
+
+function save(immediate) { sync.save(immediate); }
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
 
 // =====================================================================
 // TASK NAMES + CATEGORIES — mirrors the tid values used by the tracker
@@ -260,22 +312,15 @@ for (const c in CATEGORIES) for (const t of CATEGORIES[c]) TASK_CAT[t] = c;
 function nameOf(t) { return TASK_NAMES[t] || t; }
 
 // =====================================================================
-// LOAD ARCHIVE — one localStorage key per year: gw2-daily-log-YYYY
-// Each is { "YYYY-MM-DD": { taskId: timestamp } }
+// YEARS — now derived from the in-memory state (the cloud row),
+// not from scanning localStorage.
 // =====================================================================
 function findYears() {
-  const years = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (/^gw2-daily-log-\d{4}$/.test(k)) years.push(k.slice(-4));
-  }
-  return years.sort();
+  return Object.keys(logs).sort();
 }
 
-let currentYear = null;
-
 function loadYear(y) {
-  const log = Store.get("gw2-daily-log-" + y) || {};
+  const log = logs[y] || {};
   const days = Object.keys(log).sort();
   return { log, days };
 }
@@ -462,9 +507,10 @@ function clearDonut() {
 // Export file shape: { year: "2026", log: { "2026-11-04": { taskId: ts } } }
 // For backwards compatibility, import also accepts a bare log object
 // (old clipboard-style dumps), inferring the year from the date keys.
+// Restores now push to the user's cloud row immediately.
 // =====================================================================
 function exportYear() {
-  const data = Store.get("gw2-daily-log-" + currentYear) || {};
+  const data = logs[currentYear] || {};
   const dayCount = Object.keys(data).length;
   if (dayCount === 0) {
     showToast("Nothing archived for " + currentYear + " yet.");
@@ -522,13 +568,13 @@ async function importYear(e) {
       }
 
       const inDays = Object.keys(incoming).length;
-      const cur = Store.get("gw2-daily-log-" + year) || {};
+      const cur = logs[year] || {};
       const curDays = Object.keys(cur).length;
       const overlap = Object.keys(incoming).filter(d => cur[d]).length;
 
       const details =
         "Backup file: " + inDays + " days\n" +
-        "On this device: " + curDays + " days" +
+        "In your cloud archive: " + curDays + " days" +
         (overlap ? "\nOverlap: " + overlap + " days exist in both" : "");
 
       let mode;
@@ -562,8 +608,9 @@ async function importYear(e) {
         merged = { ...incoming };
       }
 
-      Store.set("gw2-daily-log-" + year, merged);
+      logs[year] = merged;
       currentYear = year;
+      save(true);   // push to this user's cloud row immediately
       render();
       showToast(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
         (mode === "MERGE" ? "merged" : "replaced") + ").");
@@ -636,9 +683,48 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
-const yrs = findYears();
-currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
-render();
+// =====================================================================
+// INIT — auth gate, migrate legacy per-year localStorage keys into
+// this user's single cloud row, then render.
+//
+// Legacy layout was one key per year: gw2-daily-log-YYYY. On first
+// load we fold every year found into the cloud row for whoever signs
+// in first on this browser; the old per-year keys are then removed so
+// they don't linger or double-import later.
+// =====================================================================
+(async function init() {
+  const session = await requireAuth();   // bounces to login if needed
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+
+  await sync.init();
+
+  // legacy migration: adopt any old gw2-daily-log-YYYY keys
+  const legacyKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (/^gw2-daily-log-\d{4}$/.test(k)) legacyKeys.push(k);
+  }
+  if (legacyKeys.length) {
+    let adopted = 0;
+    legacyKeys.forEach(k => {
+      const y = k.slice(-4);
+      const data = Store.get(k);
+      if (data && Object.keys(data).length) {
+        logs[y] = { ...(logs[y] || {}), ...data };  // cloud year wins on conflict
+        adopted++;
+      }
+    });
+    if (adopted) {
+      save(true);   // push migrated years to the cloud immediately
+      legacyKeys.forEach(k => localStorage.removeItem(k));
+    }
+  }
+
+  const yrs = findYears();
+  currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
+  render();
+})();
 </script>
 
 </body>
