@@ -415,7 +415,7 @@ const sync = createUserSync({
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 
@@ -484,6 +484,7 @@ function logWithRollover(ev, nowMs) {
 // TIMER ENGINE
 // =====================================================================
 let selectedEv = null;
+let liveChips = [];   // rebuilt on every full render() — feeds updateClock()
 
 function zoneFor(ev, tMs) {
   if (!ev.zones) return ev.zone || "";
@@ -702,7 +703,7 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
              (logged ? " logged" : "") +
              (selectedEv === ev ? " selected" : "");
 
-      inner += (cdText ? ' <span class="chip-cd">' + cdText + "</span>" : "") +
+      inner += ' <span class="chip-cd"' + (isActive ? ' style="display:none"' : '') + '>' + cdText + '</span>' +
               (logged ? ' <span class="tick">\u2713</span>' : "");
       chip.title = ev.name +
         (logged ? " \u2014 logged today (click again to un-log)" : "") +
@@ -723,12 +724,14 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
       e.preventDefault();
       openSchedule(ev, e);
     };
+    liveChips.push({ chip: chip, ev: ev });
     roster.appendChild(chip);
   });
 }
 
 function render() {
   const now = Date.now();
+  liveChips = [];                       // registry rebuilds with the chips
   document.getElementById("clock-now").textContent = fmtClock(now);
 
   renderChips("roster-wb", WORLD_BOSSES, now);
@@ -776,8 +779,37 @@ function render() {
   if (dirty) sync.save(true);
 
   render();
-  setInterval(render, 1000);
+  setInterval(updateClock, 1000);
+  setInterval(render, 60000);   // safety net: full repaint once a minute
 })();
+
+// =====================================================================
+// 1-SECOND TICK — clocks, chip countdowns, active/next states, and the
+// schedule panel. Chips are stable DOM: never rebuilt by this tick, so
+// clicks can't race a repaint. Full render() runs on clicks, sync pulls,
+// and the once-a-minute safety net.
+// =====================================================================
+function updateClock() {
+  const now = Date.now();
+  document.getElementById("clock-now").textContent = fmtClock(now);
+
+  liveChips.forEach(function(entry) {
+    const chip = entry.chip, ev = entry.ev;
+    if (!ev.interval && !ev.daily) return;   // ad-hoc chips never tick
+    const mu = minutesUntil(ev, now);
+    const since = minutesSince(ev, now);
+    const isActive = since < 15;
+    chip.classList.toggle("active", isActive);
+    chip.classList.toggle("next", !isActive && mu <= 6);
+    const cd = chip.querySelector(".chip-cd");
+    if (cd) {
+      cd.textContent = isActive ? "" : fmtCDShort(mu);
+      cd.style.display = isActive ? "none" : "";
+    }
+  });
+
+  if (selectedEv) renderSchedule(now);
+}
 </script>
 
 </body>

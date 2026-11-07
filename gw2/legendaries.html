@@ -184,7 +184,7 @@
   </nav>
 </div>
 
-<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Newest projects at the top; progress counts every ingredient. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
+<p class="sub">Type a name — the right full-recipe template jumps into place automatically. Newest projects at the top; progress counts every ingredient. </span></p>
 
 <div class="add-card">
   <h2>Start a new legendary</h2>
@@ -199,7 +199,6 @@
 
 <div class="leg-list" id="leg-list"></div>
 
-<p class="note">Saved to your own cloud row automatically — every ingredient check, added step, and project syncs to your account only. Parent items auto-check when all ingredients are done.</p>
 
 <!-- ================= THEMED MODAL ================= -->
 <div class="confirm-overlay" id="modal-overlay">
@@ -251,7 +250,7 @@ const sync = createUserSync({
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 

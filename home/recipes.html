@@ -366,7 +366,7 @@ async function saveStorage() {
 function setSyncNote(ok, msg) {
   const el = document.getElementById("sync-note");
   if (!el) return;
-  el.textContent = msg || (ok ? "cloud synced \u2713" : "offline");
+  el.textContent = msg || (ok ? "\u2713" : "offline");
   el.classList.toggle("live", !!ok);
 }
 

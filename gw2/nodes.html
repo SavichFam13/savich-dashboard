@@ -201,7 +201,7 @@
   </nav>
 </div>
 
-<p class="sub">Left-click = toggle owned &middot; Right-click = details popup. Popup can store a chat-link code per node &mdash; click "copy code", paste into GW2 chat, click the link. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
+<p class="sub">Left-click = toggle owned &middot; Right-click = details popup. Popup can store a chat-link code per node &mdash; click "copy code", paste into GW2 chat, click the link. </span></p>
 
 <div class="stats-line" id="stats"></div>
 <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
@@ -236,7 +236,6 @@
     Import Backup
     <input type="file" accept=".json" onchange="importState(event)">
   </label>
-  <span class="backup-label">Saves everything: owned nodes, custom nodes &amp; saved map codes</span>
 </div>
 
 <!-- POPUP PANEL -->
@@ -303,7 +302,7 @@ function save(immediate) { sync.save(immediate); }
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 

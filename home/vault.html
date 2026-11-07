@@ -180,7 +180,7 @@
     <a href="../index.html" class="back">&larr; Back to Dashboard</a>
   </div>
 </div>
-<p class="sub">Save baby, save baby, save baby save! <span style="opacity:0.6;">(shared household data — cloud synced)</span></p>
+<p class="sub">Save baby, save baby, save baby save!</span></p>
 
 <nav>
   <button id="tab-distribute" class="active">DISTRIBUTE</button>
@@ -219,7 +219,7 @@
 
   <div class="actions">
     <button class="primary" onclick="saveCycle()">Save Pay Cycle to History</button>
-    <button class="danger" onclick="resetCycle()">Reset (doesn't save)</button>
+    <button class="danger" onclick="resetCycle()">Reset</button>
   </div>
 </div>
 
@@ -342,7 +342,7 @@ async function loadHistoryRows() {
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 
@@ -537,7 +537,7 @@ async function saveCycle() {
     renderVaults();
     renderHistory();
     setSync(true);
-    showToast("Pay cycle saved to history. Board reset for next time.");
+    showToast("Pay cycle saved to history.");
   } catch (err) {
     console.error(err);
     setSync(false);

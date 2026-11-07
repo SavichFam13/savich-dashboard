@@ -150,7 +150,7 @@
   </nav>
 </div>
 
-<p class="sub">Your archived daily completions, by year. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
+<p class="sub">Your archived daily completions, by year.</span></p>
 
 <div class="year-row" id="year-row"></div>
 
@@ -235,7 +235,7 @@ function save(immediate) { sync.save(immediate); }
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 

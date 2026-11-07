@@ -240,7 +240,7 @@
     <a href="../index.html" class="back">&larr; Back to Dashboard</a>
   </div>
 </div>
-<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping! <span style="opacity:0.6;">(shared household data — cloud synced)</span></p>
+<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</span></p>
 
 <nav>
   <button id="tab-inventory" class="active">INVENTORY</button>
@@ -382,7 +382,7 @@ async function updateRow(id, fields) {
 
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 

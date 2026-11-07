@@ -188,7 +188,7 @@
 
 <div class="flash-msg" id="flash-msg"></div>
 
-<p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC &mdash; both anchored to UTC so daylight saving never shifts them. </p>
+<p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC. </p>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
@@ -241,6 +241,9 @@ const DAILIES = [
   { id: "furby",      name: "Bondage Furby",               color: "#e43710", zone: "Starlit Weald",              reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
   { id: "vault",      name: "Daily Wizards Vault",         color: "#148eb4", zone: "Wherever my cold dead heart beats", reward: "Astral acclaim" }
 ];
+
+const TASK_BY_ID = {};
+DAILIES.forEach(t => { TASK_BY_ID[t.id] = t; });
 
 // ---- rollover carry: kills that finish AFTER the UTC reset count for the new day ----
 // ---- state row keys (legacy bridge + internal routing) ----
@@ -483,6 +486,7 @@ let dailyOnline = false;
 let weeklyOnline = false;
 let historyOnline = false;
 let historySyncReady = false;
+let lastWeeklyCounts = { done: 0, total: 0 };
 
 function normalizeDailyState(s) {
   s = s || {};
@@ -506,7 +510,7 @@ function updateSyncNote() {
   const el = document.getElementById("sync-note");
   if (!el) return;
   const ok = dailyOnline && weeklyOnline && historyOnline;
-  el.textContent = ok ? "cloud synced \u2713" : "offline \u2014 changes NOT saved";
+  el.textContent = ok ? "✓" : "offline \u2014 changes NOT saved";
   el.classList.toggle("live", ok);
 }
 function setDailySync(ok)   { dailyOnline = !!ok; updateSyncNote(); }
@@ -576,10 +580,10 @@ function saveState(key, value) {
   if (key === KEY_DAILY || key === KEY_CARRY) {
     if (key === KEY_DAILY) dailyState.daily = value;
     else dailyState.carry = value;
-    dailySync.save();
+    dailySync.save(true);
   } else if (key === KEY_WEEKLY) {
     weeklyState.weekly = value;
-    weeklySync.save();
+    weeklySync.save(true);
   }
 }
 
@@ -644,7 +648,8 @@ function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
     s.done[tid] = (stampMs !== undefined ? stampMs : Date.now());
     flash("\u2714 logged: " + name + " @ " + fmtClock(s.done[tid]));
   }
-  saveState(key, s);
+  render();                        // repaint NOW — show the ✓ before the next 1s tick
+  saveState(key, s);               // save AFTER paint, state object is same reference
 }
 
 // =====================================================================
@@ -784,6 +789,21 @@ function tooltipFor(task, isWeekly, nowMs) {
   tip += "\nLeft-click: toggle done. Right-click: details.";
   return tip;
 }
+// Builds the live countdown span for an unlogged event chip. Carries the
+// task id so updateClock() can retick it in place every second.
+function cdSpanHtml(t, now) {
+  const ev = EVS[t.id];
+  const nowMin = now / 60000;
+  const since = ((nowMin - ev.offset) % ev.interval + ev.interval) % ev.interval;
+  if (since < 15) {
+    return ' <span class="chip-cd live-cd" data-ev="' + t.id +
+           '" style="color:var(--now);font-weight:700">Active NOW</span>';
+  }
+  const nx = evNextMs(ev, now);
+  let nextTxt = "next @ " + fmtClock(nx);
+  if (t.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
+  return ' <span class="chip-cd live-cd" data-ev="' + t.id + '">' + nextTxt + '</span>';
+}
 
 function renderDailyChips(now) {
   const roster = document.getElementById("roster-daily");
@@ -807,17 +827,9 @@ function renderDailyChips(now) {
         inner += ' <span class="chip-cd" style="color:var(--accent2)">(yesterday)</span>';
     }  
     } else if (ev) {
-      const nowMin = now / 60000;
-      const since = ((nowMin - ev.offset) % ev.interval + ev.interval) % ev.interval;
-      if (since < 15) {
-        inner += ' <span class="chip-cd" style="color:var(--now);font-weight:700">Active NOW</span>';
-      } else {
-        const nx = evNextMs(ev, now);
-        let nextTxt = "next @ " + fmtClock(nx);
-        if (t.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
-        inner += ' <span class="chip-cd">' + nextTxt + '</span>';
-      }
-    } else if (t.zone) {
+      inner += cdSpanHtml(t, now);
+    }
+      else if (t.zone) {
       inner += ' <span class="chip-zone">@ ' + t.zone + '</span>';
     }
     chip.innerHTML = inner;
@@ -937,7 +949,8 @@ chip.title = tooltipFor(t, true, now);
   bar.style.width = pct + "%";
   bar.className = "progress-inner" + (pct === 100 ? " full" : "");
 
-  return { done: doneCount, total: WEEKLIES.length };
+  lastWeeklyCounts = { done: doneCount, total: WEEKLIES.length };   // ← NEW
+  return lastWeeklyCounts;
 }
 
 // =====================================================================
@@ -1002,9 +1015,49 @@ function render() {
   if (adoptedYears && legacyYearKeys.length) legacyYearKeys.forEach(key => localStorage.removeItem(key));
 
   render();
-  setInterval(render, 1000);
+  setInterval(updateClock, 1000);
+  setInterval(render, 60000);   // safety net for anything not on the 1s tick
 })();
-</script>
 
+// =====================================================================
+// 1-SECOND TICK — updates ONLY the clocks, the reset countdowns, and
+// every .live-cd countdown span in place. Chips are stable DOM: they
+// are never rebuilt by this tick, so clicks can't race a repaint.
+// Full render() still runs on clicks, cloud pulls, and once a minute.
+// =====================================================================
+function updateClock() {
+  const now = Date.now();
+
+  // header clock + reset countdowns
+  document.getElementById("clock-now").textContent = fmtClock(now);
+  document.getElementById("daily-meta").innerHTML =
+    "resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
+  const w = lastWeeklyCounts;
+  document.getElementById("weekly-meta").innerHTML =
+    "Week " + isoWeek(now) + " \u00B7 " + w.done + " of " + w.total + " done" +
+    " \u00B7 resets in <b>" + fmtDur(nextWeeklyReset(now) - now) + "</b>";
+
+  // live countdown spans on unlogged event chips
+  document.querySelectorAll(".live-cd").forEach(span => {
+    const t = TASK_BY_ID[span.dataset.ev];
+    if (!t || !t.ev) return;
+    const ev = EVS[t.id];
+    const nowMin = now / 60000;
+    const since = ((nowMin - ev.offset) % ev.interval + ev.interval) % ev.interval;
+    if (since < 15) {
+      span.textContent = "Active NOW";
+      span.style.color = "var(--now)";
+      span.style.fontWeight = "700";
+    } else {
+      const nx = evNextMs(ev, now);
+      let txt = "next @ " + fmtClock(nx);
+      if (t.id === "nakedman") txt += " \u00B7 " + nakedMap(nx);
+      span.textContent = txt;
+      span.style.color = "";
+      span.style.fontWeight = "";
+    }
+  });
+}
+</script>
 </body>
 </html>

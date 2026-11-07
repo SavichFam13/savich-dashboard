@@ -429,7 +429,7 @@ function save(immediate) {
 function setSync(ok, message) {
   const el = document.getElementById("sync-note");
   if (!el) return;
-  el.textContent = ok ? (message || "cloud synced ✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 
