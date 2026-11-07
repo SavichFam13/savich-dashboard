@@ -3,728 +3,846 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dailies History</title>
+<title>Daily &amp; Weekly Tracker</title>
 <style>
   :root {
-    --bg: #121016; --panel: #1c1922; --text: #f2eef7; --accent: #c9a0ff;
-    --accent2: #5fd3c4; --dim: #a89bbd; --border: #332c3e; --good: #7ddba3;
-    --bad: #ff8a8a; --hot-pink: #e10ab2;
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #ffffff;
+    --accent: #c9a0ff;
+    --accent2: #5fd3c4;
+    --hot-pink: #e10ab2;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --now: #ff4d6d;
+    --good: #7ddba3;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg); color: var(--text);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     font-size: 15px; line-height: 1.5;
-    padding: 32px 20px; max-width: 1180px; margin: 0 auto;
+    padding: 32px 20px; max-width: 1320px; margin: 0 auto;
   }
-  .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+  .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+  
+  /* Navigation Bar Styles */
+  .nav-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
   .nav-btn {
-    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
-    text-decoration: none; padding: 6px 14px; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
   }
-  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
-  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
-  .sync-note.live { color: var(--good); }
+  .nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .nav-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  
+  p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
 
-  .year-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
-  .year-btn {
-    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
-    border-radius: 999px; padding: 5px 16px; font-family: inherit; font-size: 0.8rem;
-    font-weight: 700; cursor: pointer;
-  }
-  .year-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .backup-btn {
-    background: var(--panel); border: 1px solid var(--accent2); color: var(--accent2);
-    border-radius: 999px; padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
-    font-weight: 700; cursor: pointer; margin-left: auto;
-  }
-  .backup-btn:hover { background: var(--accent2); color: var(--bg); }
-  .backup-btn.import {
-    margin-left: 0; border-style: dashed;
-    color: var(--dim); border-color: var(--border);
-  }
-  .backup-btn.import:hover { color: var(--accent2); border-color: var(--accent2); background: var(--panel); }
-  .backup-btn input[type="file"] { display: none; }
-
-  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
-  .stat-box {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 14px 20px; min-width: 150px;
-  }
-  .stat-box .num { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
-  .stat-box .lab { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
-
-  .charts-row { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 30px; }
-  .chart-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 20px; flex: 1; min-width: 320px;
-  }
-  .chart-card h2 {
-    font-size: 0.78rem; letter-spacing: 1.5px;
-    color: var(--accent2); text-transform: uppercase; margin-bottom: 14px; font-weight: 700;
-  }
-  #donut-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-  .legend { display: flex; flex-direction: column; gap: 7px; font-size: 0.8rem; }
-  .legend .li { display: flex; align-items: center; gap: 8px; color: var(--text); }
-  .legend .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
-  .legend .lc-n { color: var(--dim); }
-
-  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
-  .bar-label { width: 150px; text-align: right; color: var(--text); flex-shrink: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { flex: 1; background: #16131c; border-radius: 999px; height: 16px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
-  .bar-num { color: var(--dim); width: 34px; flex-shrink: 0; }
+  .clock { color: var(--dim); font-size: 0.95rem; margin-bottom: 14px; }
+  .clock b { color: var(--text); }
 
   .section-title {
-    font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
-    letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
+    font-size: 0.9rem; color: var(--hot-pink); text-transform: uppercase;
+    letter-spacing: 1.5px; font-weight: 700; margin: 26px 0 6px;
   }
-  .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
-  .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
+  .section-note { color: var(--dim); font-size: 0.82rem; margin-bottom: 10px; }
+  .section-note b { color: var(--accent2); }
 
-  /* ---- modal (house style, same as inventory/recipes) ---- */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
-    display: none; align-items: center; justify-content: center;
-    z-index: 100; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal-box {
+  /* ---- chips ---- */
+  .roster { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 10px; padding: 26px 28px 22px;
-    max-width: 410px; width: 100%;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    border-radius: 999px; padding: 10px 18px;
+    color: var(--text); font-family: inherit; font-size: 0.95rem;
+    cursor: pointer; font-weight: 700;
   }
-  .modal-box h2 {
-    font-size: 0.96rem; color: var(--hot-pink);
-    margin-bottom: 12px; line-height: 1.4;
+  .chip .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .chip:hover { border-color: var(--accent2); }
+  .chip.logged {
+    border-color: var(--good);
+    box-shadow: 0 0 0 2px rgba(125, 219, 163, 0.30);
   }
-  .modal-box p {
-    font-size: 0.81rem; color: var(--dim);
-    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  .chip .tick { color: var(--good); font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+  .chip .stamp-info {
+    color: var(--good); font-size: 0.8rem; font-weight: 700; white-space: nowrap;
   }
-  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-  .modal-buttons button {
-    font-family: inherit; font-size: 0.81rem; font-weight: 700;
-    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
-  }
-  .modal-yes { background: var(--accent2); color: #121016; border: none; }
-  .modal-yes.destructive { background: var(--bad); }
-  .modal-yes:hover { filter: brightness(1.1); }
-  .modal-no {
-    background: none; color: var(--dim);
-    border: 1px solid var(--border); font-weight: 400;
-  }
-  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+  .chip .chip-cd { color: var(--accent2); font-size: 0.8rem; font-weight: 400; white-space: nowrap; }
+  .chip .chip-zone { color: var(--dim); font-size: 0.75rem; font-weight: 400; white-space: nowrap; }
+  .chip.warn { border-color: var(--now); }
+  .chip .warn-flag { color: var(--now); font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+#ghost-block { margin-top: 14px; }
 
-  /* ---- toast (house style) ---- */
-  .toast {
-    position: fixed; bottom: 26px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--panel); border: 1px solid var(--accent2);
-    color: var(--good); border-radius: 8px; padding: 12px 22px;
-    font-size: 0.81rem; opacity: 0; pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    z-index: 110; max-width: 90vw; text-align: center;
+  .ghost-divider {
+    margin: 18px 0 8px;
+    font-size: 0.72rem; color: var(--accent2); letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .ghost-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* ---- info panel (right-click a chip) ---- */
+  .info-panel {
+    display: none; position: fixed; z-index: 100;
+    width: min(560px, calc(100vw - 40px));
+    background: var(--panel); border: 1px solid var(--accent2);
+    border-radius: 10px; padding: 18px 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65);
+  }
+  .info-panel.open { display: block; }
+  .info-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; margin-bottom: 6px;
+  }
+  .info-name { font-size: 1.05rem; font-weight: 700; color: var(--accent2); }
+  .info-close {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-family: inherit; font-size: 0.95rem; padding: 0;
+  }
+  .info-close:hover { color: #ff8a8a; }
+  .info-line { font-size: 0.85rem; margin-bottom: 8px; }
+  .info-line b { color: var(--text); }
+  .info-line .lab { color: var(--dim); }
+  .info-line.missing { color: var(--now); font-weight: 700; }
+  .info-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
+
+  .flash-msg {
+    position: fixed; top: 18px; right: 18px; z-index: 300;
+    background: var(--panel); border: 1px solid var(--good);
+    color: var(--good); border-radius: 10px; padding: 10px 18px;
+    font-weight: 700; font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    display: none;
+  }
+  .flash-msg.show { display: block; }
+
+  .progress-outer {
+    background: #16131c; border-radius: 999px; height: 14px;
+    margin: 12px 0 16px; overflow: hidden; width: 100%; max-width: 340px;
+  }
+  .progress-inner {
+    background: var(--good); height: 100%; width: 0%;
+    border-radius: 999px; transition: width 0.3s ease;
+  }
+  .progress-inner.full { background: var(--accent2); }
+  .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
 </style>
 </head>
 <body>
 
 <div class="top">
-  <h1>Dailies History</h1>
+  <h1>Daily &amp; Weekly Tracker</h1>
   <nav class="nav-bar">
-    <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
-    <a href="trackers.html" class="nav-btn">Trackers</a>
     <a href="misc.html" class="nav-btn">Misc</a>
+    <a href="#" class="nav-btn active">Trackers</a>
   </nav>
 </div>
 
-<p class="sub">Your archived daily completions, by year. <span style="opacity:0.6;">(personal data — saved to your own account)</span></p>
+<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = toggle done &middot; right-click = details</span></div>
 
-<div class="year-row" id="year-row"></div>
+<!-- ================= DAILIES ================= -->
+<div class="section-title">Dailies</div>
+<div class="section-note" id="daily-meta"></div>
+<div class="roster" id="roster-daily"></div>
+<div id="ghost-block"></div>
 
-<div class="stat-row" id="stat-row"></div>
+<!-- ================= WEEKLIES ================= -->
+<div class="section-title">Weeklies</div>
+<div class="section-note" id="weekly-meta"></div>
+<div class="progress-outer"><div class="progress-inner" id="weekly-bar"></div></div>
+<div class="roster" id="roster-weekly"></div>
 
-<div class="charts-row">
-  <div class="chart-card">
-    <h2>Time spent by category</h2>
-    <div id="donut-wrap">
-      <canvas id="donut" width="240" height="240"></canvas>
-      <div class="legend" id="cat-legend"></div>
-    </div>
+<!-- ================= INFO PANEL ================= -->
+<div class="info-panel" id="info-panel">
+  <div class="info-head">
+    <span class="info-name" id="info-name"></span>
+    <button class="info-close" onclick="closeInfo()">close &times;</button>
   </div>
-  <div class="chart-card">
-    <h2>Most-completed dailies</h2>
-    <div id="task-bars"></div>
-  </div>
+  <div id="info-lines"></div>
 </div>
 
-<div class="section-title">Days on record</div>
-<div id="day-list"></div>
+<div class="flash-msg" id="flash-msg"></div>
 
-<!-- ============ MODAL + TOAST ============ -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal-box">
-    <h2 id="modal-title"></h2>
-    <p id="modal-message"></p>
-    <div class="modal-buttons" id="modal-buttons"></div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+<p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC &mdash; both anchored to UTC so daylight saving never shifts them. </p>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../db.js"></script>
 <script>
 // =====================================================================
-// STORE SHIM — per-user local cache (fast loads, offline fallback).
-// Cloud (Supabase user_state) is the source of truth; cache is keyed
-// by user id so two accounts on the same device never mix.
+// CONFIG
 // =====================================================================
-const Store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
-  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+const WEEKLY_RESET_MIN_UTC = 450;   // Monday 07:30 UTC
+
+// =====================================================================
+// TIMED EVENT SCHEDULES (UTC) - shared tids with timer.html.
+// interval = minutes between spawns, offset = one anchor occurrence,
+// daily = fixed UTC minutes-past-midnight spawns, map = rotating map.
+// =====================================================================
+const EVS = {
+  nakedman:   { interval: 120, offset: 20,  map: true },
+  facehugger: { interval: 120, offset: 385 },
+  brahmance:  { interval: 120, offset: 60 },
+  witch:      { interval: 180, offset: 90 },
+  pinata:     { interval: 120, offset: 381 },
+  bigg:       { interval: 120, offset: 400 },
+  squid:      { interval: 120, offset: 300 },
+  bear:       { interval: 180, offset: 0 },
+  twatwaffle: { daily: [0, 180, 420, 690, 960, 1140] },
+  fmlife:     { interval: 180, offset: 60 },
+  family:     { interval: 120, offset: 160 },
+  furby:      { interval: 120, offset: 220, dur: 40 }
 };
 
 // =====================================================================
-// STATE + PER-USER SYNC (createUserSync lives in db.js)
-//
-// state = { logs: { "2026": { "2026-11-04": { taskId: ts } }, ... } }
-// One cloud row (key "gw2-daily-log") holds every year at once, so
-// cross-device sync covers all years without per-year polling.
+// DAILY TASKS - ev:true = tied to EVS above (slot-time stamping)
 // =====================================================================
-const KEY = "gw2-daily-log";
-let USER_ID = null;
-let currentYear = null;
+const DAILIES = [
+  { id: "nakedman",   name: "Naked Man",                   color: "#959393", zone: "",                            reward: "1 Mystic Coin and 6 unbound magic", ev: true },
+  { id: "facehugger", name: "Face Hugger",                 color: "#b5e48c", zone: "Tangled Depths",             reward: "Chance to drop a Chak Egg Sac Infusion", ev: true },
+  { id: "brahmance",  name: "Brahmance",                   color: "#2c21cc", zone: "Eye of the North",           reward: "2 g and a chance at Pristine Dragon's Left/Right Eye Infusion", ev: true },
+  { id: "talent",     name: "Pretend I have Talent",       color: "#959393", zone: "Wizard's Tower",             reward: "Xunlai Electrum/Deldrimor Steel Ingot, Spiritwood Plank, Elonian Leather" },
+  { id: "witch",      name: "Cum Stained Witch",           color: "#ff9f43", zone: "The Condom",                 reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
+  { id: "pinata",     name: "Chode Pinata",                color: "#e10ab2", zone: "Crystal Oasis",             reward: "Chance to drop Festive Confetti Infusion & Unopened Endless Choya Pinata Tonic", ev: true },
+  { id: "bigg",       name: "The Big G (Not Georgia)",     color: "#94a3ff", zone: "Janthir Syntri",             reward: "Chance to drop the Pale Branch Spear", ev: true },
+  { id: "squid",      name: "Forest Squid",                color: "#b5e48c", zone: "Auric Basin (West)",         reward: "27 chests with a chance at a Vial of Liquid Aurillium Infusion", ev: true },
+  { id: "bear",       name: "Cum Stained Bear",            color: "#94a3ff", zone: "Lowland Shores",              reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
+  { id: "twatwaffle", name: "Twatwaffle the Spineless",    color: "#9b486c", zone: "Sparkfly Fen",               reward: "2 g and a chance at an ascended chest", ev: true },
+  { id: "peasants",   name: "Rob my Peasants",             color: "#959393", zone: "Homestead",                  reward: "Daily goodies" },
+  { id: "princess",   name: "Princess",                    color: "#148eb4", zone: "Wherever the Princess is!", reward: "5 Gunk-Covered Pellets" },
+  { id: "purple",     name: "Daily Purple Shiny",          color: "#66e0ff", zone: "Trash Can (Jade Gate)",      reward: "between 4-8 Jade Runestones" },
+  { id: "frecs",      name: "Daily Frecs",                 color: "#94a3ff", zone: "Fractal Lobby",              reward: "Lot'O Gold and lootsies" },
+  { id: "fmlife",     name: "Fuck My Life for Eternity!",  color: "#e43710", zone: "Leyspring Hollows",         reward: "2 g and chance to drop Volatile Ascension Infusion", ev: true },
+  { id: "family",     name: "Family Time",                 color: "#e43710", zone: "Shipwreck Strand",          reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
+  { id: "furby",      name: "Bondage Furby",               color: "#e43710", zone: "Starlit Weald",              reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
+  { id: "vault",      name: "Daily Wizards Vault",         color: "#148eb4", zone: "Wherever my cold dead heart beats", reward: "Astral acclaim" }
+];
 
-// state held in `logs` — normalized so setState can't get junk
-let logs = {};        // { year: { date: { taskId: ts } } }
+// ---- rollover carry: kills that finish AFTER the UTC reset count for the new day ----
+const KEY_CARRY = "gw2-tracker-daily-carry";
+const ROLLOVER_MINS = { "furby": 40 };   // timers page adds: dragonstand:90, island:45, joras:~40
 
-function normalizeLogs(l) {
-  const out = {};
-  if (l && typeof l === "object" && !Array.isArray(l)) {
-    for (const y in l) {
-      if (/^\d{4}$/.test(y) && l[y] && typeof l[y] === "object") out[y] = l[y];
-    }
-  }
-  return out;
-}
-
-const sync = createUserSync({
-  key: KEY,
-  sections: ["logs"],
-  loadLocal: () => Store.get(KEY + ":" + USER_ID),
-  saveLocal: (s) => Store.set(KEY + ":" + USER_ID, s),
-  getState: () => ({ logs: logs }),
-  setState: (s) => { logs = normalizeLogs(s && s.logs); },
-  onRender: () => render(),
-  setOnline: (ok, msg) => setSync(ok, msg)
-});
-
-function save(immediate) { sync.save(immediate); }
-
-function setSync(ok, msg) {
-  const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "cloud synced ✓") : "offline — changes NOT saved";
-  el.classList.toggle("live", !!ok);
-}
-
-// =====================================================================
-// TASK NAMES + CATEGORIES — mirrors the tid values used by the tracker
-// and timer pages. Keep ids in sync if you rename/add tasks there.
-// =====================================================================
-const TASK_NAMES = {
-  // core dailies
-  nakedman: "Naked Man", facehugger: "Face Hugger", brahmance: "Brahmance",
-  talent: "Pretend I have Talent", witch: "Cum Stained Witch",
-  pinata: "Chode Pinata", bigg: "The Big G", squid: "Forest Squid",
-  bear: "Cum Stained Bear", twatwaffle: "Twatwaffle the Spineless",
-  peasants: "Rob my Peasants", princess: "Princess",
-  purple: "Daily Purple Shiny", frecs: "Daily Frecs",
-  fmlife: "Fuck My Life for Eternity!", family: "Family Time",
-  furby: "Bondage Furby", vault: "Daily Wizards Vault",
-  // world bosses
-  wb_mega: "Megadestroyer", wb_fire: "Fire Elemental",
-  wb_shatterer: "Shatterer", wb_wurm: "Jungle Wurm",
-  wb_ulgoth: "Modniir Ulgoth", wb_svanir: "Svanir Shaman Chief",
-  wb_behemoth: "Shadow Behemoth", wb_taidha: "Taidha Covington",
-  wb_golem: "Golem Mark II", wb_jormag: "Claw of Jormag",
-  tt: "Triple Trouble", karka: "Karka Queen",
-  // metas
-  depths: "Depths of Cruelty", shackles: "Shackles of Death",
-  dragonstand: "Dragonstand", nightbosses: "Night Bosses",
-  island: "The Island", lutgardis: "Lutgardis", trashcan: "Trash Can",
-  shitsnake: "Shit Snake", drakkar: "Drakkar",
-  doomlore: "Grothmar Doomlore", effigy: "Grothmar Effigy",
-  concert: "Grothmar Metal Concert", oozepits: "Grothmar Ooze Pits",
-  path: "Path to Ascension", deaddoggies: "Dead Doggies",
-  maws: "Maws of Torment", skywatch: "Skywatch",
-  octopussy: "Octopussy", titanic: "Dick'tacles",
-  turtlepower: "Turtle Power",
-  // adhoc / keys
-  wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
-  fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
-  // seasonal
-  madking: "Mad King", wintersday: "Wintersday", lny: "Lunar New Year",
-  sab: "Super Adventure Box", dragonbash: "Dragon Bash",
-  fourwinds: "Four Winds"
-};
-
-const CATEGORIES = {
-  "World Bosses": ["wb_mega","wb_fire","wb_shatterer","wb_wurm","wb_ulgoth",
-                   "wb_svanir","wb_behemoth","wb_taidha","wb_golem","wb_jormag",
-                   "tt","karka","twatwaffle"],
-  "Convergences": ["fmlife","brahmance","witch","bear"],
-  "Metas": ["family","depths","shackles","furby","nakedman","facehugger","pinata",
-            "bigg","squid","dragonstand","nightbosses","island","lutgardis",
-            "trashcan","shitsnake","drakkar","doomlore","effigy","concert",
-            "oozepits","path","deaddoggies","maws","skywatch","octopussy",
-            "titanic","turtlepower","joras"],
-  "Vault & Misc": ["wvw","talent","princess","purple","vault"],
-  "Seasonal": ["madking","wintersday","lny","sab","dragonbash","fourwinds"],
-  "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
-  "Fractals": ["frecs"]
-};
-
-const CAT_COLORS = {
-  "World Bosses": "#ff8a8a",
-  "Convergences": "#ff9f43",
-  "Metas": "#c9a0ff",
-  "Vault & Misc": "#148eb4",
-  "Seasonal": "#ebdd11",
-  "Homestead / Keys": "#7ddba3",
-  "Fractals": "#94a3ff"
-};
-
-// build reverse map task -> category
-const TASK_CAT = {};
-for (const c in CATEGORIES) for (const t of CATEGORIES[c]) TASK_CAT[t] = c;
-
-function nameOf(t) { return TASK_NAMES[t] || t; }
-
-// =====================================================================
-// YEARS — now derived from the in-memory state (the cloud row),
-// not from scanning localStorage.
-// =====================================================================
-function findYears() {
-  return Object.keys(logs).sort();
-}
-
-function loadYear(y) {
-  const log = logs[y] || {};
-  const days = Object.keys(log).sort();
-  return { log, days };
-}
-
-function render() {
-  const years = findYears();
-  const yrRow = document.getElementById("year-row");
-  yrRow.innerHTML = "";
-  years.forEach(y => {
-    const b = document.createElement("button");
-    b.className = "year-btn" + (y === currentYear ? " on" : "");
-    b.textContent = y;
-    b.onclick = () => { currentYear = y; render(); };
-    yrRow.appendChild(b);
-  });
-
-  if (years.length) {
-    const exp = document.createElement("button");
-    exp.className = "backup-btn";
-    exp.textContent = "\u2913 Export " + currentYear + " JSON";
-    exp.onclick = exportYear;
-    yrRow.appendChild(exp);
-
-    const impLabel = document.createElement("label");
-    impLabel.className = "backup-btn import";
-    impLabel.textContent = "\u2913 Import Year JSON ";
-    const impInput = document.createElement("input");
-    impInput.type = "file";
-    impInput.accept = ".json";
-    impInput.onchange = importYear;
-    impLabel.appendChild(impInput);
-    yrRow.appendChild(impLabel);
-  }
-
-  if (!years.length) {
-    document.getElementById("stat-row").innerHTML = "";
-    document.getElementById("cat-legend").innerHTML = "";
-    document.getElementById("task-bars").innerHTML =
-      "<div class='empty-msg'>No archived days yet. Do today's dailies, come back tomorrow.</div>";
-    document.getElementById("day-list").innerHTML = "";
-    clearDonut();
-
-    // still allow importing into an empty page
-    const yrRow = document.getElementById("year-row");
-    const impLabel = document.createElement("label");
-    impLabel.className = "backup-btn import";
-    impLabel.style.marginLeft = "auto";
-    impLabel.textContent = "\u2913 Import Year JSON ";
-    const impInput = document.createElement("input");
-    impInput.type = "file";
-    impInput.accept = ".json";
-    impInput.onchange = importYear;
-    impLabel.appendChild(impInput);
-    yrRow.appendChild(impLabel);
+function logDailyEv(name, tid, ev, nowMs) {
+  const slotMs = evPrevMs(ev, nowMs);          // keeps your 5-min early-click grace
+const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
+  if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
+    toggleLog(name, tid, nowMs, false, slotMs); // normal day — behaves exactly as before
     return;
   }
-
-  const { log, days } = loadYear(currentYear);
-
-  // ---- aggregate ----
-  const taskCounts = {};
-  const catCounts = {};
-  let totalCompletions = 0, totalPerDay = 0;
-  days.forEach(d => {
-    const done = log[d] || {};
-    const ids = Object.keys(done);
-    totalPerDay += ids.length;
-    ids.forEach(t => {
-      taskCounts[t] = (taskCounts[t] || 0) + 1;
-      const c = TASK_CAT[t] || "Vault & Misc";
-      catCounts[c] = (catCounts[c] || 0) + 1;
-      totalCompletions++;
-    });
-  });
-  const avg = days.length ? (totalPerDay / days.length).toFixed(1) : "0";
-
-  // ---- stat boxes ----
-  document.getElementById("stat-row").innerHTML =
-    statBox(days.length, "days archived") +
-    statBox(totalCompletions, "dailies done") +
-    statBox(avg, "avg per day") +
-    statBox(topCategory(catCounts), "top category");
-
-  // ---- donut ----
-  drawDonut(catCounts, totalCompletions);
-
-  // ---- task bars ----
-  const ranked = Object.entries(taskCounts).sort((a, b) => b[1] - a[1]);
-  const max = ranked.length ? ranked[0][1] : 1;
-  const bars = document.getElementById("task-bars");
-  bars.innerHTML = "";
-  if (!ranked.length) {
-    bars.innerHTML = "<div class='empty-msg'>No completions recorded this year.</div>";
+  let carry = loadState(KEY_CARRY) || {};
+  const newEp = dailyEpoch(creditMs);
+  if (carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
+  if (carry.done[tid] !== undefined) {
+    delete carry.done[tid];
+    flash("\u2716 unqueued: " + name);
+  } else {
+    carry.done[tid] = slotMs;
+    flash("\u2714 " + name + " finishes after reset \u2014 logged for the NEW day");
   }
-  ranked.forEach(([t, n]) => {
-    const row = document.createElement("div");
-    row.className = "bar-row";
-    const col = CAT_COLORS[TASK_CAT[t] || "Vault & Misc"];
-    row.innerHTML =
-      "<div class='bar-label' title='" + esc(nameOf(t)) + "'>" + esc(nameOf(t)) + "</div>" +
-      "<div class='bar-track'><div class='bar-fill' style='width:" +
-      (n / max * 100) + "%; background:" + col + "'></div></div>" +
-      "<div class='bar-num'>" + n + "</div>";
-    bars.appendChild(row);
-  });
-
-  // ---- day list (most recent 14) ----
-  const dl = document.getElementById("day-list");
-  dl.innerHTML = "";
-  days.slice(-14).reverse().forEach(d => {
-    const ids = Object.keys(log[d] || {});
-    const row = document.createElement("div");
-    row.className = "bar-row";
-    row.innerHTML =
-      "<div class='bar-label'>" + d + "</div>" +
-      "<div style='flex:1; color:var(--dim); font-size:0.78rem;'>" +
-      (ids.length ? ids.length + " done: " + ids.map(nameOf).join(", ") : "nothing logged") +
-      "</div>";
-    dl.appendChild(row);
-  });
-}
-
-function statBox(num, lab) {
-  return "<div class='stat-box'><div class='num'>" + num + "</div><div class='lab'>" + lab + "</div></div>";
-}
-function topCategory(cc) {
-  const e = Object.entries(cc).sort((a, b) => b[1] - a[1]);
-  return e.length ? e[0][0] : "\u2014";
-}
-function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
-
-// ---- canvas donut ----
-function drawDonut(catCounts, total) {
-  const cv = document.getElementById("donut");
-  const ctx = cv.getContext("2d");
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  const leg = document.getElementById("cat-legend");
-  leg.innerHTML = "";
-
-  const entries = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return;
-
-  const cx = cv.width / 2, cy = cv.height / 2, r = 100, w = 42;
-  let ang = -Math.PI / 2;
-  entries.forEach(([cat, n]) => {
-    const slice = (n / total) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, ang, ang + slice);
-    ctx.closePath();
-    ctx.fillStyle = CAT_COLORS[cat] || "#888";
-    ctx.fill();
-    ang += slice;
-
-    const li = document.createElement("div");
-    li.className = "li";
-    li.innerHTML = "<span class='swatch' style='background:" + (CAT_COLORS[cat] || "#888") + "'></span>" +
-      esc(cat) + " <span class='lc-n'>" + n + " (" + Math.round(n / total * 100) + "%)</span>";
-    leg.appendChild(li);
-  });
-  // punch the hole
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(cx, cy, r - w, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalCompositeOperation = "source-over";
-  // center text
-  ctx.fillStyle = "#f2eef7";
-  ctx.font = "700 26px Verdana";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(String(total), cx, cy - 8);
-  ctx.fillStyle = "#a89bbd";
-  ctx.font = "11px Verdana";
-  ctx.fillText("total", cx, cy + 14);
-}
-function clearDonut() {
-  const cv = document.getElementById("donut");
-  cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+  saveState(KEY_CARRY, carry);
 }
 
 // =====================================================================
-// BACKUP / RESTORE — per-year archive files
-// Export file shape: { year: "2026", log: { "2026-11-04": { taskId: ts } } }
-// For backwards compatibility, import also accepts a bare log object
-// (old clipboard-style dumps), inferring the year from the date keys.
-// Restores now push to the user's cloud row immediately.
+// EXTRAS - names/zones/rewards for tracker IDs logged from the
+// Event Timers page that aren't one of the 18 dailies.
+// NOTE: zone/reward here feed the tooltip and right-click details
+// panel only — the chip face itself shows just name + check + @time,
+// same as a logged daily.
 // =====================================================================
-function exportYear() {
-  const data = logs[currentYear] || {};
-  const dayCount = Object.keys(data).length;
-  if (dayCount === 0) {
-    showToast("Nothing archived for " + currentYear + " yet.");
-    return;
-  }
-  const payload = JSON.stringify({ year: currentYear, log: data }, null, 2);
-  const blob = new Blob([payload], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "gw2-dailies-" + currentYear + "-backup-" +
-    new Date().toISOString().slice(0, 10) + ".json";
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("Backup downloaded: " + dayCount + " archived days from " + currentYear + ".");
+const EXTRAS = {
+  wb_svanir:     { name: "Svanir Shaman Chief",        zone: "Wayfarer Foothills", color: "#959393" },
+  wb_fire:       { name: "Fire Elemental",             zone: "Metrica Province", color: "#959393" },
+  wb_behemoth:   { name: "Shadow Behemoth",            zone: "Queensdale", color: "#959393" },
+  wb_wurm:       { name: "Great Jungle Wurm",          zone: "Caledon Forest", color: "#959393" },
+  wb_ulgoth:     { name: "Modniir Ulgoth",             zone: "Harathi Hinterlands", color: "#959393" },
+  wb_taidha:     { name: "Admiral Taidha Covington",   zone: "Bloodtide Coast", color: "#959393" },
+  wb_shatterer:  { name: "The Shatterer",              zone: "Blazeridge Steppes", color: "#959393" },
+  wb_golem:      { name: "Inquest Golem Mark II",      zone: "Mount Maelstrom", color: "#959393" },
+  wb_mega:       { name: "Megadestroyer",              zone: "Mount Maelstrom", color: "#959393" },
+  wb_jormag:     { name: "Claw of Jormag",             zone: "Frostgorge Sound", color: "#959393" },
+  tt:            { name: "Triple Trouble",             zone: "Bloodtide Coast (Firthside Vigil)", reward: "2 g and a chance for ascended chest", color: "#959393" },
+  karka:         { name: "Karka Queen",                zone: "Southsun Cove", color: "#959393" },
+  depths:        { name: "Depths of Cruelty",          zone: "Leyspring Hollows", reward: "Ur doin it for shitz'n giggles cuz it ain't give u shit", color: "#e43710" },
+  shackles:      { name: "Shackles of the Ancients",   zone: "Eternity's Garden", reward: "Chance at Swiftwing Raptor Mount Skin or Mote of Seer Transcendence Infusion", color: "#e43710" },
+  dragonstand:   { name: "Dragon's Stand",             zone: "Dragon's Stand", color: "#b5e48c" },
+  nightbosses:   { name: "Verdant Brink Night Bosses", zone: "Verdant Brink", color: "#b5e48c" },
+  island:        { name: "Aetherblade Assault",        zone: "Sandswept Isles", color: "#66e0ff" },
+  lutgardis:     { name: "Kaineng Blackout",           zone: "New Kaineng (Lutgardis)", color: "#66e0ff" },
+  trashcan:      { name: "Gang War",                   zone: "Jade Gate", color: "#66e0ff" },
+  shitsnake:     { name: "Dragon's End",               zone: "Dragon's Fall", reward: "Chance to drop the Echo of the Dragonvoid infusion", color: "#66e0ff" },
+  drakkar:       { name: "Drakkar",                    zone: "Bjora Marches", reward: "Chance to drop Winter's Heart Infusion", color: "#2c21cc" },
+  joras:         { name: "Jora's Keep",                zone: "Bjora Marches", color: "#2c21cc"},
+  doomlore:      { name: "Doomlore Shrine",            zone: "Grothmar Valley", color: "#2c21cc" },
+  effigy:        { name: "Effigy (Ceremony of the Sacred Flame)", zone: "Grothmar Valley", color: "#2c21cc" },
+  concert:       { name: "Metal Concert",               zone: "Grothmar Valley", color: "#2c21cc" },
+  oozepits:      { name: "Ooze Pits",                  zone: "Grothmar Valley", color: "#2c21cc" },
+  path:          { name: "A Path to Ascension",        zone: "Domain of Vabbi", color: "#e10ab2" },
+  deaddoggies:   { name: "Forged With Fire",           zone: "Vabbi", reward: "Chance to drop Nightingale's Music Box", color: "#e10ab2" },
+  maws:          { name: "Maws of Torment",            zone: "The Desolation", reward: "Chance to drop Ghiwane's Music Box", color: "#e10ab2" },
+  skywatch:      { name: "Unlocking the Wizard's Tower", zone: "Skywatch (Droknar's)", color: "#ff9f43" },
+  octopussy:     { name: "Defense of Amnytas",         zone: "Amnytas", color: "#ff9f43" },
+  titanic:       { name: "A Titanic Voyage",           zone: "Isle of Janthir", color: "#94a3ff" },
+  turtlepower:   { name: "Turtle Power",               zone: "Gyala Delve (Sewers)", reward: "Runs whenever someone starts it", color: "#66e0ff" },
+  bavanisos:     { name: "Bava Nisos",                zone: "Bava Nisos", reward: "Give a Titan CANCER", color: "#94a3ff" },
+  wvw:           { name: "WvW",                        zone: "Somewhere in the Edge of the Mists", color: "#959393" },
+  warkeys:       { name: "War Supply Cache Keys",     zone: "Drizzlewood Coast", reward: "Can buy 5 per day", color: "#959393" },
+  kodankeys:     { name: "Daily Kodan Cache Keys",     zone: "Bava Nisos", reward: "Limit of 21 keys per day", color: "#959393" },
+  fractalkeys:   { name: "Deeply Discounted Fractal Keys", zone: "Fractal Lobby", reward: "Limit of 30 keys per day", color: "#959393" },
+  banditkeys:    { name: "Bandit Skeleton Key",        zone: "The Silverwastes", reward: "25 bandit crests for every 5 skeleton keys", color: "#959393" },
+  auguryrock:    { name: "Augury Rock",               zone: "Elon Riverlands", reward: "Drops JACK SHIT", color: "#e10ab2" },
+  madking:       { name: "Mad King",                   zone: "Lion's Arch / Mad King's Labyrinth", reward: "Sell the bags or open them for rare infusions", color: "#8700c0" },
+  wintersday:    { name: "Wintersday",                 zone: "Divinity's Reach / Crown Pavilion", reward: "Winter's Heart / Snow Diamond / Toy-Shell infusions", color: "#8fa8d7" },
+  lny:           { name: "Lunar New Year",             zone: "Divinity's Reach", reward: "Sell all the envelopes for gold after cheeves", color: "#ebdd11" },
+  sab:           { name: "Super Adventure Box",        zone: "Rata Sum", reward: "Farm baubles to convert for sale", color: "#08f124" },
+  dragonbash:    { name: "Dragon Bash",                zone: "Hoelbrak", reward: "Sell the dragon coffers after cheeves", color: "#eb1118" },
+  fourwinds:     { name: "Festival of the Four Winds", zone: "Crown Pavilion / Labyrinthine Cliffs", reward: "Gamble your heart away", color: "#d1c4f6" }
+};
+
+// =====================================================================
+// WEEKLIES
+// =====================================================================
+const WEEKLIES = [
+  { id: "level10",   name: "Level 10",                          objective: "Human Hunter loves Fisting In the Streets @ the Circus W/Lyssa" },
+  { id: "banners",   name: "Weekly Hero Banners",               objective: "Guild Hero Banners from Wizard's Tower and WvW" },
+  { id: "rifts",     name: "Unstable Rift Motivations",         objective: "Fuck my Life for Eternity, Cum Stained Bear & Outer Nayos" },
+  { id: "enemy",     name: "Defeat Enemy Ranks",                rotating: "Defeat Enemy Ranks" },
+  { id: "ten",       name: "Ten Events",                         objective: "Pick ten, any ten!" },
+  { id: "faction",   name: "Defeat Faction or Events/Bounties", rotating: "Defeat Faction or Events/Bounties" },
+  { id: "metaev",    name: "Meta Event",                        rotating: "Meta Event" },
+  { id: "instance",  name: "Instanced Content",                 rotating: "Instanced Content" },
+  { id: "jumping",   name: "Jumping Puzzle",                    rotating: "Jumping Puzzle" },
+  { id: "worldboss", name: "World Boss",                        rotating: "World Boss" },
+  { id: "resource",  name: "Resource Action",                   rotating: "Resource Action" }
+];
+
+// =====================================================================
+// 53-WEEK ROTATION - weeks 8-38 are blank on your sheet, so rotating
+// objectives for those weeks show a red warning BY DESIGN until you
+// fill them in (January TickTick reminder).
+// =====================================================================
+const WEEKS = {
+  1: { "Defeat Faction or Events/Bounties": "Defeat 50 Titanspawn or Elemental Enemies", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Crimson Plateau Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Shadow Behemoth World Boss or 10 Complete Events in Queensdale", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  2: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Castora or 7 Group Events", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Janthir or 15 Events in Orr", "Jumping Puzzle": "Complete the Dark Reverie Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Svanir Shaman Chief World Boss or Complete 10 Events in Wayfarer Foothills", "Resource Action": "Salvage 50 Items" },
+  3: { "Defeat Faction or Events/Bounties": "Defeat 50 Kryptis or Bandits", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Heart of Maguuma or 15 Events in Ascalon ", "Jumping Puzzle": "Complete the Fawcett's Bounty Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Inquest Golem Mark II World Boss or Complete 10 Events in Mount Maelstrom", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  4: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in Desert Highlands or 5 Group Events", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in the Crystal Desert or 15 Events in Kryta ", "Jumping Puzzle": "Complete the Grendich Gamble Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Claw of Jormag World Boss or Complete 10 Events in Frostgorge Sound", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  5: { "Defeat Faction or Events/Bounties": "Defeat 50 Jade Mechs or Inquest", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Cantha or 15 Events in Maguuma Jungle", "Jumping Puzzle": "Complete the Loreclaw Expanse Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Fire Elemental World Boss or Complete 10 Events in Metrica Province", "Resource Action": "Salvage 50 Items" },
+  6: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Horn of Maguuma or 7 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the Not So Secret Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Megadestroyer World Boss or Complete 10 Events in Mount Maelstrom", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  7: { "Defeat Faction or Events/Bounties": "Defeat 50 Forged or Flame Legion", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Pig Iron Quarry Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat Tequatl the Sunless or Complete 10 Events in Sparkfly Fen", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  39: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Castora or 7 Group Events", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in the Crystal Desert or 15 Events in Kryta", "Jumping Puzzle": "Complete the Not So Secret Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Claw of Jormag World Boss or Complete 10 Events in Frostgorge Sound", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  40: { "Defeat Faction or Events/Bounties": "Defeat 50 Kryptis or Bandits", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Cantha or 15 Events in Maguuma Jungle", "Jumping Puzzle": "Complete the Pig Iron Quarry Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Fire Elemental World Boss or Complete 10 Events in Metrica Province", "Resource Action": "Salvage 50 Items" },
+  41: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in Desert Highlands or 5 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the Professor Portmatt's Lab Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Megadestroyer World Boss or Complete 10 Events in Mount Maelstrom", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  42: { "Defeat Faction or Events/Bounties": "Defeat 50 Jade Mechs or Inquest", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Retrospective Runaround Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat Tequatl the Sunless or Complete 10 Events in Sparkfly Fen", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  43: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Horn of Maguuma or 7 Group Events", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Janthir or 15 Events in Orr", "Jumping Puzzle": "Complete the Shattered Ice Ruins Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Great Jungle Wurm World Boss or Complete 10 Events in Caledon Forest", "Resource Action": "Salvage 50 Items" },
+  44: { "Defeat Faction or Events/Bounties": "Defeat 50 Forged or Flame Legion", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Heart of Maguuma or 15 Events in Ascalon", "Jumping Puzzle": "Complete the Spekks's Laboratory Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Shatterer World Boss or Complete 10 Events in Blazeridge Steppes", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  45: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in the Domain of Vabbi or 5 Group Events", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in the Crystal Desert or 15 Events in Kryta", "Jumping Puzzle": "Complete the Tribulation Caverns Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Shadow Behemoth World Boss or 10 Complete Events in Queensdale", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  46: { "Defeat Faction or Events/Bounties": "Defeat 50 Void Enemies or Sons of Svanir", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Cantha or 15 Events in Maguuma Jungle", "Jumping Puzzle": "Complete the Weyandt's Revenge Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Svanir Shaman Chief World Boss or Complete 10 Events in Wayfarer Foothills", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  47: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in Crystal Oasis or 5 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the Skipping Stones Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Inquest Golem Mark II World Boss or Complete 10 Events in Mount Maelstrom", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  48: { "Defeat Faction or Events/Bounties": "Defeat 50 Inquest or Pirates", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Antre of Adjournment Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Claw of Jormag World Boss or Complete 10 Events in Frostgorge Sound", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  49: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Janthir or 7 Group Events", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Janthir or 15 Events in Orr", "Jumping Puzzle": "Complete the Behem Gauntlet Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Fire Elemental World Boss or Complete 10 Events in Metrica Province", "Resource Action": "Salvage 50 Items" },
+  50: { "Defeat Faction or Events/Bounties": "Defeat 50 Awakened or Risen", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Heart of Maguuma or 15 Events in Ascalon", "Jumping Puzzle": "Complete the Branded Mine Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Megadestroyer World Boss or Complete 10 Events in Mount Maelstrom", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" },
+  51: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in Elon Riverlands or 5 Group Events", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in the Crystal Desert or 15 Events in Kryta", "Jumping Puzzle": "Complete the Chaos Crystal Cavern Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat Tequatl the Sunless or Complete 10 Events in Sparkfly Fen", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
+  52: { "Defeat Faction or Events/Bounties": "Defeat 50 Mordrem or Nightmare Court", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Cantha or 15 Events in Maguuma Jungle", "Jumping Puzzle": "Complete the Coddler's Cove Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Great Jungle Wurm World Boss or Complete 10 Events in Caledon Forest", "Resource Action": "Salvage 50 Items" },
+  53: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in the Desolation or 5 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the The Collapsed Observatory Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Shatterer World Boss or Complete 10 Events in Blazeridge Steppes", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" }
+};
+
+// =====================================================================
+// SLOT-TIME ENGINE
+// =====================================================================
+const NAKED_MAPS = ["Gendarran Fields", "Timberline Falls", "Iron Marches"];
+function mod(a, n) { return ((a % n) + n) % n; }
+function nakedMap(slotMs) {
+  const h = new Date(slotMs).getUTCHours();
+  return NAKED_MAPS[mod(Math.floor(h / 2) - 2, 3)];
 }
 
-function inferYearFromLog(log) {
-  const keys = Object.keys(log);
-  if (!keys.length) return null;
-  const m = keys[0].match(/^(\d{4})-/);
-  return m ? m[1] : null;
-}
-
-function validateLog(log) {
-  if (!log || typeof log !== "object" || Array.isArray(log)) return false;
-  return Object.keys(log).every(d =>
-    /^\d{4}-\d{2}-\d{2}$/.test(d) &&
-    log[d] && typeof log[d] === "object" && !Array.isArray(log[d]));
-}
-
-async function importYear(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try {
-      const raw = JSON.parse(reader.result);
-      let year, incoming;
-
-      if (raw && typeof raw === "object" && !Array.isArray(raw) && raw.log && typeof raw.year === "string") {
-        // modern backup file
-        year = raw.year;
-        incoming = raw.log;
-      } else {
-        // legacy bare log (old clipboard dumps)
-        incoming = raw;
-        year = inferYearFromLog(incoming);
+function evPrevMs(ev, nowMs) {
+  const nowMin = nowMs / 60000;
+  // NEW: 5-minute early-click grace — stamp the upcoming slot
+  const nx = evNextMs(ev, nowMs);
+  if (nx - nowMs <= 5 * 60000) return nx;
+  if (ev.daily) {
+    const dayStart = Math.floor(nowMin / 1440) * 1440;
+    let best = -Infinity;
+    for (let d = -1; d <= 0; d++) {
+      for (let i = 0; i < ev.daily.length; i++) {
+        const cand = dayStart + d * 1440 + ev.daily[i];
+        if (cand <= nowMin && cand > best) best = cand;
       }
-
-      if (!year || !/^\d{4}$/.test(year) || !validateLog(incoming)) {
-        showToast("That file isn't a valid dailies backup. Expected a gw2-dailies YEAR export.");
-        e.target.value = "";
-        return;
-      }
-
-      const inDays = Object.keys(incoming).length;
-      const cur = logs[year] || {};
-      const curDays = Object.keys(cur).length;
-      const overlap = Object.keys(incoming).filter(d => cur[d]).length;
-
-      const details =
-        "Backup file: " + inDays + " days\n" +
-        "In your cloud archive: " + curDays + " days" +
-        (overlap ? "\nOverlap: " + overlap + " days exist in both" : "");
-
-      let mode;
-      if (curDays > 0) {
-        mode = await askChoice(
-          "Restore " + year + " archive from backup?",
-          details + "\n\nMERGE adds the backup's days on top of what's here (backup wins on overlapping days). REPLACE wipes the year and uses only the backup.",
-          [
-            { label: "MERGE", value: "MERGE", primary: true },
-            { label: "REPLACE", value: "REPLACE", destructive: true },
-            { label: "CANCEL", value: null }
-          ]
-        );
-      } else {
-        mode = await askChoice(
-          "Restore " + year + " archive from backup?",
-          details + "\n\nNo existing data for " + year + " — nothing will be overwritten.",
-          [
-            { label: "RESTORE", value: "REPLACE", primary: true },
-            { label: "CANCEL", value: null }
-          ]
-        );
-      }
-      if (mode === null || mode === undefined) { e.target.value = ""; return; }
-
-      let merged;
-      if (mode === "MERGE") {
-        merged = { ...cur };
-        for (const d in incoming) merged[d] = incoming[d]; // backup wins on overlap
-      } else if (mode === "REPLACE") {
-        merged = { ...incoming };
-      }
-
-      logs[year] = merged;
-      currentYear = year;
-      save(true);   // push to this user's cloud row immediately
-      render();
-      showToast(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
-        (mode === "MERGE" ? "merged" : "replaced") + ").");
-    } catch (err) {
-      showToast("Couldn't read that file.");
     }
-    e.target.value = "";
-  };
-  reader.readAsText(file);
-}
-
-// =====================================================================
-// MODAL — askConfirm but with any number of choices.
-// Each choice: { label, value, primary?, destructive? }
-// Resolves with the chosen value (null if cancelled/escaped/backdrop).
-// =====================================================================
-let modalResolve = null;
-
-function askChoice(title, message, choices) {
-  return new Promise(resolve => {
-    modalResolve = resolve;
-    document.getElementById("modal-title").textContent = title;
-    document.getElementById("modal-message").textContent = message;
-    const btns = document.getElementById("modal-buttons");
-    btns.innerHTML = "";
-    choices.forEach(c => {
-      const b = document.createElement("button");
-      b.textContent = c.label;
-      b.className = c.primary
-        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
-        : "modal-no";
-      b.onclick = () => closeModal(c.value);
-      btns.appendChild(b);
-    });
-    document.getElementById("modal-overlay").classList.add("open");
-  });
-}
-
-function askConfirm(title, message, destructive) {
-  return askChoice(title, message, [
-    { label: "NO", value: false },
-    { label: "YES", value: true, primary: true, destructive: !!destructive }
-  ]);
-}
-
-function closeModal(result) {
-  document.getElementById("modal-overlay").classList.remove("open");
-  if (modalResolve) { modalResolve(result); modalResolve = null; }
-}
-
-document.getElementById("modal-overlay").addEventListener("click", e => {
-  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" &&
-      document.getElementById("modal-overlay").classList.contains("open")) {
-    closeModal(null);
+    return best * 60000;
   }
-});
-
-// =====================================================================
-// TOAST
-// =====================================================================
-let toastTimer = null;
-function showToast(message) {
-  const t = document.getElementById("toast");
-  t.textContent = message;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+  const phase = mod(nowMin - ev.offset, ev.interval);
+  return (nowMin - phase) * 60000;
 }
 
-// =====================================================================
-// INIT — auth gate, migrate legacy per-year localStorage keys into
-// this user's single cloud row, then render.
-//
-// Legacy layout was one key per year: gw2-daily-log-YYYY. On first
-// load we fold every year found into the cloud row for whoever signs
-// in first on this browser; the old per-year keys are then removed so
-// they don't linger or double-import later.
-// =====================================================================
-(async function init() {
-  const session = await requireAuth();   // bounces to login if needed
-  if (!session) return;
-  USER_ID = session.user && session.user.id;
 
-  await sync.init();
-
-  // legacy migration: adopt any old gw2-daily-log-YYYY keys
-  const legacyKeys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (/^gw2-daily-log-\d{4}$/.test(k)) legacyKeys.push(k);
-  }
-  if (legacyKeys.length) {
-    let adopted = 0;
-    legacyKeys.forEach(k => {
-      const y = k.slice(-4);
-      const data = Store.get(k);
-      if (data && Object.keys(data).length) {
-        logs[y] = { ...(logs[y] || {}), ...data };  // cloud year wins on conflict
-        adopted++;
+function evNextMs(ev, nowMs) {
+  const nowMin = nowMs / 60000;
+  if (ev.daily) {
+    const dayStart = Math.floor(nowMin / 1440) * 1440;
+    let best = Infinity;
+    for (let d = 0; d <= 1; d++) {
+      for (let i = 0; i < ev.daily.length; i++) {
+        const delta = dayStart + d * 1440 + ev.daily[i] - nowMin;
+        if (delta >= 0 && delta < best) best = delta;
       }
-    });
-    if (adopted) {
-      save(true);   // push migrated years to the cloud immediately
-      legacyKeys.forEach(k => localStorage.removeItem(k));
+    }
+    return nowMs + best * 60000;
+  }
+  const phase = mod(nowMin - ev.offset, ev.interval);
+  return (nowMin - phase + ev.interval) * 60000;
+}
+
+// =====================================================================
+// CLOCK HELPERS
+// =====================================================================
+function fmtClock(ms) {
+  const d = new Date(ms);
+  let h = d.getHours() % 12; if (h === 0) h = 12;
+  const ampm = d.getHours() >= 12 ? "PM" : "AM";
+  return h + ":" + String(d.getMinutes()).padStart(2, "0") + " " + ampm;
+}
+function fmtDur(msLeft) {
+  const totalMin = Math.max(0, Math.floor(msLeft / 60000));
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  if (d > 0) return d + "d " + h + "hr " + m + "m";
+  if (h > 0) return h + "hr " + m + "m";
+  return m + "m";
+}
+function isoWeek(nowMs) {
+  const d = new Date(nowMs);
+  const u = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  u.setUTCDate(u.getUTCDate() + 4 - (u.getUTCDay() || 7));
+  const ys = new Date(Date.UTC(u.getUTCFullYear(), 0, 1));
+  return Math.ceil((((u - ys) / 86400000) + 1) / 7);
+}
+function nextDailyReset(nowMs) {
+  const d = new Date(nowMs);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
+}
+function nextWeeklyReset(nowMs) {
+  const d = new Date(nowMs);
+  const todayStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const daysToMonday = mod(1 - new Date(todayStart).getUTCDay(), 7);
+  let t = todayStart + daysToMonday * 86400000 + WEEKLY_RESET_MIN_UTC * 60000;
+  if (t <= nowMs) t += 7 * 86400000;
+  return t;
+}
+
+// =====================================================================
+// STATE
+// =====================================================================
+const KEY_DAILY  = "gw2-tracker-daily";
+const KEY_WEEKLY = "gw2-tracker-weekly";
+
+function dailyEpoch(nowMs) { return Math.floor(nowMs / 86400000); }
+function weeklyEpoch(nowMs) {
+  const WEEK_MS = 7 * 86400000;
+  const WEEKLY_ANCHOR = 4 * 86400000 + WEEKLY_RESET_MIN_UTC * 60000;
+  return Math.floor((nowMs - WEEKLY_ANCHOR) / WEEK_MS);
+}
+function loadState(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; }
+}
+function saveState(key, state) { localStorage.setItem(key, JSON.stringify(state)); }
+
+function getFreshState(key, epoch) {
+  let s = loadState(key);
+  if (!s || s.epoch !== epoch) {
+    if (key === KEY_DAILY) archiveYesterday(s);
+    s = { epoch: epoch, done: {} };
+    if (key === KEY_DAILY) {
+      const carry = loadState(KEY_CARRY);
+      if (carry && carry.epoch === epoch) {
+        for (const tid in carry.done) {
+          if (s.done[tid] === undefined) s.done[tid] = carry.done[tid];
+        }
+        saveState(KEY_CARRY, { epoch: epoch, done: {} });  // consume it
+      }
+    }
+    saveState(key, s);
+  }
+  if (!s.done) s.done = {};
+  return s;
+}
+
+   // --- DAILY HISTORY ARCHIVE (feeds misc history page) ---
+   // Called only when the daily state's epoch has rolled over,
+   // meaning the previous day (and its completions) is now closed out.
+   function archiveYesterday(oldState) {
+     if (!oldState || !oldState.done) return;
+     const dayIds = Object.keys(oldState.done);
+     if (!dayIds.length) return;            // nothing was done; skip
+     // The timestamps ARE from the day being archived, so date from them.
+     const firstMs = Math.min(...dayIds.map(id => oldState.done[id]));
+     const d = new Date(firstMs);
+     const dayKey = d.getUTCFullYear() + "-" +
+       String(d.getUTCMonth() + 1).padStart(2, "0") + "-" +
+       String(d.getUTCDate()).padStart(2, "0");
+     const yearKey = "gw2-daily-log-" + d.getUTCFullYear();
+     let yearLog = {};
+     try { yearLog = JSON.parse(localStorage.getItem(yearKey)) || {}; } catch (e) {}
+     // store the whole done-map: { taskId: completionTimestamp }
+     yearLog[dayKey] = oldState.done;
+     localStorage.setItem(yearKey, JSON.stringify(yearLog));
+   }
+
+// returns the recorded timestamp for a task, or undefined
+function loggedStamp(tid, nowMs, isWeekly) {
+  const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
+  const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
+  return getFreshState(key, ep).done[tid];
+}
+
+function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
+  const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
+  const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
+  const s = getFreshState(key, ep);
+  if (s.done[tid] !== undefined) {
+    delete s.done[tid];
+    flash("\u2716 unlogged: " + name);
+  } else {
+    s.done[tid] = (stampMs !== undefined ? stampMs : Date.now());
+    flash("\u2714 logged: " + name + " @ " + fmtClock(s.done[tid]));
+  }
+  saveState(key, s);
+}
+
+// =====================================================================
+// FLASH TOAST
+// =====================================================================
+let flashTimer = null;
+function flash(msg) {
+  const el = document.getElementById("flash-msg");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+// =====================================================================
+// INFO PANEL (right-click)
+// =====================================================================
+let infoTask = null;
+
+function openInfo(task, evt, isWeekly) {
+  infoTask = { t: task, isWeekly: isWeekly };
+  const now = Date.now();
+  const panel = document.getElementById("info-panel");
+
+  document.getElementById("info-name").textContent = task.name;
+
+  const lines = document.getElementById("info-lines");
+  lines.innerHTML = "";
+
+  function line(html, cls) {
+    const div = document.createElement("div");
+    div.className = "info-line" + (cls ? " " + cls : "");
+    div.innerHTML = html;
+    lines.appendChild(div);
+  }
+
+  // zone
+  if (task.zone) line('<span class="lab">Where:</span> <b>' + task.zone + '</b>');
+
+  // reward
+  if (task.reward) line('<span class="lab">Reward:</span> ' + task.reward);
+
+  // weekly objective (static or rotating)
+  if (isWeekly) {
+    if (task.rotating) {
+      const wk = isoWeek(now);
+      const weekData = WEEKS[wk] || null;
+      const text = weekData ? weekData[task.rotating] : null;
+      if (text) {
+        line('<span class="lab">This week (' + wk + '):</span> ' + text);
+      } else {
+        // BY DESIGN: red warning until blank weeks are filled in
+        line('no objective listed for week ' + wk + ' yet (blank weeks in your sheet)', 'missing');
+      }
+    } else if (task.objective) {
+      line('<span class="lab">Objective:</span> ' + task.objective);
     }
   }
 
-  const yrs = findYears();
-  currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
+  // "picked up today" ghosts aren't part of the regular rotation
+  if (task.isGhost) {
+    line('<span class="lab">Picked up today</span> \u2014 logged from the Event Timers page; vanishes at the daily reset.');
+  }
+
+  // daily timed schedule info
+  const ev = (!isWeekly && task.ev) ? EVS[task.id] : null;
+  if (ev) {
+    const pat = ev.daily
+      ? "fixed daily spawns (UTC)"
+      : "every " + (ev.interval / 60) + " hours";
+    line('<span class="lab">Schedule:</span> ' + pat + (ev.map ? " \u00B7 rotates: " + NAKED_MAPS.join(" \u2192 ") : ""));
+  }
+
+  // stamp / next spawn
+  const ts = loggedStamp(task.id, now, isWeekly);
+  const ok = typeof ts === "number" && !isNaN(ts);
+  if (ok) {
+    let stampTxt;
+    if (isWeekly) {
+      const d = new Date(ts);
+      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      stampTxt = "done " + days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() +
+                 " @ " + fmtClock(ts);
+    } else {
+      stampTxt = "done @ " + fmtClock(ts);
+    }
+    if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
+    if (ev) stampTxt += "  (yesterday)";
+    line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
+    } else if (ev) {
+    const nx = evNextMs(ev, now);
+    let nextTxt = "next @ " + fmtClock(nx);
+    if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
+    line('<span class="lab">Status:</span> ' + nextTxt);
+  }
+
+  panel.classList.add("open");
+
+  const chipEl = evt && evt.currentTarget ? evt.currentTarget : null;
+  if (chipEl) {
+    const r = chipEl.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const pw = panel.offsetWidth, ph = panel.offsetHeight;
+    let y = r.bottom + 10;
+    if (y + ph > vh - 14) y = Math.max(14, r.top - ph - 10);
+    let x = r.left;
+    if (x + pw > vw - 14) x = Math.max(14, vw - pw - 14);
+    panel.style.left = x + "px";
+    panel.style.top = y + "px";
+  }
+}
+function closeInfo() {
+  infoTask = null;
+  document.getElementById("info-panel").classList.remove("open");
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeInfo(); });
+
+// =====================================================================
+// CHIP BUILDERS
+// =====================================================================
+function esc(s) { return String(s).replace(/"/g, "&quot;"); }
+
+function tooltipFor(task, isWeekly, nowMs) {
+  let tip = task.name;
+  if (task.zone) tip += "\nWhere: " + task.zone;
+  if (task.reward) tip += "\nReward: " + task.reward;
+  if (isWeekly && task.rotating) {
+    const wk = isoWeek(nowMs);
+    const wd = WEEKS[wk] || null;
+    tip += wd && wd[task.rotating]
+      ? "\nThis week (" + wk + "): " + wd[task.rotating]
+      : "\n!! no objective listed for week " + wk + " (fill it in)";
+  } else if (isWeekly && task.objective) {
+    tip += "\nObjective: " + task.objective;
+  }
+  tip += "\nLeft-click: toggle done. Right-click: details.";
+  return tip;
+}
+
+function renderDailyChips(now) {
+  const roster = document.getElementById("roster-daily");
+  roster.innerHTML = "";
+  const s = getFreshState(KEY_DAILY, dailyEpoch(now));
+
+  DAILIES.forEach(t => {
+    const ts = s.done[t.id];
+    const ev = t.ev ? EVS[t.id] : null;
+
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (ts !== undefined ? " logged" : "");
+
+    let inner = '<span class="dot" style="background:' + t.color + '"></span>' + t.name;
+    if (ts !== undefined) {
+      let stampTxt = fmtClock(ts);
+      if (t.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
+      inner += ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + stampTxt + '</span>';
+      if (dailyEpoch(ts) < dailyEpoch(now)) {
+        inner += ' <span class="chip-cd" style="color:var(--accent2)">(yesterday)</span>';
+    }  
+    } else if (ev) {
+      const nowMin = now / 60000;
+      const since = ((nowMin - ev.offset) % ev.interval + ev.interval) % ev.interval;
+      if (since < 15) {
+        inner += ' <span class="chip-cd" style="color:var(--now);font-weight:700">Active NOW</span>';
+      } else {
+        const nx = evNextMs(ev, now);
+        let nextTxt = "next @ " + fmtClock(nx);
+        if (t.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
+        inner += ' <span class="chip-cd">' + nextTxt + '</span>';
+      }
+    } else if (t.zone) {
+      inner += ' <span class="chip-zone">@ ' + t.zone + '</span>';
+    }
+    chip.innerHTML = inner;
+    chip.title = tooltipFor(t, false, now);
+
+chip.onclick = e => {
+  e.preventDefault();
+  if (ev && ROLLOVER_MINS[t.id]) {
+    logDailyEv(t.name, t.id, ev, Date.now());
+  } else {
+    const stamp = ev ? evPrevMs(ev, Date.now()) : undefined;
+    toggleLog(t.name, t.id, Date.now(), false, stamp);
+  }
   render();
-})();
+};
+chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, false); };
+roster.appendChild(chip);
+});
+
+  return Object.keys(s.done).filter(k => DAILIES.some(d => d.id === k)).length + " of " + DAILIES.length + " done";
+}
+
+function renderGhosts(now) {
+  const block = document.getElementById("ghost-block");
+  block.innerHTML = "";
+  const s = getFreshState(KEY_DAILY, dailyEpoch(now));
+
+  const dailyIds = {};
+  DAILIES.forEach(t => { dailyIds[t.id] = true; });
+
+  const ghosts = Object.keys(s.done)
+    .filter(tid => !dailyIds[tid])
+    .map(tid => ({ tid: tid, ts: s.done[tid] }))
+    .sort((a, b) => a.ts - b.ts);
+
+  if (ghosts.length === 0) return;
+
+  const roster = document.createElement("div");
+  roster.className = "roster";
+  block.appendChild(roster);
+
+  ghosts.forEach(g => {
+    const x = EXTRAS[g.tid] || { name: g.tid, zone: "logged from Event Timers" };
+
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip ghost logged";
+
+    // Same face as a logged daily: dot + name + check + @time.
+    // Zone/reward live in the tooltip and right-click details.
+  let inner = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' + x.name +
+                ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + fmtClock(g.ts) + '</span>';
+    chip.innerHTML = inner;
+
+    let tip = x.name + "\nWhere: " + (x.zone || "?");
+    if (x.reward) tip += "\nReward: " + x.reward;
+    tip += "\nLeft-click: toggle done. Right-click: details.";
+    chip.title = tip;
+
+    // minimal task object so ghosts reuse the daily details panel
+    const ghostTask = {
+      id: g.tid,
+      name: x.name,
+      zone: x.zone || "",
+      reward: x.reward || "",
+      isGhost: true
+    };
+
+    chip.onclick = e => {
+      e.preventDefault();
+      toggleLog(x.name, g.tid, Date.now(), false);
+      render();
+    };
+    chip.oncontextmenu = e => { e.preventDefault(); openInfo(ghostTask, e, false); };
+    roster.appendChild(chip);
+  });
+}
+
+function renderWeeklyChips(now) {
+  const roster = document.getElementById("roster-weekly");
+  roster.innerHTML = "";
+  const s = getFreshState(KEY_WEEKLY, weeklyEpoch(now));
+  const wk = isoWeek(now);
+  const weekData = WEEKS[wk] || null;
+
+  let doneCount = 0;
+  WEEKLIES.forEach(t => {
+    const ts = s.done[t.id];
+    if (ts !== undefined) doneCount++;
+
+    const missing = t.rotating && !(weekData && weekData[t.rotating]);
+
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (ts !== undefined ? " logged" : "") + (missing ? " warn" : "");
+
+let inner = '<span class="dot" style="background:#148eb4"></span>' + t.name;
+if (ts !== undefined) {
+  inner += ' <span class="tick">\u2713</span>';
+} else if (missing) {
+  inner += ' <span class="warn-flag">no objective for wk ' + wk + '</span>';
+}
+chip.innerHTML = inner;
+chip.title = tooltipFor(t, true, now);
+
+    chip.onclick = e => {
+      e.preventDefault();
+      toggleLog(t.name, t.id, Date.now(), true);
+      render();
+    };
+    chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, true); };
+    roster.appendChild(chip);
+  });
+
+  const pct = WEEKLIES.length ? (doneCount / WEEKLIES.length) * 100 : 0;
+  const bar = document.getElementById("weekly-bar");
+  bar.style.width = pct + "%";
+  bar.className = "progress-inner" + (pct === 100 ? " full" : "");
+
+  return { done: doneCount, total: WEEKLIES.length };
+}
+
+// =====================================================================
+// MAIN RENDER
+// =====================================================================
+function render() {
+  const now = Date.now();
+  document.getElementById("clock-now").textContent = fmtClock(now);
+
+  const dMeta = renderDailyChips(now);
+  document.getElementById("daily-meta").innerHTML =
+    dMeta + " \u00B7 resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
+
+  renderGhosts(now);
+
+  const w = renderWeeklyChips(now);
+  document.getElementById("weekly-meta").innerHTML =
+    "Week " + isoWeek(now) + " \u00B7 " + w.done + " of " + w.total + " done" +
+    " \u00B7 resets in <b>" + fmtDur(nextWeeklyReset(now) - now) + "</b>";
+}
+
+
+render();
+setInterval(render, 1000);
 </script>
 
 </body>
