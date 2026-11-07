@@ -54,6 +54,8 @@
     color: var(--bg);
     border-color: var(--accent);
   }
+  .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
   
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
 
@@ -152,6 +154,7 @@
 <div class="top">
   <h1>Daily &amp; Weekly Tracker</h1>
   <nav class="nav-bar">
+    <span class="sync-note" id="sync-note">connecting…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
     <a href="misc.html" class="nav-btn">Misc</a>
@@ -186,6 +189,8 @@
 
 <p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC &mdash; both anchored to UTC so daylight saving never shifts them. </p>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
 // =====================================================================
 // CONFIG
@@ -237,6 +242,10 @@ const DAILIES = [
 ];
 
 // ---- rollover carry: kills that finish AFTER the UTC reset count for the new day ----
+// ---- state row keys (legacy bridge + internal routing) ----
+// (KEY_CARRY is declared up top, next to ROLLOVER_MINS — don't duplicate it)
+const KEY_DAILY  = "gw2-tracker-daily";
+const KEY_WEEKLY = "gw2-tracker-weekly";
 const KEY_CARRY = "gw2-tracker-daily-carry";
 const ROLLOVER_MINS = { "furby": 40 };   // timers page adds: dragonstand:90, island:45, joras:~40
 
@@ -449,11 +458,130 @@ function nextWeeklyReset(nowMs) {
   return t;
 }
 
+
 // =====================================================================
-// STATE
+// PER-USER CLOUD SYNC — THREE rows now:
+//   gw2-tracker-daily   = daily + carry  (SHARED ROW with timer.html!)
+//   gw2-tracker-weekly  = weeklies      (own row)
+//   gw2-daily-log       = history archive (same row as History page)
+// The daily row MUST keep the key "gw2-tracker-daily" so the Event
+// Timer page and this page read/write the SAME state (ghost chips!).
 // =====================================================================
-const KEY_DAILY  = "gw2-tracker-daily";
-const KEY_WEEKLY = "gw2-tracker-weekly";
+const Store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+const DAILY_CLOUD_KEY   = "gw2-tracker-daily";     // shared with timer.html
+const WEEKLY_CLOUD_KEY  = "gw2-tracker-weekly";
+const HISTORY_CLOUD_KEY = "gw2-daily-log";
+let USER_ID = null;
+let dailyState   = { daily: null, carry: null };
+let weeklyState  = { weekly: null };
+let historyLogs = {};
+let historyUpdatedAt = {};
+let dailyOnline = false;
+let weeklyOnline = false;
+let historyOnline = false;
+let historySyncReady = false;
+
+function normalizeDailyState(s) {
+  s = s || {};
+  return {
+    daily: s.daily || null,
+    carry: s.carry || null,
+    updatedAt: s.updatedAt || {}
+  };
+}
+function normalizeWeeklyState(s) {
+  s = s || {};
+  return {
+    weekly: s.weekly || null,
+    updatedAt: s.updatedAt || {}
+  };
+}
+function normalizeHistoryLogs(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function updateSyncNote() {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  const ok = dailyOnline && weeklyOnline && historyOnline;
+  el.textContent = ok ? "cloud synced \u2713" : "offline \u2014 changes NOT saved";
+  el.classList.toggle("live", ok);
+}
+function setDailySync(ok)   { dailyOnline = !!ok; updateSyncNote(); }
+function setWeeklySync(ok)  { weeklyOnline = !!ok; updateSyncNote(); }
+function setHistorySync(ok) { historyOnline = !!ok; updateSyncNote(); }
+
+// ---- DAILY + CARRY: same row the Event Timer writes to ----
+const dailySync = createUserSync({
+  key: DAILY_CLOUD_KEY,
+  sections: ["daily", "carry"],
+  // First signed-in user on this browser adopts the old shared
+  // localStorage keys (legacy bridge from timer.html) into their own
+  // per-user cache. Cloud is merged on top by sync.init().
+  loadLocal: () => {
+    const cached = Store.get(DAILY_CLOUD_KEY + ":" + USER_ID);
+    if (cached) return normalizeDailyState(cached);
+    return normalizeDailyState({
+      daily: Store.get(KEY_DAILY),
+      carry: Store.get(KEY_CARRY)
+    });
+  },
+  saveLocal: value => Store.set(DAILY_CLOUD_KEY + ":" + USER_ID, value),
+  getState: () => dailyState,
+  setState: value => { dailyState = normalizeDailyState(value); },
+  onRender: () => render(),
+  setOnline: setDailySync
+});
+
+// ---- WEEKLIES: own row ----
+const weeklySync = createUserSync({
+  key: WEEKLY_CLOUD_KEY,
+  sections: ["weekly"],
+  loadLocal: () => {
+    const cached = Store.get(WEEKLY_CLOUD_KEY + ":" + USER_ID);
+    return cached ? normalizeWeeklyState(cached)
+                  : normalizeWeeklyState({ weekly: Store.get(KEY_WEEKLY) });
+  },
+  saveLocal: value => Store.set(WEEKLY_CLOUD_KEY + ":" + USER_ID, value),
+  getState: () => weeklyState,
+  setState: value => { weeklyState = normalizeWeeklyState(value); },
+  onRender: () => render(),
+  setOnline: setWeeklySync
+});
+
+// ---- HISTORY ARCHIVE: same row as the Dailies History page ----
+const historySync = createUserSync({
+  key: HISTORY_CLOUD_KEY,
+  sections: ["logs"],
+  loadLocal: () => ({ logs: normalizeHistoryLogs(Store.get(HISTORY_CLOUD_KEY + ":" + USER_ID)?.logs) }),
+  saveLocal: value => Store.set(HISTORY_CLOUD_KEY + ":" + USER_ID, value),
+  getState: () => ({ logs: historyLogs, updatedAt: historyUpdatedAt }),
+  setState: value => {
+    historyLogs = normalizeHistoryLogs(value && value.logs);
+    historyUpdatedAt = (value && value.updatedAt) || {};
+  },
+  setOnline: setHistorySync
+});
+
+// ---- State routing: pages keep calling loadState/saveState ----
+function loadState(key) {
+  if (key === KEY_DAILY) return dailyState.daily;
+  if (key === KEY_CARRY) return dailyState.carry;
+  if (key === KEY_WEEKLY) return weeklyState.weekly;
+  return null;
+}
+function saveState(key, value) {
+  if (key === KEY_DAILY || key === KEY_CARRY) {
+    if (key === KEY_DAILY) dailyState.daily = value;
+    else dailyState.carry = value;
+    dailySync.save();
+  } else if (key === KEY_WEEKLY) {
+    weeklyState.weekly = value;
+    weeklySync.save();
+  }
+}
 
 function dailyEpoch(nowMs) { return Math.floor(nowMs / 86400000); }
 function weeklyEpoch(nowMs) {
@@ -461,51 +589,42 @@ function weeklyEpoch(nowMs) {
   const WEEKLY_ANCHOR = 4 * 86400000 + WEEKLY_RESET_MIN_UTC * 60000;
   return Math.floor((nowMs - WEEKLY_ANCHOR) / WEEK_MS);
 }
-function loadState(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; }
-}
-function saveState(key, state) { localStorage.setItem(key, JSON.stringify(state)); }
 
 function getFreshState(key, epoch) {
-  let s = loadState(key);
-  if (!s || s.epoch !== epoch) {
-    if (key === KEY_DAILY) archiveYesterday(s);
-    s = { epoch: epoch, done: {} };
+  let state = loadState(key);
+  if (!state || state.epoch !== epoch) {
+    if (key === KEY_DAILY) archiveYesterday(state);
+    state = { epoch: epoch, done: {} };
     if (key === KEY_DAILY) {
       const carry = loadState(KEY_CARRY);
       if (carry && carry.epoch === epoch) {
-        for (const tid in carry.done) {
-          if (s.done[tid] === undefined) s.done[tid] = carry.done[tid];
+        for (const tid in (carry.done || {})) {
+          if (state.done[tid] === undefined) state.done[tid] = carry.done[tid];
         }
-        saveState(KEY_CARRY, { epoch: epoch, done: {} });  // consume it
+        saveState(KEY_CARRY, { epoch: epoch, done: {} }); // consume carry
       }
     }
-    saveState(key, s);
+    saveState(key, state);
   }
-  if (!s.done) s.done = {};
-  return s;
+  if (!state.done || typeof state.done !== "object") state.done = {};
+  return state;
 }
 
-   // --- DAILY HISTORY ARCHIVE (feeds misc history page) ---
-   // Called only when the daily state's epoch has rolled over,
-   // meaning the previous day (and its completions) is now closed out.
-   function archiveYesterday(oldState) {
-     if (!oldState || !oldState.done) return;
-     const dayIds = Object.keys(oldState.done);
-     if (!dayIds.length) return;            // nothing was done; skip
-     // The timestamps ARE from the day being archived, so date from them.
-     const firstMs = Math.min(...dayIds.map(id => oldState.done[id]));
-     const d = new Date(firstMs);
-     const dayKey = d.getUTCFullYear() + "-" +
-       String(d.getUTCMonth() + 1).padStart(2, "0") + "-" +
-       String(d.getUTCDate()).padStart(2, "0");
-     const yearKey = "gw2-daily-log-" + d.getUTCFullYear();
-     let yearLog = {};
-     try { yearLog = JSON.parse(localStorage.getItem(yearKey)) || {}; } catch (e) {}
-     // store the whole done-map: { taskId: completionTimestamp }
-     yearLog[dayKey] = oldState.done;
-     localStorage.setItem(yearKey, JSON.stringify(yearLog));
-   }
+// Archive completed dailies into the same {logs:{year:{date:{taskId:ts}}}}
+// structure used by history.html, then push through its existing sync key.
+function archiveYesterday(oldState) {
+  if (!oldState || !oldState.done) return;
+  const taskIds = Object.keys(oldState.done);
+  if (!taskIds.length) return;
+  const firstMs = Math.min(...taskIds.map(id => oldState.done[id]).filter(Number.isFinite));
+  if (!Number.isFinite(firstMs)) return;
+  const date = new Date(firstMs);
+  const year = String(date.getUTCFullYear());
+  const dayKey = year + "-" + String(date.getUTCMonth() + 1).padStart(2, "0") + "-" + String(date.getUTCDate()).padStart(2, "0");
+  historyLogs[year] = historyLogs[year] || {};
+  historyLogs[year][dayKey] = { ...oldState.done };
+  if (historySyncReady) historySync.save();
+}
 
 // returns the recorded timestamp for a task, or undefined
 function loggedStamp(tid, nowMs, isWeekly) {
@@ -841,8 +960,50 @@ function render() {
 }
 
 
-render();
-setInterval(render, 1000);
+// =====================================================================
+// INIT — authenticate, adopt legacy browser data for this account,
+// load both existing cloud records, migrate archived year keys, render.
+// =====================================================================
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+  if (!USER_ID) return;
+
+
+  // Load History first so a daily rollover can safely append to its logs.
+  await dailySync.init();
+  await weeklySync.init();
+  await historySync.init();
+  historySyncReady = true;
+
+
+  // Migrate History's former one-key-per-year browser archive into the
+  // existing per-user History cache/cloud row. Never overwrite a day
+  // already present in the cloud record.
+  const legacyYearKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (/^gw2-daily-log-\d{4}$/.test(key)) legacyYearKeys.push(key);
+  }
+  let adoptedYears = false;
+  for (const key of legacyYearKeys) {
+    const year = key.slice(-4);
+    const legacyYear = Store.get(key);
+    if (legacyYear && typeof legacyYear === "object") {
+      historyLogs[year] = historyLogs[year] || {};
+      for (const day of Object.keys(legacyYear)) {
+        if (!historyLogs[year][day]) historyLogs[year][day] = legacyYear[day];
+      }
+      adoptedYears = true;
+    }
+  }
+  if (adoptedYears) historySync.save(true);
+  if (adoptedYears && legacyYearKeys.length) legacyYearKeys.forEach(key => localStorage.removeItem(key));
+
+  render();
+  setInterval(render, 1000);
+})();
 </script>
 
 </body>

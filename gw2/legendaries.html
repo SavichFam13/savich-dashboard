@@ -330,7 +330,7 @@ document.addEventListener("keydown", e => {
 // templates never breaks saved legends.
 // =====================================================================
 const TEMPLATES = {
-  "vision": {
+  "Vision": {
     label: "Vision (accessory) — FULL RECIPE",
     hint: "Vision I & II achievements, then Glimpse via Gift of Prescience, Gift of Arid Mastery, and Mystic Tribute.",
     phases: [
@@ -423,7 +423,7 @@ const TEMPLATES = {
                 { label: "Fang", qty: "100x" } ]} ]} ]} ]} ]}
     ]
   },
-  "aurora": {
+  "Aurora": {
     label: "Aurora (accessory) — FULL RECIPE",
     hint: "Four achievements → Gleam of Sentience → Sentient Seed, the six Hero collections, 21 Electrum infusions, then Spark of Sentience via three big gifts.",
     phases: [
@@ -549,7 +549,7 @@ const TEMPLATES = {
               { label: "Fang", qty: "100x" } ]} ]} ]} ]}
     ]
   },
-  "fang": {
+  "Fang": {
     label: "Dragon's Fang / Primordus Fang (Gen 3 sword) — FULL RECIPE",
     hint: "Dragon's Fang precursor, Gift of Jade Mastery, Draconic Tribute, Gift of Aurene's Fang, plus the Aurene's Facet of Fire collection for the empowered skin.",
     phases: [
@@ -745,7 +745,6 @@ const TEMPLATES = {
   },
   "accessory-other": {
     label: "Other Accessory/Ring/Back (Coalescence, Infinity...) — outline",
-    hint: "Generic Living World / PoF / EoD outline. If you want the FULL recipe for one of these (like Vision and Aurora have), tell Lumo and it gets added.",
     phases: [
       { title: "Prerequisites", sub: "", items: [
         { label: "Complete prerequisite story/achievements" } ]},
@@ -768,8 +767,8 @@ const TEMPLATES = {
 // full-recipe template. Keys are lowercase substrings.
 // =====================================================================
 const NAME_MATCH = [
-  { keys: ["vision", "glimpse"], tpl: "vision" },
-  { keys: ["aurora", "spark of sentience"], tpl: "aurora" },
+  { keys: ["Vision", "glimpse"], tpl: "Vision" },
+  { keys: ["Aurora", "spark of sentience"], tpl: "Aurora" },
   { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
   { keys: ["coalescence", "infinity"], tpl: "accessory-other" },
   { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" }
