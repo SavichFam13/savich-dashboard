@@ -1099,6 +1099,13 @@ tplSel.onchange = () => {
 autoMatch();
 updHint();
 
+function titleCase(str) {
+  const minor = ["of", "the", "and", "for", "to", "in", "a", "an", "at", "on", "vs"];
+  return str.toLowerCase().split(/\s+/).map((w, i) =>
+    (i > 0 && minor.includes(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)
+  ).join(" ");
+}
+
 function addLegend() {
   const name = nameEl.value.trim();
   if (!name) return;
@@ -1107,7 +1114,7 @@ function addLegend() {
   if (!tpl) return;               // never add from a broken dropdown state
   const phases = snapshot(tpl.phases);
   phases[0].open = true;
-  legs.unshift({ id: "l" + Date.now(), name: name, kind: tpl.label, phases: phases });
+  legs.unshift({ id: "l" + Date.now(), name: titleCase(name), kind: tpl.label, phases: phases });
   nameEl.value = "";
   // reset the form so the next entry can't inherit this template by accident
   matchNote.classList.remove("show");
@@ -1130,6 +1137,7 @@ function delLegend(li) {
     }
   });
 }
+
 
 function toggleAt(li, pi, path, checked) {
   const arr = legs[li].phases[pi].items;
