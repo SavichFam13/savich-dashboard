@@ -733,7 +733,7 @@ function openInfo(task, evt, isWeekly) {
       stampTxt = "done @ " + fmtClock(ts);
     }
     if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
-    if (ev) stampTxt += "  (yesterday)";
+    if (!isWeekly && dailyEpoch(ts) < dailyEpoch(now)) stampTxt += "  (yesterday)";
     line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
     } else if (ev) {
     const nx = evNextMs(ev, now);
