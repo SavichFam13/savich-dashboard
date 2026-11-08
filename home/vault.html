@@ -96,6 +96,18 @@
     font-family: inherit; cursor: pointer;
   }
   button.danger:hover { border-color: var(--bad); color: var(--bad); }
+  .row-del {
+  background: none; border: 1px solid var(--border); color: var(--dim);
+  border-radius: 4px; cursor: pointer; padding: 2px 8px;
+  font-size: 0.72rem; font-family: inherit;
+  }
+  .row-del:hover { border-color: var(--bad); color: var(--bad); }
+  button.quiet {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    padding: 6px 14px; border-radius: 8px; font-size: 0.78rem;
+    font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+ button.quiet:hover { border-color: var(--accent2); color: var(--accent2); }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
   th {
@@ -242,19 +254,20 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="danger" onclick="exportHistory()">Export Backup</button>
-      <button class="danger" onclick="document.getElementById('import-file').click()">Import Backup</button>
-      <button class="danger" id="btn-clear-history" onclick="clearHistory()">Clear All History</button>
+      <button class="quiet" onclick="exportHistory()">Export Backup</button>
+      <button class="quiet" onclick="document.getElementById('import-file').click()">Import Backup</button>
+      <button class="quiet" id="btn-clear-history" onclick="clearHistory()">Clear All History</button>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
+  
   <table>
     <thead>
       <tr>
         <th style="width:120px;">Date</th>
         <th style="width:150px;" class="transfer">Extra Savings</th>
         <th style="width:100px;" class="transfer">Vaults</th>
-        <th style="width:60px;"></th>
+        <th style="width:90px;"></th>
       </tr>
     </thead>
     <tbody id="history-body"></tbody>
@@ -604,7 +617,12 @@ function renderHistory() {
       "<td>" + (m + "/" + d + "/" + y) + "</td>" +
       '<td class="transfer">' + money(row.amount) + "</td>" +
       '<td class="transfer">' + (row.entries ? row.entries.length : 0) + "</td>" +
-      '<td style="color:var(--dim); font-size:0.75rem;">&#9662;</td>';
+      '<td style="white-space:nowrap; text-align:right;">' +
+        '<span style="color:var(--dim); font-size:0.75rem;">&#9662;</span>' +
+        (IS_ADMIN
+          ? '<button class="row-del" title="Delete this cycle" onclick="event.stopPropagation(); deleteCycle(' + row.id + ', this)">✕</button>'
+          : "") +
+      "</td>";
     tbody.appendChild(tr);
   });
 }
@@ -624,6 +642,28 @@ function toggleDetail(tr, row) {
 }
 
 // Clear All = admin only at the DB level; hide button for members
+async function deleteCycle(id, btn) {
+  const row = history.find(r => r.id === id);
+  const label = row ? row.cycle_date : "this pay cycle";
+  const ok = await askConfirm(
+    "Delete this pay cycle?",
+    label + " will be removed from the shared history on every device. This cannot be undone.",
+    true
+  );
+  if (!ok) return;
+  try {
+    const { error } = await sb().from("vault_history").delete().eq("id", id);
+    if (error) throw error;
+    await loadHistoryRows();
+    renderHistory();
+    setSync(true);
+    showToast("Pay cycle deleted.");
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not delete — check your connection.");
+  }
+}
 async function clearHistory() {
   if (!IS_ADMIN) {
     showToast("Only the household admin can clear history.");
