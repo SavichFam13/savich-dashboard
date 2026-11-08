@@ -26,12 +26,27 @@
     padding: 32px 20px; max-width: 1060px; margin: 0 auto;
   }
   .top {
-    display: flex; justify-content: space-between; align-items: baseline;
+    display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
-  .back-link { color: var(--dim); text-decoration: none; font-size: 0.8rem; }
-  .back-link:hover { color: var(--accent); }
+  .top-right {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;
+  }
+  /* Navigation Bar — house style, same as trackers/misc/timer/bucket */
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .nav-btn.active { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
   button.back {
     color: var(--dim); font-size: 0.8rem; background: none;
     border: none; font-family: inherit; cursor: pointer;
@@ -212,9 +227,9 @@
 
 <div class="top">
   <h1>Recipe Book</h1>
-  <div style="display:flex; gap:12px; align-items:baseline; flex-wrap:wrap;">
+  <div class="top-right">
     <span class="sync-note" id="sync-note">syncing&hellip;</span>
-    <a href="../index.html" class="back-link">&larr; Back to Dashboard</a>
+    <a href="../index.html" class="nav-btn">Dashboard</a>
   </div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
