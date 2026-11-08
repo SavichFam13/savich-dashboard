@@ -15,7 +15,6 @@
     --dim: #a89bbd;
     --border: #332c3e;
     --bad: #ff8a8a;
-    /* lisa frank neon layer */
     --lf-pink: #ff4fa3;
     --lf-magenta: #d81b7f;
     --lf-gold: #ffd93d;
@@ -35,7 +34,6 @@
     margin: 0 auto;
     overflow-x: hidden;
   }
-  /* subtle rainbow glow behind everything */
   body::before {
     content: "";
     position: fixed; inset: 0;
@@ -47,14 +45,12 @@
     z-index: 0;
   }
 
-  /* floating doodles */
   .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   .sky span { position: absolute; opacity: .5; animation: drift 9s ease-in-out infinite alternate; }
   @keyframes drift { from { transform: translateY(0) rotate(-8deg);} to { transform: translateY(-22px) rotate(10deg);} }
 
   .wrap { position: relative; z-index: 1; }
 
-  /* ---- top bar: sync note left, backup buttons + nav on one line right ---- */
   .top {
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
@@ -62,7 +58,6 @@
   .top-right {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
   }
-  /* Navigation Bar — house style, same as trackers/misc/timer */
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -122,7 +117,6 @@
     background: rgba(255,79,163,.07);
   }
 
-  /* section headers — dashboard style but sparklier */
   h2.section {
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -142,7 +136,6 @@
     box-shadow: 0 0 10px rgba(139,47,201,.5);
   }
 
-  /* stats strip */
   .stats {
     display: flex; gap: 14px; justify-content: center;
     margin-bottom: 8px; flex-wrap: wrap;
@@ -157,7 +150,6 @@
   }
   .stat b { color: var(--lf-gold); font-size: 0.95rem; }
 
-  /* panels match dashboard .nav-card look */
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -210,7 +202,6 @@
   }
   .del:hover { opacity: 1; transform: rotate(15deg) scale(1.15); color: var(--lf-pink); }
 
-  /* add form — at the TOP of each card */
   .addrow { display: flex; gap: 10px; }
   input[type="text"] {
     flex: 1;
@@ -262,7 +253,6 @@
     text-align: center;
   }
 
-  /* toast — same pattern as inventory/recipes */
   .toast {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--lf-teal);
@@ -273,7 +263,6 @@
   }
   .toast.show { display: block; }
 
-  /* sparkle burst */
   .sparkle {
     position: fixed; pointer-events: none; font-size: 1.3rem;
     animation: pop 800ms ease-out forwards; z-index: 50;
@@ -283,7 +272,6 @@
     100% { transform: scale(1.6) translateY(-50px); opacity: 0; }
   }
 
-  /* ---- modal (house style, same as inventory/recipes/history/nodes) ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -325,7 +313,6 @@
 
 <div class="wrap">
 
-  <!-- ============ TOP BAR: sync note left, export/import + Dashboard right ============ -->
   <div class="top">
     <span class="sync-note" id="sync-note">checking account…</span>
     <div class="top-right">
@@ -372,7 +359,6 @@
   <p class="footer-note">✦ every day is a chance to accidentally achieve something ✦</p>
 </div>
 
-<!-- ============ MODAL + TOAST ============ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -385,8 +371,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// Per-user cloud row in user_state. This is a plain bucket-list blob,
-// not part of any GW2 daily/weekly tracker structure.
 const KEY = "savich-bucket";
 const LEGACY_KEY = "savichBucket";
 let USER_ID = null;
@@ -402,7 +386,6 @@ let data = {
   classic: []
 };
 
-// Normalize the two independent lists while preserving each item's fields.
 function normalizeBucketState(value) {
   const source = value && typeof value === "object" ? value : {};
   return {
@@ -421,8 +404,6 @@ const Store = {
   }
 };
 
-// Same per-user sync engine as Nodes and History.
-// The cloud record "savich-bucket" stores { twist: [...], classic: [...] }.
 const sync = createUserSync({
   key: KEY,
   sections: ["twist", "classic"],
@@ -548,10 +529,6 @@ function burst(ev) {
   }
 }
 
-// ==========================================================
-// BACKUP / RESTORE — matches inventory/recipes house style
-// Export file name: savich-bucket-backup-YYYY-MM-DD.json
-// ==========================================================
 function exportData() {
   const blob = new Blob([JSON.stringify(data, null, 2)],
     { type: "application/json" });
@@ -594,11 +571,6 @@ function importData(e) {
   e.target.value = "";
 }
 
-// ==========================================================
-// MODAL — askConfirm but with any number of choices.
-// Each choice: { label, value, primary?, destructive? }
-// Resolves with the chosen value (null if cancelled/escaped/backdrop).
-// ==========================================================
 let modalResolve = null;
 
 function askChoice(title, message, choices) {
@@ -643,9 +615,6 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// ==========================================================
-// TOAST
-// ==========================================================
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -655,7 +624,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
-/* floating sky doodles */
 (function() {
   const sky = document.getElementById("sky");
   const doodles = ["⭐","💖","🌈","🦄","✨","🍭","🌟","🎀"];
@@ -675,10 +643,6 @@ function renderAll() {
   render("classic", "classicList");
   renderStats();
 }
-// Render the existing starter content immediately, then load the signed-in
-// account's cache/cloud state. The legacy browser key is adopted once by the
-// first account that opens this upgraded page, then removed to prevent leakage
-// into another account on the same browser.
 renderAll();
 
 (async function initBucketSync() {
@@ -698,7 +662,6 @@ renderAll();
       Store.set(userCacheKey, normalizeBucketState(legacy));
     }
 
-    // Never leave the old unscoped key available to a different account.
     if (legacy !== null) localStorage.removeItem(LEGACY_KEY);
 
     await sync.init();

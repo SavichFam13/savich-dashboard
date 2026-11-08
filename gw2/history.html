@@ -88,8 +88,6 @@
   }
   .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
-
-  /* ---- modal (house style, same as inventory/recipes) ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -123,8 +121,6 @@
     border: 1px solid var(--border); font-weight: 400;
   }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
-
-  /* ---- toast (house style) ---- */
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -149,13 +145,9 @@
     <a href="misc.html" class="nav-btn">Misc</a>
   </nav>
 </div>
-
 <p class="sub">Your archived daily completions, by year.</span></p>
-
 <div class="year-row" id="year-row"></div>
-
 <div class="stat-row" id="stat-row"></div>
-
 <div class="charts-row">
   <div class="chart-card">
     <h2>Time spent by category</h2>
@@ -169,11 +161,8 @@
     <div id="task-bars"></div>
   </div>
 </div>
-
 <div class="section-title">Days on record</div>
 <div id="day-list"></div>
-
-<!-- ============ MODAL + TOAST ============ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -182,34 +171,17 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// =====================================================================
-// STORE SHIM — per-user local cache (fast loads, offline fallback).
-// Cloud (Supabase user_state) is the source of truth; cache is keyed
-// by user id so two accounts on the same device never mix.
-// =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-
-// =====================================================================
-// STATE + PER-USER SYNC (createUserSync lives in db.js)
-//
-// state = { logs: { "2026": { "2026-11-04": { taskId: ts } }, ... } }
-// One cloud row (key "gw2-daily-log") holds every year at once, so
-// cross-device sync covers all years without per-year polling.
-// =====================================================================
 const KEY = "gw2-daily-log";
 let USER_ID = null;
 let currentYear = null;
-
-// state held in `logs` — normalized so setState can't get junk
-let logs = {};        // { year: { date: { taskId: ts } } }
-
+let logs = {};
 function normalizeLogs(l) {
   const out = {};
   if (l && typeof l === "object" && !Array.isArray(l)) {
@@ -219,7 +191,6 @@ function normalizeLogs(l) {
   }
   return out;
 }
-
 const sync = createUserSync({
   key: KEY,
   sections: ["logs"],
@@ -232,17 +203,11 @@ const sync = createUserSync({
 });
 
 function save(immediate) { sync.save(immediate); }
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
-// =====================================================================
-// TASK NAMES + CATEGORIES — mirrors the tid values used by the tracker
-// and timer pages. Keep ids in sync if you rename/add tasks there.
-// =====================================================================
 const TASK_NAMES = {
   // core dailies
   nakedman: "Naked Man", facehugger: "Face Hugger", brahmance: "Brahmance",
@@ -271,15 +236,13 @@ const TASK_NAMES = {
   maws: "Maws of Torment", skywatch: "Skywatch",
   octopussy: "Octopussy", titanic: "Dick'tacles",
   turtlepower: "Turtle Power",
-  // adhoc / keys
+  // adhoc / seasonal
   wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
   fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
-  // seasonal
   madking: "Mad King", wintersday: "Wintersday", lny: "Lunar New Year",
   sab: "Super Adventure Box", dragonbash: "Dragon Bash",
   fourwinds: "Four Winds"
 };
-
 const CATEGORIES = {
   "World Bosses": ["wb_mega","wb_fire","wb_shatterer","wb_wurm","wb_ulgoth",
                    "wb_svanir","wb_behemoth","wb_taidha","wb_golem","wb_jormag",
@@ -295,7 +258,6 @@ const CATEGORIES = {
   "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
   "Fractals": ["frecs"]
 };
-
 const CAT_COLORS = {
   "World Bosses": "#ff8a8a",
   "Convergences": "#ff9f43",
@@ -305,27 +267,17 @@ const CAT_COLORS = {
   "Homestead / Keys": "#7ddba3",
   "Fractals": "#94a3ff"
 };
-
-// build reverse map task -> category
 const TASK_CAT = {};
 for (const c in CATEGORIES) for (const t of CATEGORIES[c]) TASK_CAT[t] = c;
-
 function nameOf(t) { return TASK_NAMES[t] || t; }
-
-// =====================================================================
-// YEARS — now derived from the in-memory state (the cloud row),
-// not from scanning localStorage.
-// =====================================================================
 function findYears() {
   return Object.keys(logs).sort();
 }
-
 function loadYear(y) {
   const log = logs[y] || {};
   const days = Object.keys(log).sort();
   return { log, days };
 }
-
 function render() {
   const years = findYears();
   const yrRow = document.getElementById("year-row");
@@ -337,14 +289,12 @@ function render() {
     b.onclick = () => { currentYear = y; render(); };
     yrRow.appendChild(b);
   });
-
   if (years.length) {
     const exp = document.createElement("button");
     exp.className = "backup-btn";
     exp.textContent = "\u2913 Export Data";
     exp.onclick = exportYear;
     yrRow.appendChild(exp);
-
     const impLabel = document.createElement("label");
     impLabel.className = "backup-btn import";
     impLabel.textContent = "\u2913 Import Data";
@@ -355,7 +305,6 @@ function render() {
     impLabel.appendChild(impInput);
     yrRow.appendChild(impLabel);
   }
-
   if (!years.length) {
     document.getElementById("stat-row").innerHTML = "";
     document.getElementById("cat-legend").innerHTML = "";
@@ -363,8 +312,6 @@ function render() {
       "<div class='empty-msg'>No archived days yet. Do today's dailies, come back tomorrow.</div>";
     document.getElementById("day-list").innerHTML = "";
     clearDonut();
-
-    // still allow importing into an empty page
     const yrRow = document.getElementById("year-row");
     const impLabel = document.createElement("label");
     impLabel.className = "backup-btn import";
@@ -378,10 +325,7 @@ function render() {
     yrRow.appendChild(impLabel);
     return;
   }
-
   const { log, days } = loadYear(currentYear);
-
-  // ---- aggregate ----
   const taskCounts = {};
   const catCounts = {};
   let totalCompletions = 0, totalPerDay = 0;
@@ -397,18 +341,13 @@ function render() {
     });
   });
   const avg = days.length ? (totalPerDay / days.length).toFixed(1) : "0";
-
-  // ---- stat boxes ----
   document.getElementById("stat-row").innerHTML =
     statBox(days.length, "days archived") +
     statBox(totalCompletions, "dailies done") +
     statBox(avg, "avg per day") +
     statBox(topCategory(catCounts), "top category");
 
-  // ---- donut ----
   drawDonut(catCounts, totalCompletions);
-
-  // ---- task bars ----
   const ranked = Object.entries(taskCounts).sort((a, b) => b[1] - a[1]);
   const max = ranked.length ? ranked[0][1] : 1;
   const bars = document.getElementById("task-bars");
@@ -427,8 +366,6 @@ function render() {
       "<div class='bar-num'>" + n + "</div>";
     bars.appendChild(row);
   });
-
-  // ---- day list (most recent 14) ----
   const dl = document.getElementById("day-list");
   dl.innerHTML = "";
   days.slice(-14).reverse().forEach(d => {
@@ -443,7 +380,6 @@ function render() {
     dl.appendChild(row);
   });
 }
-
 function statBox(num, lab) {
   return "<div class='stat-box'><div class='num'>" + num + "</div><div class='lab'>" + lab + "</div></div>";
 }
@@ -452,18 +388,14 @@ function topCategory(cc) {
   return e.length ? e[0][0] : "\u2014";
 }
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
-
-// ---- canvas donut ----
 function drawDonut(catCounts, total) {
   const cv = document.getElementById("donut");
   const ctx = cv.getContext("2d");
   ctx.clearRect(0, 0, cv.width, cv.height);
   const leg = document.getElementById("cat-legend");
   leg.innerHTML = "";
-
   const entries = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
   if (!entries.length) return;
-
   const cx = cv.width / 2, cy = cv.height / 2, r = 100, w = 42;
   let ang = -Math.PI / 2;
   entries.forEach(([cat, n]) => {
@@ -475,20 +407,17 @@ function drawDonut(catCounts, total) {
     ctx.fillStyle = CAT_COLORS[cat] || "#888";
     ctx.fill();
     ang += slice;
-
     const li = document.createElement("div");
     li.className = "li";
     li.innerHTML = "<span class='swatch' style='background:" + (CAT_COLORS[cat] || "#888") + "'></span>" +
       esc(cat) + " <span class='lc-n'>" + n + " (" + Math.round(n / total * 100) + "%)</span>";
     leg.appendChild(li);
   });
-  // punch the hole
   ctx.globalCompositeOperation = "destination-out";
   ctx.beginPath();
   ctx.arc(cx, cy, r - w, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalCompositeOperation = "source-over";
-  // center text
   ctx.fillStyle = "#f2eef7";
   ctx.font = "700 26px Verdana";
   ctx.textAlign = "center";
@@ -502,14 +431,6 @@ function clearDonut() {
   const cv = document.getElementById("donut");
   cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
 }
-
-// =====================================================================
-// BACKUP / RESTORE — per-year archive files
-// Export file shape: { year: "2026", log: { "2026-11-04": { taskId: ts } } }
-// For backwards compatibility, import also accepts a bare log object
-// (old clipboard-style dumps), inferring the year from the date keys.
-// Restores now push to the user's cloud row immediately.
-// =====================================================================
 function exportYear() {
   const data = logs[currentYear] || {};
   const dayCount = Object.keys(data).length;
@@ -528,21 +449,18 @@ function exportYear() {
   URL.revokeObjectURL(url);
   showToast("Backup downloaded: " + dayCount + " archived days from " + currentYear + ".");
 }
-
 function inferYearFromLog(log) {
   const keys = Object.keys(log);
   if (!keys.length) return null;
   const m = keys[0].match(/^(\d{4})-/);
   return m ? m[1] : null;
 }
-
 function validateLog(log) {
   if (!log || typeof log !== "object" || Array.isArray(log)) return false;
   return Object.keys(log).every(d =>
     /^\d{4}-\d{2}-\d{2}$/.test(d) &&
     log[d] && typeof log[d] === "object" && !Array.isArray(log[d]));
 }
-
 async function importYear(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -551,33 +469,26 @@ async function importYear(e) {
     try {
       const raw = JSON.parse(reader.result);
       let year, incoming;
-
       if (raw && typeof raw === "object" && !Array.isArray(raw) && raw.log && typeof raw.year === "string") {
-        // modern backup file
         year = raw.year;
         incoming = raw.log;
       } else {
-        // legacy bare log (old clipboard dumps)
         incoming = raw;
         year = inferYearFromLog(incoming);
       }
-
       if (!year || !/^\d{4}$/.test(year) || !validateLog(incoming)) {
         showToast("That file isn't a valid dailies backup. Expected a gw2-dailies YEAR export.");
         e.target.value = "";
         return;
       }
-
       const inDays = Object.keys(incoming).length;
       const cur = logs[year] || {};
       const curDays = Object.keys(cur).length;
       const overlap = Object.keys(incoming).filter(d => cur[d]).length;
-
       const details =
         "Backup file: " + inDays + " days\n" +
         "In your cloud archive: " + curDays + " days" +
         (overlap ? "\nOverlap: " + overlap + " days exist in both" : "");
-
       let mode;
       if (curDays > 0) {
         mode = await askChoice(
@@ -600,18 +511,16 @@ async function importYear(e) {
         );
       }
       if (mode === null || mode === undefined) { e.target.value = ""; return; }
-
       let merged;
       if (mode === "MERGE") {
         merged = { ...cur };
-        for (const d in incoming) merged[d] = incoming[d]; // backup wins on overlap
+        for (const d in incoming) merged[d] = incoming[d];
       } else if (mode === "REPLACE") {
         merged = { ...incoming };
       }
-
       logs[year] = merged;
       currentYear = year;
-      save(true);   // push to this user's cloud row immediately
+      save(true);
       render();
       showToast(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
         (mode === "MERGE" ? "merged" : "replaced") + ").");
@@ -622,14 +531,7 @@ async function importYear(e) {
   };
   reader.readAsText(file);
 }
-
-// =====================================================================
-// MODAL — askConfirm but with any number of choices.
-// Each choice: { label, value, primary?, destructive? }
-// Resolves with the chosen value (null if cancelled/escaped/backdrop).
-// =====================================================================
 let modalResolve = null;
-
 function askChoice(title, message, choices) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -649,19 +551,16 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
     { label: "NO", value: false },
     { label: "YES", value: true, primary: true, destructive: !!destructive }
   ]);
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(null);
 });
@@ -671,10 +570,6 @@ document.addEventListener("keydown", e => {
     closeModal(null);
   }
 });
-
-// =====================================================================
-// TOAST
-// =====================================================================
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -683,24 +578,11 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
-
-// =====================================================================
-// INIT — auth gate, migrate legacy per-year localStorage keys into
-// this user's single cloud row, then render.
-//
-// Legacy layout was one key per year: gw2-daily-log-YYYY. On first
-// load we fold every year found into the cloud row for whoever signs
-// in first on this browser; the old per-year keys are then removed so
-// they don't linger or double-import later.
-// =====================================================================
 (async function init() {
   const session = await requireAuth();   // bounces to login if needed
   if (!session) return;
   USER_ID = session.user && session.user.id;
-
   await sync.init();
-
-  // legacy migration: adopt any old gw2-daily-log-YYYY keys
   const legacyKeys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
@@ -712,21 +594,19 @@ function showToast(message) {
       const y = k.slice(-4);
       const data = Store.get(k);
       if (data && Object.keys(data).length) {
-        logs[y] = { ...(logs[y] || {}), ...data };  // cloud year wins on conflict
+        logs[y] = { ...(logs[y] || {}), ...data };
         adopted++;
       }
     });
     if (adopted) {
-      save(true);   // push migrated years to the cloud immediately
+      save(true);
       legacyKeys.forEach(k => localStorage.removeItem(k));
     }
   }
-
   const yrs = findYears();
   currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
   render();
 })();
 </script>
-
 </body>
 </html>

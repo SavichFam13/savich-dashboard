@@ -45,8 +45,6 @@
 
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
-  /* ---- chips ---- */
   .roster {
     display: flex; flex-wrap: wrap; gap: 10px;
   }
@@ -88,8 +86,6 @@
     0%, 100% { transform: scale(1); }
     50%      { transform: scale(1.35); }
   }
-
-  /* ---- floating schedule panel (right-click a chip) ---- */
   .schedule-panel {
     display: none;
     position: fixed;
@@ -130,7 +126,6 @@
     display: none;
   }
   .flash-msg.show { display: block; }
-/* ---- nav bar ---- */
 .nav-bar {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline;
 }
@@ -170,27 +165,19 @@
 </div>
 
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log to dailies &middot; right-click = schedule</span></div>
-
-
 <div class="section-title">World Bosses</div>
 <div class="roster" id="roster-wb"></div>
-
 <div class="section-title">Hard World Bosses</div>
 <div class="roster" id="roster-daily"></div>
-
 <div class="section-title">Convergences</div>
 <div class="roster" id="roster-conv"></div>
-
 <div class="section-title">Metas</div>
 <div class="roster" id="roster-meta"></div>
-
 <div class="section-title">Misc</div>
 <div class="roster" id="roster-misc"></div>
-
 <div class="section-title">Ad-hoc &amp; Seasonal</div>
 <div class="roster" id="roster-adhoc"></div>
 
-<!-- floating schedule popup: right-click a chip -->
 <div class="schedule-panel" id="schedule-panel">
   <div class="sched-head">
     <span class="sched-name" id="sched-name"></span>
@@ -205,13 +192,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// =====================================================================
-// EVENTS
-// tid = tracker id. IDs matching a daily in trackers.html write straight
-// into that daily; all other IDs become "ghost rows" there.
-// =====================================================================
 
-// --- Rotating world bosses ---
 const WORLD_BOSSES = [
   { name: "Svanir Shaman Chief",     short: "Svanir Shaman Chief", interval: 120, offset: 15,  color: "#959393", tid: "wb_svanir", zone: "Wayfarer Foothills"},
   { name: "Fire Elemental",          short: "Fire Elemental", interval: 120, offset: 45,  color: "#959393", tid: "wb_fire", zone: "Metrica Province"},
@@ -225,7 +206,6 @@ const WORLD_BOSSES = [
   { name: "Claw of Jormag",          short: "Claw of Jormag", interval: 180, offset: 150, color: "#959393", tid: "wb_jormag", zone: "Frostgorge Sound" }
 ];
 
-// --- Hard world bosses: six fixed spawns per day, stored in UTC ---
 const DAILY_BOSSES = [
   {
     name: "Triple Trouble",
@@ -254,7 +234,6 @@ const DAILY_BOSSES = [
   }
 ];
 
-// --- Convergences ---
 const CONVERGENCES = [
   { name: "Mount Balrior Convergence", short: "Cum Stained Bear", color: "#94a3ff",
     interval: 180, offset: 0, tid: "bear", zone: "Lowland Shores" },
@@ -266,7 +245,6 @@ const CONVERGENCES = [
     interval: 120, offset: 60, tid: "brahmance", zone: "Eye of the North" }
 ];
 
-// --- Metas: FIXED ORDER - do not sort. ---
 const METAS = [
   { name: "Hammerhart Rumble", short: "Family Time", color: "#e43710",
     interval: 120, offset: 160, tid: "family", zone: "Shipwreck Strand" },
@@ -290,7 +268,6 @@ const METAS = [
     interval: 120, offset: 300, tid: "squid", zone: "Auric Basin (West)" }
 ];
 
-// --- Misc: FIXED ORDER - do not sort. ---
 const MISC = [
   { name: "Dragonstand", short: "Dragonstand", color: "#b5e48c",
     interval: 120, offset: 90, tid: "dragonstand", zone: "Dragon's Stand" },
@@ -330,7 +307,6 @@ const MISC = [
     interval: 120, offset: 80, tid: "titanic", zone: "Bava Nisos" }
 ];
 
-// --- Ad-hoc & seasonal: untimed. Left-click stamps NOW. ---
 const ADHOC = [
   { short: "WvW", name: "WvW Roaming", tid: "wvw", color: "#959393",
     zone: "Edge of the Mists", reward: "Wherever the fun is" },
@@ -358,21 +334,6 @@ const ADHOC = [
     zone: "Gyala Delve (Sewers)", reward: "Runs whenever someone starts it" }
 ];
 
-// =====================================================================
-// TRACKER BRIDGE — per-user cloud sync.
-//
-// Cloud row ("gw2-tracker-daily" in user_state) holds BOTH halves:
-//   daily : { epoch: <days since epoch UTC>, done: { tid: ts } }
-//   carry : { epoch, done }            (rollover bucket, may be absent)
-//
-// The OLD shared localStorage keys (gw2-tracker-daily /
-// gw2-tracker-daily-carry) are still WRITTEN on every change so the
-// not-yet-converted trackers.html keeps working on this device — but
-// they are only READ once, during first-run legacy migration, so the
-// two household accounts never absorb each other's logs.
-//
-// Timed chips store the LAST SLOT TIME, not the click time.
-// =====================================================================
 const LOCAL_DAILY = "gw2-tracker-daily";
 const LOCAL_CARRY = "gw2-tracker-daily-carry";
 const ROLLOVER_MINS = { furby: 40, dragonstand: 90, island: 45, joras: 40 };
@@ -384,9 +345,8 @@ const Store = {
 
 let USER_ID = null;
 
-// ---- in-memory per-user state ----
 let daily = { epoch: -1, done: {} };
-let carry = null;   // rollover bucket: { epoch, done }
+let carry = null;
 
 function normDaily(s) {
   if (!s || typeof s !== "object" || typeof s.epoch !== "number" ||
@@ -429,13 +389,13 @@ function getDailyState(nowMs) {
 
 function saveDailyState(s) {
   daily = s;
-  sync.save();                                              // per-user cloud row
-  Store.set(LOCAL_DAILY, s);   // bridge: keeps un-converted trackers.html in step
+  sync.save();
+  Store.set(LOCAL_DAILY, s);
 }
 
 function saveCarryState() {
   sync.save();
-  if (carry) Store.set(LOCAL_CARRY, carry);   // bridge for trackers.html
+  if (carry) Store.set(LOCAL_CARRY, carry);
 }
 
 function isLogged(tid, nowMs) {
@@ -445,30 +405,30 @@ function isLogged(tid, nowMs) {
 function toggleLog(ev, nowMs) {
   const s = getDailyState(nowMs);
   if (s.done[ev.tid] !== undefined) {
-    delete s.done[ev.tid];               // clicking again un-logs it
+    delete s.done[ev.tid];
     flash("\u2716 unlogged: " + ev.short);
   } else {
-    s.done[ev.tid] = prevSlotMs(ev, nowMs);  // slot time, not click time
+    s.done[ev.tid] = prevSlotMs(ev, nowMs);
     flash("\u2714 logged: " + ev.short);
   }
   saveDailyState(s);
 }
 
 function prevSlotMs(ev, nowMs) {
-  if (!ev.interval && !ev.daily) return nowMs;   // ad-hoc: stamp NOW
+  if (!ev.interval && !ev.daily) return nowMs;
   const mu = minutesUntil(ev, nowMs);
-  if (mu <= 5) return nowMs + mu * 60000;   // early click → upcoming slot
+  if (mu <= 5) return nowMs + mu * 60000;
   return nowMs - minutesSince(ev, nowMs) * 60000;
 }
 
 function logWithRollover(ev, nowMs) {
-  const slotMs   = prevSlotMs(ev, nowMs);      // keeps this page's 5-min early-click grace
+  const slotMs   = prevSlotMs(ev, nowMs);
   const creditMs = slotMs + ROLLOVER_MINS[ev.tid] * 60000;
   if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
-    toggleLog(ev, nowMs);                       // same-day credit — business as usual
+    toggleLog(ev, nowMs);
     return;
   }
-  const newEp = dailyEpoch(creditMs);          // crosses UTC midnight → park for the new day
+  const newEp = dailyEpoch(creditMs);
   if (!carry || carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
   if (carry.done[ev.tid] !== undefined) {
     delete carry.done[ev.tid];
@@ -480,11 +440,8 @@ function logWithRollover(ev, nowMs) {
   saveCarryState();
 }
 
-// =====================================================================
-// TIMER ENGINE
-// =====================================================================
 let selectedEv = null;
-let liveChips = [];   // rebuilt on every full render() — feeds updateClock()
+let liveChips = [];
 
 function zoneFor(ev, tMs) {
   if (!ev.zones) return ev.zone || "";
@@ -597,7 +554,6 @@ function patternFor(ev) {
   return s;
 }
 
-// ---- toast feedback when logging ----
 let flashTimer = null;
 function flash(msg) {
   const el = document.getElementById("flash-msg");
@@ -607,7 +563,6 @@ function flash(msg) {
   flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
 
-// ---- schedule panel: opened by RIGHT-CLICK ----
 function openSchedule(ev, evt) {
   selectedEv = ev;
   const panel = document.getElementById("schedule-panel");
@@ -666,7 +621,6 @@ function renderSchedule(now) {
   });
 }
 
-// ---- chips ----
 function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
   const roster = document.getElementById(containerId);
   roster.innerHTML = "";
@@ -712,8 +666,6 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
 
     chip.className = cls;
     chip.innerHTML = inner;
-
-    // LEFT-CLICK = log/un-log; RIGHT-CLICK = schedule popup
     chip.onclick = e => {
       e.preventDefault();
       if (ROLLOVER_MINS[ev.tid]) logWithRollover(ev, Date.now());
@@ -731,7 +683,7 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
 
 function render() {
   const now = Date.now();
-  liveChips = [];                       // registry rebuilds with the chips
+  liveChips = [];
   document.getElementById("clock-now").textContent = fmtClock(now);
 
   renderChips("roster-wb", WORLD_BOSSES, now);
@@ -744,26 +696,22 @@ function render() {
   renderSchedule(now);
 }
 
-// =====================================================================
-// INIT — auth gate, cloud pull, roll the day forward, one-time legacy
-// migration of the old shared localStorage keys, then start ticking.
-// =====================================================================
 (async function init() {
-  const session = await requireAuth();   // bounces to login if needed
+  const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
-
+const cached = Store.get("gw2-tracker-daily-cache:" + USER_ID);
+if (cached && cached.daily && cached.daily.epoch === dailyEpoch(Date.now())) {
+  daily = normDaily(cached.daily);
+  carry = normCarry(cached.carry);
+  render();
+}
   await sync.init();
 
   const today = dailyEpoch(Date.now());
   let dirty = false;
-
-  // roll the cloud copy forward if it's from a previous day
   if (daily.epoch !== today) { daily = { epoch: today, done: {} }; dirty = true; }
 
-  // one-time legacy migration: adopt the old SHARED localStorage keys into
-  // this user's cloud row. Whoever signs in first on a device carries the
-  // shared history up; afterwards the shared keys are write-only bridges.
   const migKey = "gw2-timer-migrated:" + USER_ID;
   if (!Store.get(migKey)) {
     const ld = Store.get(LOCAL_DAILY);
@@ -780,22 +728,16 @@ function render() {
 
   render();
   setInterval(updateClock, 1000);
-  setInterval(render, 60000);   // safety net: full repaint once a minute
+  setInterval(render, 60000);
 })();
 
-// =====================================================================
-// 1-SECOND TICK — clocks, chip countdowns, active/next states, and the
-// schedule panel. Chips are stable DOM: never rebuilt by this tick, so
-// clicks can't race a repaint. Full render() runs on clicks, sync pulls,
-// and the once-a-minute safety net.
-// =====================================================================
 function updateClock() {
   const now = Date.now();
   document.getElementById("clock-now").textContent = fmtClock(now);
 
   liveChips.forEach(function(entry) {
     const chip = entry.chip, ev = entry.ev;
-    if (!ev.interval && !ev.daily) return;   // ad-hoc chips never tick
+    if (!ev.interval && !ev.daily) return;
     const mu = minutesUntil(ev, now);
     const since = minutesSince(ev, now);
     const isActive = since < 15;

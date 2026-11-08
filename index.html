@@ -92,11 +92,6 @@
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
 
-  /* ============ GATE ============ */
-  /* While checking: gate shows ONLY a tiny faint dot — visually
-     indistinguishable from a normal slow page load. If the browser
-     has the "unlocked" flag, the gate is removed before first paint
-     and the session check happens quietly in the background. */
   #gate {
     position: fixed; inset: 0; z-index: 200;
     background: var(--bg);
@@ -151,7 +146,6 @@
 </head>
 <body>
 
-<!-- ============ GATE ============ -->
 <div id="gate">
   <div class="gate-dot" id="gate-dot"></div>
   <div class="gate-box" id="gate-box">
@@ -173,7 +167,6 @@
   </div>
 </div>
 
-<!-- ============ DASHBOARD ============ -->
 <h1>Savich Family Dashboard</h1>
 
 <h2 class="section">Guild Wars 2</h2>
@@ -229,7 +222,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
 <script>
-  // ---------- gate elements ----------
   const gate = document.getElementById("gate");
   const gateDot = document.getElementById("gate-dot");
   const gateBox = document.getElementById("gate-box");
@@ -256,10 +248,6 @@
     location.reload();
   }
 
-  // ---------- OPTIMISTIC UNLOCK ----------
-  // If this browser signed in successfully before, trust it
-  // INSTANTLY (before first paint) so page navigation has zero
-  // gate flicker. The real session check runs quietly behind it.
   const unlocked = localStorage.getItem(UNLOCK_FLAG);
   if (unlocked) hideGate();
 
@@ -269,8 +257,6 @@
       const { data, error } = await sb().auth.getSession();
       session = data && data.session;
       if (error && !session) {
-        // unreachable cloud: if optimistically unlocked, ride it out;
-        // otherwise let the user try the form
         if (unlocked) {
           document.getElementById("who").textContent =
             "Offline mode — last known session";
@@ -280,7 +266,7 @@
         return;
       }
     } catch (err) {
-      if (unlocked) return; // stay unlocked, check failed silently
+      if (unlocked) return;
       showLoginForm("Could not reach the cloud — check your connection.");
       return;
     }
@@ -294,7 +280,6 @@
       return;
     }
 
-    // genuinely not signed in
     localStorage.removeItem(UNLOCK_FLAG);
     showLoginForm();
   })();

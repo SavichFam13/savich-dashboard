@@ -30,8 +30,6 @@
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-  
-  /* Navigation Bar Styles */
   .nav-bar {
     display: flex; gap: 8px; flex-wrap: wrap;
   }
@@ -69,8 +67,6 @@
   }
   .section-note { color: var(--dim); font-size: 0.82rem; margin-bottom: 10px; }
   .section-note b { color: var(--accent2); }
-
-  /* ---- chips ---- */
   .roster { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip {
     display: inline-flex; align-items: center; gap: 8px;
@@ -94,7 +90,6 @@
   .chip.warn { border-color: var(--now); }
   .chip .warn-flag { color: var(--now); font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
 #ghost-block { margin-top: 14px; }
-
   .ghost-divider {
     margin: 18px 0 8px;
     font-size: 0.72rem; color: var(--accent2); letter-spacing: 1.5px;
@@ -103,7 +98,6 @@
   }
   .ghost-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-  /* ---- info panel (right-click a chip) ---- */
   .info-panel {
     display: none; position: fixed; z-index: 100;
     width: min(560px, calc(100vw - 40px));
@@ -165,19 +159,14 @@
 
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = toggle done &middot; right-click = details</span></div>
 
-<!-- ================= DAILIES ================= -->
 <div class="section-title">Dailies</div>
 <div class="section-note" id="daily-meta"></div>
 <div class="roster" id="roster-daily"></div>
 <div id="ghost-block"></div>
-
-<!-- ================= WEEKLIES ================= -->
 <div class="section-title">Weeklies</div>
 <div class="section-note" id="weekly-meta"></div>
 <div class="progress-outer"><div class="progress-inner" id="weekly-bar"></div></div>
 <div class="roster" id="roster-weekly"></div>
-
-<!-- ================= INFO PANEL ================= -->
 <div class="info-panel" id="info-panel">
   <div class="info-head">
     <span class="info-name" id="info-name"></span>
@@ -193,16 +182,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// =====================================================================
-// CONFIG
-// =====================================================================
-const WEEKLY_RESET_MIN_UTC = 450;   // Monday 07:30 UTC
 
-// =====================================================================
-// TIMED EVENT SCHEDULES (UTC) - shared tids with timer.html.
-// interval = minutes between spawns, offset = one anchor occurrence,
-// daily = fixed UTC minutes-past-midnight spawns, map = rotating map.
-// =====================================================================
+const WEEKLY_RESET_MIN_UTC = 450; 
 const EVS = {
   nakedman:   { interval: 120, offset: 20,  map: true },
   facehugger: { interval: 120, offset: 385 },
@@ -217,10 +198,6 @@ const EVS = {
   family:     { interval: 120, offset: 160 },
   furby:      { interval: 120, offset: 220, dur: 40 }
 };
-
-// =====================================================================
-// DAILY TASKS - ev:true = tied to EVS above (slot-time stamping)
-// =====================================================================
 const DAILIES = [
   { id: "nakedman",   name: "Naked Man",                   color: "#959393", zone: "",                            reward: "1 Mystic Coin and 6 unbound magic", ev: true },
   { id: "facehugger", name: "Face Hugger",                 color: "#b5e48c", zone: "Tangled Depths",             reward: "Chance to drop a Chak Egg Sac Infusion", ev: true },
@@ -245,19 +222,16 @@ const DAILIES = [
 const TASK_BY_ID = {};
 DAILIES.forEach(t => { TASK_BY_ID[t.id] = t; });
 
-// ---- rollover carry: kills that finish AFTER the UTC reset count for the new day ----
-// ---- state row keys (legacy bridge + internal routing) ----
-// (KEY_CARRY is declared up top, next to ROLLOVER_MINS — don't duplicate it)
 const KEY_DAILY  = "gw2-tracker-daily";
 const KEY_WEEKLY = "gw2-tracker-weekly";
 const KEY_CARRY = "gw2-tracker-daily-carry";
-const ROLLOVER_MINS = { "furby": 40 };   // timers page adds: dragonstand:90, island:45, joras:~40
+const ROLLOVER_MINS = { "furby": 40 };
 
 function logDailyEv(name, tid, ev, nowMs) {
-  const slotMs = evPrevMs(ev, nowMs);          // keeps your 5-min early-click grace
+  const slotMs = evPrevMs(ev, nowMs);
 const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
   if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
-    toggleLog(name, tid, nowMs, false, slotMs); // normal day — behaves exactly as before
+    toggleLog(name, tid, nowMs, false, slotMs);
     return;
   }
   let carry = loadState(KEY_CARRY) || {};
@@ -272,14 +246,6 @@ const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
   }
   saveState(KEY_CARRY, carry);
 }
-
-// =====================================================================
-// EXTRAS - names/zones/rewards for tracker IDs logged from the
-// Event Timers page that aren't one of the 18 dailies.
-// NOTE: zone/reward here feed the tooltip and right-click details
-// panel only — the chip face itself shows just name + check + @time,
-// same as a logged daily.
-// =====================================================================
 const EXTRAS = {
   wb_svanir:     { name: "Svanir Shaman Chief",        zone: "Wayfarer Foothills", color: "#959393" },
   wb_fire:       { name: "Fire Elemental",             zone: "Metrica Province", color: "#959393" },
@@ -328,9 +294,6 @@ const EXTRAS = {
   fourwinds:     { name: "Festival of the Four Winds", zone: "Crown Pavilion / Labyrinthine Cliffs", reward: "Gamble your heart away", color: "#d1c4f6" }
 };
 
-// =====================================================================
-// WEEKLIES
-// =====================================================================
 const WEEKLIES = [
   { id: "level10",   name: "Level 10",                          objective: "Human Hunter loves Fisting In the Streets @ the Circus W/Lyssa" },
   { id: "banners",   name: "Weekly Hero Banners",               objective: "Guild Hero Banners from Wizard's Tower and WvW" },
@@ -345,11 +308,6 @@ const WEEKLIES = [
   { id: "resource",  name: "Resource Action",                   rotating: "Resource Action" }
 ];
 
-// =====================================================================
-// 53-WEEK ROTATION - weeks 8-38 are blank on your sheet, so rotating
-// objectives for those weeks show a red warning BY DESIGN until you
-// fill them in (January TickTick reminder).
-// =====================================================================
 const WEEKS = {
   1: { "Defeat Faction or Events/Bounties": "Defeat 50 Titanspawn or Elemental Enemies", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Crimson Plateau Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Shadow Behemoth World Boss or 10 Complete Events in Queensdale", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
   2: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Castora or 7 Group Events", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Janthir or 15 Events in Orr", "Jumping Puzzle": "Complete the Dark Reverie Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Svanir Shaman Chief World Boss or Complete 10 Events in Wayfarer Foothills", "Resource Action": "Salvage 50 Items" },
@@ -375,9 +333,6 @@ const WEEKS = {
   53: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in the Desolation or 5 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the The Collapsed Observatory Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Shatterer World Boss or Complete 10 Events in Blazeridge Steppes", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" }
 };
 
-// =====================================================================
-// SLOT-TIME ENGINE
-// =====================================================================
 const NAKED_MAPS = ["Gendarran Fields", "Timberline Falls", "Iron Marches"];
 function mod(a, n) { return ((a % n) + n) % n; }
 function nakedMap(slotMs) {
@@ -387,7 +342,6 @@ function nakedMap(slotMs) {
 
 function evPrevMs(ev, nowMs) {
   const nowMin = nowMs / 60000;
-  // NEW: 5-minute early-click grace — stamp the upcoming slot
   const nx = evNextMs(ev, nowMs);
   if (nx - nowMs <= 5 * 60000) return nx;
   if (ev.daily) {
@@ -404,8 +358,6 @@ function evPrevMs(ev, nowMs) {
   const phase = mod(nowMin - ev.offset, ev.interval);
   return (nowMin - phase) * 60000;
 }
-
-
 function evNextMs(ev, nowMs) {
   const nowMin = nowMs / 60000;
   if (ev.daily) {
@@ -422,10 +374,6 @@ function evNextMs(ev, nowMs) {
   const phase = mod(nowMin - ev.offset, ev.interval);
   return (nowMin - phase + ev.interval) * 60000;
 }
-
-// =====================================================================
-// CLOCK HELPERS
-// =====================================================================
 function fmtClock(ms) {
   const d = new Date(ms);
   let h = d.getHours() % 12; if (h === 0) h = 12;
@@ -460,21 +408,11 @@ function nextWeeklyReset(nowMs) {
   if (t <= nowMs) t += 7 * 86400000;
   return t;
 }
-
-
-// =====================================================================
-// PER-USER CLOUD SYNC — THREE rows now:
-//   gw2-tracker-daily   = daily + carry  (SHARED ROW with timer.html!)
-//   gw2-tracker-weekly  = weeklies      (own row)
-//   gw2-daily-log       = history archive (same row as History page)
-// The daily row MUST keep the key "gw2-tracker-daily" so the Event
-// Timer page and this page read/write the SAME state (ghost chips!).
-// =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-const DAILY_CLOUD_KEY   = "gw2-tracker-daily";     // shared with timer.html
+const DAILY_CLOUD_KEY   = "gw2-tracker-daily";
 const WEEKLY_CLOUD_KEY  = "gw2-tracker-weekly";
 const HISTORY_CLOUD_KEY = "gw2-daily-log";
 let USER_ID = null;
@@ -516,14 +454,9 @@ function updateSyncNote() {
 function setDailySync(ok)   { dailyOnline = !!ok; updateSyncNote(); }
 function setWeeklySync(ok)  { weeklyOnline = !!ok; updateSyncNote(); }
 function setHistorySync(ok) { historyOnline = !!ok; updateSyncNote(); }
-
-// ---- DAILY + CARRY: same row the Event Timer writes to ----
 const dailySync = createUserSync({
   key: DAILY_CLOUD_KEY,
   sections: ["daily", "carry"],
-  // First signed-in user on this browser adopts the old shared
-  // localStorage keys (legacy bridge from timer.html) into their own
-  // per-user cache. Cloud is merged on top by sync.init().
   loadLocal: () => {
     const cached = Store.get(DAILY_CLOUD_KEY + ":" + USER_ID);
     if (cached) return normalizeDailyState(cached);
@@ -539,7 +472,6 @@ const dailySync = createUserSync({
   setOnline: setDailySync
 });
 
-// ---- WEEKLIES: own row ----
 const weeklySync = createUserSync({
   key: WEEKLY_CLOUD_KEY,
   sections: ["weekly"],
@@ -554,8 +486,6 @@ const weeklySync = createUserSync({
   onRender: () => render(),
   setOnline: setWeeklySync
 });
-
-// ---- HISTORY ARCHIVE: same row as the Dailies History page ----
 const historySync = createUserSync({
   key: HISTORY_CLOUD_KEY,
   sections: ["logs"],
@@ -568,8 +498,6 @@ const historySync = createUserSync({
   },
   setOnline: setHistorySync
 });
-
-// ---- State routing: pages keep calling loadState/saveState ----
 function loadState(key) {
   if (key === KEY_DAILY) return dailyState.daily;
   if (key === KEY_CARRY) return dailyState.carry;
@@ -605,7 +533,7 @@ function getFreshState(key, epoch) {
         for (const tid in (carry.done || {})) {
           if (state.done[tid] === undefined) state.done[tid] = carry.done[tid];
         }
-        saveState(KEY_CARRY, { epoch: epoch, done: {} }); // consume carry
+        saveState(KEY_CARRY, { epoch: epoch, done: {} }); 
       }
     }
     saveState(key, state);
@@ -614,8 +542,6 @@ function getFreshState(key, epoch) {
   return state;
 }
 
-// Archive completed dailies into the same {logs:{year:{date:{taskId:ts}}}}
-// structure used by history.html, then push through its existing sync key.
 function archiveYesterday(oldState) {
   if (!oldState || !oldState.done) return;
   const taskIds = Object.keys(oldState.done);
@@ -630,7 +556,6 @@ function archiveYesterday(oldState) {
   if (historySyncReady) historySync.save();
 }
 
-// returns the recorded timestamp for a task, or undefined
 function loggedStamp(tid, nowMs, isWeekly) {
   const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
   const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
@@ -648,14 +573,10 @@ function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
     s.done[tid] = (stampMs !== undefined ? stampMs : Date.now());
     flash("\u2714 logged: " + name + " @ " + fmtClock(s.done[tid]));
   }
-  render();                        // repaint NOW — show the ✓ before the next 1s tick
-  saveState(key, s);               // save AFTER paint, state object is same reference
+  render();
+  saveState(key, s);
 }
 
-// =====================================================================
-// FLASH TOAST
-// =====================================================================
-let flashTimer = null;
 function flash(msg) {
   const el = document.getElementById("flash-msg");
   el.textContent = msg;
@@ -664,9 +585,6 @@ function flash(msg) {
   flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
 
-// =====================================================================
-// INFO PANEL (right-click)
-// =====================================================================
 let infoTask = null;
 
 function openInfo(task, evt, isWeekly) {
@@ -685,14 +603,8 @@ function openInfo(task, evt, isWeekly) {
     div.innerHTML = html;
     lines.appendChild(div);
   }
-
-  // zone
   if (task.zone) line('<span class="lab">Where:</span> <b>' + task.zone + '</b>');
-
-  // reward
   if (task.reward) line('<span class="lab">Reward:</span> ' + task.reward);
-
-  // weekly objective (static or rotating)
   if (isWeekly) {
     if (task.rotating) {
       const wk = isoWeek(now);
@@ -701,20 +613,15 @@ function openInfo(task, evt, isWeekly) {
       if (text) {
         line('<span class="lab">This week (' + wk + '):</span> ' + text);
       } else {
-        // BY DESIGN: red warning until blank weeks are filled in
         line('no objective listed for week ' + wk + ' yet (blank weeks in your sheet)', 'missing');
       }
     } else if (task.objective) {
       line('<span class="lab">Objective:</span> ' + task.objective);
     }
   }
-
-  // "picked up today" ghosts aren't part of the regular rotation
   if (task.isGhost) {
     line('<span class="lab">Picked up today</span> \u2014 logged from the Event Timers page; vanishes at the daily reset.');
   }
-
-  // daily timed schedule info
   const ev = (!isWeekly && task.ev) ? EVS[task.id] : null;
   if (ev) {
     const pat = ev.daily
@@ -722,8 +629,6 @@ function openInfo(task, evt, isWeekly) {
       : "every " + (ev.interval / 60) + " hours";
     line('<span class="lab">Schedule:</span> ' + pat + (ev.map ? " \u00B7 rotates: " + NAKED_MAPS.join(" \u2192 ") : ""));
   }
-
-  // stamp / next spawn
   const ts = loggedStamp(task.id, now, isWeekly);
   const ok = typeof ts === "number" && !isNaN(ts);
   if (ok) {
@@ -767,10 +672,6 @@ function closeInfo() {
   document.getElementById("info-panel").classList.remove("open");
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeInfo(); });
-
-// =====================================================================
-// CHIP BUILDERS
-// =====================================================================
 function esc(s) { return String(s).replace(/"/g, "&quot;"); }
 
 function tooltipFor(task, isWeekly, nowMs) {
@@ -789,8 +690,6 @@ function tooltipFor(task, isWeekly, nowMs) {
   tip += "\nLeft-click: toggle done. Right-click: details.";
   return tip;
 }
-// Builds the live countdown span for an unlogged event chip. Carries the
-// task id so updateClock() can retick it in place every second.
 function cdSpanHtml(t, now) {
   const ev = EVS[t.id];
   const nowMin = now / 60000;
@@ -877,9 +776,6 @@ function renderGhosts(now) {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip ghost logged";
-
-    // Same face as a logged daily: dot + name + check + @time.
-    // Zone/reward live in the tooltip and right-click details.
   let inner = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' + x.name +
                 ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + fmtClock(g.ts) + '</span>';
     chip.innerHTML = inner;
@@ -888,8 +784,6 @@ function renderGhosts(now) {
     if (x.reward) tip += "\nReward: " + x.reward;
     tip += "\nLeft-click: toggle done. Right-click: details.";
     chip.title = tip;
-
-    // minimal task object so ghosts reuse the daily details panel
     const ghostTask = {
       id: g.tid,
       name: x.name,
@@ -949,13 +843,9 @@ chip.title = tooltipFor(t, true, now);
   bar.style.width = pct + "%";
   bar.className = "progress-inner" + (pct === 100 ? " full" : "");
 
-  lastWeeklyCounts = { done: doneCount, total: WEEKLIES.length };   // ← NEW
+  lastWeeklyCounts = { done: doneCount, total: WEEKLIES.length };
   return lastWeeklyCounts;
 }
-
-// =====================================================================
-// MAIN RENDER
-// =====================================================================
 function render() {
   const now = Date.now();
   document.getElementById("clock-now").textContent = fmtClock(now);
@@ -971,29 +861,23 @@ function render() {
     "Week " + isoWeek(now) + " \u00B7 " + w.done + " of " + w.total + " done" +
     " \u00B7 resets in <b>" + fmtDur(nextWeeklyReset(now) - now) + "</b>";
 }
-
-
-// =====================================================================
-// INIT — authenticate, adopt legacy browser data for this account,
-// load both existing cloud records, migrate archived year keys, render.
-// =====================================================================
 (async function init() {
   const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
   if (!USER_ID) return;
-
-
-  // Load History first so a daily rollover can safely append to its logs.
+const dc = Store.get(DAILY_CLOUD_KEY + ":" + USER_ID);
+const wc = Store.get(WEEKLY_CLOUD_KEY + ":" + USER_ID);
+if (dc && dc.daily && dc.daily.epoch === dailyEpoch(Date.now()))
+  dailyState = normalizeDailyState(dc);
+if (wc && wc.weekly && wc.weekly.epoch === weeklyEpoch(Date.now()))
+  weeklyState = normalizeWeeklyState(wc);
+render();
   await dailySync.init();
   await weeklySync.init();
   await historySync.init();
   historySyncReady = true;
 
-
-  // Migrate History's former one-key-per-year browser archive into the
-  // existing per-user History cache/cloud row. Never overwrite a day
-  // already present in the cloud record.
   const legacyYearKeys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -1016,19 +900,11 @@ function render() {
 
   render();
   setInterval(updateClock, 1000);
-  setInterval(render, 60000);   // safety net for anything not on the 1s tick
+  setInterval(render, 60000);
 })();
-
-// =====================================================================
-// 1-SECOND TICK — updates ONLY the clocks, the reset countdowns, and
-// every .live-cd countdown span in place. Chips are stable DOM: they
-// are never rebuilt by this tick, so clicks can't race a repaint.
-// Full render() still runs on clicks, cloud pulls, and once a minute.
-// =====================================================================
 function updateClock() {
   const now = Date.now();
 
-  // header clock + reset countdowns
   document.getElementById("clock-now").textContent = fmtClock(now);
   document.getElementById("daily-meta").innerHTML =
     "resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
@@ -1036,8 +912,6 @@ function updateClock() {
   document.getElementById("weekly-meta").innerHTML =
     "Week " + isoWeek(now) + " \u00B7 " + w.done + " of " + w.total + " done" +
     " \u00B7 resets in <b>" + fmtDur(nextWeeklyReset(now) - now) + "</b>";
-
-  // live countdown spans on unlogged event chips
   document.querySelectorAll(".live-cd").forEach(span => {
     const t = TASK_BY_ID[span.dataset.ev];
     if (!t || !t.ev) return;

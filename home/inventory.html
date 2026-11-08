@@ -37,7 +37,6 @@
   .top-right {
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   }
-  /* Navigation Bar — house style, same as trackers/misc/timer/recipes */
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -153,7 +152,6 @@
 
   .empty { color: var(--dim); font-size: 0.78rem; padding: 14px 0; text-align: center; }
 
-  /* ---- grocery list ---- */
   .grocery-item {
     display: grid; grid-template-columns: 1fr 90px 148px;
     gap: 12px; padding: 8px 12px; border-bottom: 1px solid #26212e;
@@ -166,7 +164,6 @@
   .print-mark { display: none; }
   .print-header { display: none; }
 
-  /* ---- modal ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -201,7 +198,6 @@
   }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
 
-  /* ---- toast ---- */
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -213,7 +209,6 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ---- print ---- */
   @media print {
     body {
       background: #fff; color: #000; padding: 0;
@@ -261,7 +256,6 @@
   <button id="tab-grocery">GROCERY LIST</button>
 </nav>
 
-<!-- ============ INVENTORY ============ -->
 <div class="page visible" id="page-inventory">
 
   <div class="toolbar">
@@ -297,7 +291,6 @@
   <div class="columns" id="columns"></div>
 </div>
 
-<!-- ============ GROCERY LIST ============ -->
 <div class="page" id="page-grocery">
   <div class="toolbar">
     <span style="font-size:0.79rem; color:var(--dim);" id="grocery-count">0 items on list</span>
@@ -313,7 +306,6 @@
   <div id="grocery-list"></div>
 </div>
 
-<!-- ============ MODAL + TOAST ============ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -329,15 +321,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// ==========================================================
-// HOUSEHOLD INVENTORY — CLOUD EDITION
-// Scope: SHARED (both accounts see the same inventory)
-//   - add items: everyone
-//   - edit qty / store / buy-one / buy-all / zero-all: everyone
-//   - DELETE items, Import/Export backups: admin only
-//     (database-enforced via RLS; UI hides the buttons too)
-// ==========================================================
-
 const CATEGORIES = [
   "FRIDGE", "FREEZER", "PANTRY", "SPICE CABINET",
   "DAMIEN", "CLEANING", "HYGIENE", "HOLIDAY"
@@ -362,12 +345,10 @@ const STORES = [
 ];
 STORES.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 
-// ---------- state ----------
-let inventory = [];      // rows: {id, owner, name, category, store, qty}
+let inventory = [];
 let groceryFilter = localStorage.getItem("savich-grocery-filter") || "ALL";
 let IS_ADMIN = false;
 
-// ---------- cloud helpers ----------
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -406,9 +387,6 @@ function esc(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// ==========================================================
-// BUILD THE COLUMNS
-// ==========================================================
 function buildColumns() {
   const wrap = document.getElementById("columns");
   wrap.innerHTML = "";
@@ -436,9 +414,6 @@ function buildColumns() {
   });
 }
 
-// ==========================================================
-// RENDER INVENTORY — alphabetized within each column
-// ==========================================================
 function renderInventory() {
   CATEGORIES.forEach((cat, ci) => {
     const tbody = document.getElementById("body-" + ci);
@@ -481,9 +456,6 @@ function renderInventory() {
     total + " item" + (total === 1 ? "" : "s");
 }
 
-// ==========================================================
-// ROW ACTIONS (cloud writes; updates are allowed for everyone)
-// ==========================================================
 async function updateStore(id, val) {
   try { await updateRow(id, { store: val }); setSync(true); }
   catch (e) { console.error(e); setSync(false); }
@@ -498,7 +470,6 @@ async function adjustQty(id, delta) {
   renderInventory();
   renderGrocery();
 
-  // debounce rapid +/- clicks into one cloud write
   clearTimeout(pendingQtyTimers[id]);
   pendingQtyTimers[id] = setTimeout(async () => {
     try { await updateRow(id, { qty: row.qty }); setSync(true); }
@@ -534,9 +505,6 @@ async function confirmDelete(id) {
   }
 }
 
-// ==========================================================
-// ADD ITEM (everyone)
-// ==========================================================
 async function addItem() {
   const name = document.getElementById("new-name").value.trim();
   const store = document.getElementById("new-store").value;
@@ -565,9 +533,6 @@ async function addItem() {
   }
 }
 
-// ==========================================================
-// GROCERY LIST — qty above zero, grouped by store
-// ==========================================================
 function setGroceryFilter(val) {
   groceryFilter = val;
   localStorage.setItem("savich-grocery-filter", val);
@@ -666,9 +631,6 @@ async function zeroAll() {
   }
 }
 
-// ==========================================================
-// PRINT
-// ==========================================================
 function printList() {
   const d = new Date();
   document.getElementById("print-date").textContent =
@@ -677,9 +639,6 @@ function printList() {
   window.print();
 }
 
-// ==========================================================
-// BACKUP / RESTORE (admin only — restore deletes + rewrites all)
-// ==========================================================
 function exportData() {
   const dump = inventory.map(r => ({
     category: r.category, name: r.name, store: r.store, qty: r.qty
@@ -745,9 +704,6 @@ async function importData(e) {
   }
 }
 
-// ==========================================================
-// MODAL
-// ==========================================================
 let modalResolve = null;
 
 function askConfirm(title, message, destructive) {
@@ -778,9 +734,6 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// ==========================================================
-// TOAST
-// ==========================================================
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -790,9 +743,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
-// ==========================================================
-// TABS
-// ==========================================================
 document.getElementById("tab-inventory").onclick = () => switchTab("inventory");
 document.getElementById("tab-grocery").onclick = () => switchTab("grocery");
 
@@ -805,11 +755,7 @@ function switchTab(name) {
   document.getElementById("page-" + name).classList.add("visible");
 }
 
-// ==========================================================
-// INIT
-// ==========================================================
 (async function init() {
-  // dropdowns (always needed)
   document.getElementById("grocery-filter").innerHTML =
     '<option value="ALL">All Stores</option>' +
     STORES.map(s => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
@@ -825,10 +771,8 @@ function switchTab(name) {
   renderInventory();
   renderGrocery();
 
-  // auth gate
   try { await ensureAuth(); } catch (e) { return; }
 
-  // admin check → decides delete buttons + backup visibility
   try {
     const { data, error } = await sb().rpc("is_admin");
     IS_ADMIN = !error && data === true;
@@ -837,7 +781,6 @@ function switchTab(name) {
     document.getElementById("admin-tools").style.display = "none";
   }
 
-  // load shared inventory from the cloud
   try {
     await loadRows();
     setSync(true);

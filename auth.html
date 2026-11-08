@@ -79,7 +79,7 @@
 
 <div class="box">
   <h1>Savich Dashboard</h1>
-  <p class="sub">Household sign-in — your data lives in the cloud now.</p>
+  <p class="sub">Sign-in — your data lives in the cloud now.</p>
   <div class="err" id="err"></div>
   <form id="login-form">
     <label for="email">Email</label>
@@ -88,18 +88,15 @@
     <input type="password" id="password" autocomplete="current-password" required>
     <button type="submit" class="primary" id="btn">SIGN IN</button>
   </form>
-  <p class="hint">Accounts are created by the household admin in<br>Supabase → Authentication → Users</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// same config values as db.js
 const SUPABASE_URL  = "https://abcdefghij.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// If already signed in, skip straight to where we were headed
 (async () => {
   const { data } = await sb.auth.getSession();
   if (data.session) redirect();

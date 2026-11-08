@@ -28,8 +28,6 @@
   }
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-
-  /* ---- backup buttons: top of the page, under the nav bar ---- */
   .backup-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; align-items: center; justify-content: flex-end; }
   .backup-btn {
     background: none; border: 1px solid var(--border); color: var(--dim);
@@ -78,8 +76,6 @@
   .chip.has-info::after { content: "?"; color: var(--accent2); font-size: 0.7rem; font-weight: 700;
     border: 1px solid var(--border); border-radius: 50%; width: 16px; height: 16px;
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-  /* ---- POPUP PANEL STYLES ---- */
   .info-panel {
     display: none; position: fixed; z-index: 100;
     width: min(520px, calc(100vw - 40px));
@@ -131,8 +127,6 @@
   .filter-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
-
-  /* ---- modal (house style, same as inventory/recipes/history) ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -166,8 +160,6 @@
     border: 1px solid var(--border); font-weight: 400;
   }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
-
-  /* ---- toast (house style) ---- */
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -192,8 +184,6 @@
     <a href="misc.html" class="nav-btn">Misc</a>
   </nav>
 </div>
-
-<!-- BACKUP / RESTORE — under the nav bar, right-aligned -->
 <div class="backup-row">
   <button class="backup-btn" onclick="exportState()">Export Data</button>
   <label class="backup-btn" style="cursor:pointer;">
@@ -201,21 +191,15 @@
     <input type="file" accept=".json" onchange="importState(event)">
   </label>
 </div>
-
 <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
-
 <div class="stats-line" id="stats"></div>
 <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
-
 <div class="filter-row">
   <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
   <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
   <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
 </div>
-
 <div id="groups"></div>
-
-<!-- POPUP PANEL -->
 <div class="info-panel" id="info-panel">
   <div class="info-head">
     <span class="info-name" id="info-name"></span>
@@ -223,8 +207,6 @@
   </div>
   <div id="info-lines"></div>
 </div>
-
-<!-- ============ MODAL + TOAST ============ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -237,23 +219,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// =====================================================================
-// STORE SHIM — per-user local cache (fast loads, offline fallback).
-// Cloud (Supabase user_state) is the source of truth; the cache is
-// keyed by user id so two accounts on the same device never mix.
-// =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-
-// =====================================================================
-// STATE + PER-USER SYNC ENGINE (createUserSync lives in db.js)
-// =====================================================================
 const STATE_KEY = "gw2-nodes";
 let USER_ID = null;
-
-// state: { owned: {name:true}, custom: [{group,name,details}], locs: {name:"[&...] text"} }
 function normalizeState(s) {
   s = s || {};
   if (!s.owned || typeof s.owned !== "object") s.owned = {};
@@ -282,10 +253,6 @@ function setSync(ok, msg) {
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
-// =====================================================================
-// NODE GROUPS (kept exactly as-is)
-// =====================================================================
 const NODE_GROUPS = {
     "Packs & Racks": [
     "Basic Ore Node Pack", "Basic Lumber Node Pack", "Basic Harvesting Node Pack",
@@ -325,10 +292,6 @@ const NODE_GROUPS = {
     "Janthir Wilds Expedition Contract", "Visions of Eternity Expedition Board"
   ]
 };
-
-// =====================================================================
-// DETAILS INFO DICTIONARY (kept exactly as-is)
-// =====================================================================
 const INFO = {
   "Basic Ore Node Pack":        { src: "Gem Store (800 gems)", drops: "Copper, Silver & Gold ore nodes" },
   "Basic Lumber Node Pack":     { src: "Gem Store (800 gems)", drops: "Green, Soft & Seasoned wood nodes" },
@@ -399,12 +362,6 @@ const INFO = {
   "Feline Holoscepter":         { src: "Holomancer Netto: + 30 coin", drops: "Toy" },
   "Feline Water Pistol":        { src: "Holomancer Netto: + 2g", drops: "Toy" }
 };
-
-// =====================================================================
-// LOCATION SEEDS — map + NPC hints. Codes users add are saved to
-// their own cloud row (state.locs) and override these, so refreshing
-// this seed list never loses codes.
-// =====================================================================
 const LOC = {
   "Bloodstone Crystal Node": "Bloodstone Fen — Natto (near Zealot's Overlook Waypoint)",
   "Winterberry Bush Node":   "Bitterfrost Frontier — Slooshoo, upstairs at Sorrow's Eclipse Sanctuary",
@@ -432,17 +389,12 @@ const LOC = {
   "Eternal Ice Shard Node": "Frostgorge Sound — Anette Eymundrdottir",
   "Snow truffle node":      "Transference Converter, Drojtar's Hollow Complex"
 };
-
-// =====================================================================
-// BACKUP / RESTORE
-// =====================================================================
 function isValidNodeState(data) {
   return data && typeof data === "object" && !Array.isArray(data) &&
     typeof data.owned === "object" && data.owned !== null &&
     Array.isArray(data.custom) &&
     (data.locs === undefined || (typeof data.locs === "object" && data.locs !== null));
 }
-
 function exportState() {
   const ownedCount = Object.keys(state.owned).length;
   const customCount = (state.custom || []).length;
@@ -462,7 +414,6 @@ function exportState() {
   URL.revokeObjectURL(url);
   showToast("Backup downloaded. Keep it somewhere safe.");
 }
-
 function importState(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -490,8 +441,7 @@ function importState(e) {
       );
       if (!ok) { e.target.value = ""; return; }
       state = normalizeState(data);
-      save(true); // push to cloud right away
-      render();
+      save(true);
       showToast("Backup restored.");
     } catch (err) {
       showToast("Couldn't read that file.");
@@ -500,10 +450,6 @@ function importState(e) {
   };
   reader.readAsText(file);
 }
-
-// =====================================================================
-// POPUP FUNCTIONS
-// =====================================================================
 function infoFor(node) {
   const cust = (state.custom || []).find(c => c.name === node.name);
   if (cust && cust.details) {
@@ -513,23 +459,18 @@ function infoFor(node) {
   if (i) return { src: i.src, drops: i.drops, custom: false };
   return null;
 }
-
 function locFor(node) {
-  // user-saved code/text wins over the seed
   return (state.locs && state.locs[node.name]) || LOC[node.name] || null;
 }
-
 function codeIn(text) {
   const m = text && text.match(/\[&[A-Za-z0-9+/]+={0,2}\]/);
   return m ? m[0] : null;
 }
-
 function openInfo(node, evt) {
   const panel = document.getElementById("info-panel");
   document.getElementById("info-name").textContent = node.name;
   const lines = document.getElementById("info-lines");
   lines.innerHTML = "";
-
   function line(lab, val) {
     const div = document.createElement("div");
     div.className = "info-line";
@@ -544,7 +485,6 @@ function openInfo(node, evt) {
     btn.onclick = onClick;
     return btn;
   }
-
   const info = infoFor(node);
   if (info) {
     if (info.src) line(info.custom ? "Details" : "How to get it", info.src);
@@ -553,19 +493,15 @@ function openInfo(node, evt) {
     line("Details", "Not yet documented");
   }
   line("Status", state.owned[node.name] ? "OWNED ✓" : "Still needed");
-
-  // ---------- LOCATION LINE (copy-code + inline edit) ----------
   const curLoc = locFor(node);
   const code = codeIn(curLoc);
   const locDiv = document.createElement("div");
   locDiv.className = "info-line";
   if (code) locDiv.classList.add("has-code");
-
   const lab = document.createElement("span");
   lab.className = "lab";
   lab.textContent = "Location: ";
   locDiv.appendChild(lab);
-
   const val = document.createElement("b");
   val.innerHTML = esc(curLoc || "not set");
   if (code) {
@@ -573,7 +509,6 @@ function openInfo(node, evt) {
       ' <span class="info-code">' + esc(code) + "</span>";
   }
   locDiv.appendChild(val);
-
   if (code) {
     locDiv.appendChild(smallBtn("copy code", "copycode", function () {
       const btn = this;
@@ -584,9 +519,7 @@ function openInfo(node, evt) {
       });
     }));
   }
-
   const editBtn = smallBtn(curLoc ? "edit" : "+ add code", "plain", function () {
-    // INLINE EDITOR — no browser dialogs, so nothing can be blocked
     locDiv.innerHTML = "";
     const inp = document.createElement("input");
     inp.type = "text";
@@ -594,7 +527,6 @@ function openInfo(node, evt) {
     inp.placeholder = "paste code like [&BLgEAAA=] + optional note";
     inp.value = curLoc || "";
     locDiv.appendChild(inp);
-
     const saveBtn = smallBtn("save", "copycode", function () {
       const v = inp.value.trim();
       if (v) state.locs[node.name] = v;
@@ -603,26 +535,19 @@ function openInfo(node, evt) {
       openInfo(node, evt); // redraw popup with the new value
     });
     locDiv.appendChild(saveBtn);
-
     const cancelBtn = smallBtn("cancel", "plain", function () {
       openInfo(node, evt);
     });
     locDiv.appendChild(cancelBtn);
-
-    // Enter key saves, Escape cancels (careful: outer Escape handler closes panel)
     inp.addEventListener("keydown", function (e) {
       if (e.key === "Enter") { e.preventDefault(); saveBtn.click(); }
       if (e.key === "Escape") { e.stopPropagation(); cancelBtn.click(); }
     });
-
     inp.focus();
   });
   locDiv.appendChild(editBtn);
 
   lines.appendChild(locDiv);
-  // ------------------------------------------------------
-
-  // Delete button for custom nodes
   if (node.custom) {
     const btn = document.createElement("button");
     btn.className = "info-del";
@@ -632,9 +557,7 @@ function openInfo(node, evt) {
     };
     lines.appendChild(btn);
   }
-
   panel.classList.add("open");
-  // only reposition when opened from a chip (not when reopened after edit)
   const t = evt && evt.currentTarget;
   const isChip = t && t.classList && t.classList.contains("chip");
   if (isChip) {
@@ -658,10 +581,6 @@ document.addEventListener("click", e => {
   if (panel.classList.contains("open") && !panel.contains(e.target))
     closeInfo();
 }, true);
-
-// =====================================================================
-// RENDER
-// =====================================================================
 function allNodes() {
   const out = [];
   for (const g in NODE_GROUPS)
@@ -670,25 +589,21 @@ function allNodes() {
     out.push({ group: c.group, name: c.name, custom: true, details: c.details || "" });
   return out;
 }
-
 function render() {
   const nodes = allNodes();
   const ownedCount = nodes.filter(n => state.owned[n.name]).length;
   const pct = nodes.length ? Math.round(ownedCount / nodes.length * 100) : 0;
-
   document.getElementById("stats").textContent =
     ownedCount + " of " + nodes.length + " nodes owned (" + pct + "%)";
   const bar = document.getElementById("bar");
   bar.style.width = pct + "%";
   bar.className = "progress-inner" + (pct === 100 ? " full" : "");
-
   const groups = {};
   for (const n of nodes) {
     if (filter === "needed" && state.owned[n.name]) continue;
     if (filter === "owned" && !state.owned[n.name]) continue;
     (groups[n.group] = groups[n.group] || []).push(n);
   }
-
   const wrap = document.getElementById("groups");
   wrap.innerHTML = "";
   for (const g in groups) {
@@ -707,7 +622,6 @@ function render() {
       b.innerHTML = (state.owned[n.name] ? "<span class='tick'>&#10003;</span> " : "") +
                     "<span class='nm'>" + esc(n.name) + "</span>";
 
-      // Hover tooltip
       if (info) {
         b.title = (info.src ? "How: " + info.src + "\n" : "") +
                   (info.drops ? "Gives: " + info.drops + "\n" : "") +
@@ -726,13 +640,11 @@ function render() {
   for (const [id, f] of [["f-all","all"],["f-needed","needed"],["f-owned","owned"]])
     document.getElementById(id).className = "filter-btn" + (filter === f ? " on" : "");
 }
-
 function toggle(name) {
   if (state.owned[name]) delete state.owned[name];
   else state.owned[name] = true;
   save(); render();
 }
-
 async function confirmAndRemove(name) {
   const ok = await askConfirm(
     "Remove custom node?",
@@ -746,20 +658,11 @@ async function confirmAndRemove(name) {
   closeInfo();
   showToast("Custom node removed.");
 }
-
 function setFilter(f) { filter = f; render(); }
-
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-
-// =====================================================================
-// MODAL — askConfirm but with any number of choices.
-// Each choice: { label, value, primary?, destructive? }
-// Resolves with the chosen value (null if cancelled/escaped/backdrop).
-// =====================================================================
 let modalResolve = null;
-
 function askChoice(title, message, choices) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -779,19 +682,16 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
     { label: "NO", value: false },
     { label: "YES", value: true, primary: true, destructive: !!destructive }
   ]);
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(null);
 });
@@ -801,10 +701,6 @@ document.addEventListener("keydown", e => {
     closeModal(null);
   }
 });
-
-// =====================================================================
-// TOAST
-// =====================================================================
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -813,24 +709,16 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
-
-// =====================================================================
-// INIT
-// =====================================================================
 (async function init() {
-  render(); // show structure immediately while auth check runs
-
-  const session = await requireAuth(); // bounces to login if needed
+  render();
+  const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
-
-  // migrate old single-user localStorage data to this user's cache once
   const legacy = Store.get(STATE_KEY);
   if (legacy) {
     Store.set(STATE_KEY + ":" + USER_ID, legacy);
     localStorage.removeItem(STATE_KEY);
   }
-
   const ok = await sync.init();
   render();
 })();

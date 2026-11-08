@@ -36,7 +36,6 @@
   .top-right {
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   }
-  /* Navigation Bar — house style, same as trackers/recipes/inventory */
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -147,7 +146,6 @@
   }
   .sync-note.live { color: var(--good); }
 
-  /* ---- custom modal ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -185,7 +183,6 @@
   }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
 
-  /* ---- toast ---- */
   .toast {
     position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--panel); border: 1px solid var(--accent2);
@@ -213,7 +210,6 @@
   <button id="tab-history">HISTORY</button>
 </nav>
 
-<!-- ============ DISTRIBUTE ============ -->
 <div class="page visible" id="page-distribute">
 
   <div class="pool-panel">
@@ -249,7 +245,6 @@
   </div>
 </div>
 
-<!-- ============ HISTORY ============ -->
 <div class="page" id="page-history">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
@@ -260,7 +255,7 @@
       <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
-  
+
   <table>
     <thead>
       <tr>
@@ -275,7 +270,6 @@
   <div class="empty" id="hist-empty">No pay cycles saved yet. Complete a distribution, then click "Save Pay Cycle to History".</div>
 </div>
 
-<!-- ============ MODAL + TOAST ============ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -291,14 +285,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// ==========================================================
-// VAULT DISTRIBUTION — CLOUD EDITION
-// Scope: SHARED (both accounts see and contribute)
-//   - vault config + in-progress cycle -> app_data blobs
-//   - saved pay cycles                -> vault_history rows
-//   - deleting history / clearing     -> admin only (DB-enforced)
-// ==========================================================
-
 const DEFAULT_VAULTS = [
   { name: "420", weight: 2 },
   { name: "Advantage", weight: 0 },
@@ -327,12 +313,9 @@ const CUR_KEY  = "savich-vault-current";
 
 let vaults  = DEFAULT_VAULTS.map(v => ({ ...v }));
 let current = { amount: "", done: {} };
-let history = [];          // vault_history rows from the cloud
+let history = [];
 let IS_ADMIN = false;
 
-// ==========================================================
-// CLOUD HELPERS (direct to supabase, shared scope)
-// ==========================================================
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -373,9 +356,6 @@ function setSync(ok, msg) {
   el.classList.toggle("live", !!ok);
 }
 
-// ==========================================================
-// TRANSFER MATH (unchanged)
-// ==========================================================
 function transferFor(amount, weight) {
   if (amount === "" || !Number.isFinite(amount)) return "";
   if (weight === "" || !Number.isFinite(weight)) return "";
@@ -392,9 +372,6 @@ function poolAmount() {
   return Number.isFinite(v) ? v : "";
 }
 
-// ==========================================================
-// CUSTOM MODAL
-// ==========================================================
 let modalResolve = null;
 
 function askConfirm(title, message, destructive) {
@@ -425,9 +402,6 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// ==========================================================
-// TOAST
-// ==========================================================
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -437,9 +411,6 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
 }
 
-// ==========================================================
-// RENDER DISTRIBUTE TABLE
-// ==========================================================
 function renderVaults() {
   const tbody = document.getElementById("vault-body");
   tbody.innerHTML = "";
@@ -511,9 +482,6 @@ document.getElementById("pool-amount").addEventListener("input", () => {
   }, 600);
 });
 
-// ==========================================================
-// SAVE CYCLE — inserts a vault_history row
-// ==========================================================
 async function saveCycle() {
   const amount = poolAmount();
   if (amount === "" || amount <= 0) {
@@ -572,9 +540,6 @@ async function saveCycle() {
   }
 }
 
-// ==========================================================
-// RESET
-// ==========================================================
 async function resetCycle() {
   const ok = await askConfirm(
     "Reset Vault Distribution?",
@@ -592,9 +557,6 @@ async function resetCycle() {
   showToast("Ready for the next pay cycle.");
 }
 
-// ==========================================================
-// HISTORY (rows come from vault_history)
-// ==========================================================
 function renderHistory() {
   const tbody = document.getElementById("history-body");
   const empty = document.getElementById("hist-empty");
@@ -641,7 +603,6 @@ function toggleDetail(tr, row) {
   tr.after(detail);
 }
 
-// Clear All = admin only at the DB level; hide button for members
 async function deleteCycle(id, btn) {
   const row = history.find(r => r.id === id);
   const label = row ? row.cycle_date : "this pay cycle";
@@ -689,10 +650,6 @@ async function clearHistory() {
   }
 }
 
-// ==========================================================
-// EXPORT / IMPORT BACKUP (also the migration path:
-// export from the old local page, import here)
-// ==========================================================
 function exportHistory() {
   const payload = {
     vaults: vaults,
@@ -725,7 +682,6 @@ async function importHistory(input) {
     return;
   }
 
-  // Accept either the full backup format or a bare history array
   let impVaults = null;
   let cycles = null;
   if (Array.isArray(parsed)) {
@@ -783,9 +739,6 @@ async function importHistory(input) {
   }
 }
 
-// ==========================================================
-// TABS
-// ==========================================================
 document.getElementById("tab-distribute").onclick = () => switchTab("distribute");
 document.getElementById("tab-history").onclick = () => switchTab("history");
 
@@ -798,17 +751,13 @@ function switchTab(name) {
   document.getElementById("page-" + name).classList.add("visible");
 }
 
-// ==========================================================
-// INIT — gate, then load everything from the cloud
-// ==========================================================
 (async function init() {
   try {
     await ensureAuth();
   } catch (e) {
-    return; // redirecting to login
+    return;
   }
 
-  // admin check drives UI (the DB enforces regardless)
   try {
     const { data, error } = await sb().rpc("is_admin");
     IS_ADMIN = !error && data === true;
@@ -822,7 +771,7 @@ function switchTab(name) {
     if (cfg && Array.isArray(cfg.vaults) && cfg.vaults.length) {
       vaults = cfg.vaults;
     } else if (Array.isArray(cfg) && cfg.length) {
-      vaults = cfg; // older blob format, just in case
+      vaults = cfg;
     }
 
     const cur = await getBlob(CUR_KEY);

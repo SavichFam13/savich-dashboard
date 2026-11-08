@@ -31,8 +31,6 @@
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
-  /* ---- add form ---- */
   .add-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px; margin-bottom: 28px;
@@ -60,8 +58,6 @@
   .template-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
   .match-note { color: var(--accent2); font-size: 0.78rem; font-weight: 700; margin-top: 8px; display: none; }
   .match-note.show { display: block; }
-
-  /* ---- legendary cards ---- */
   .leg-list { display: flex; flex-direction: column; gap: 16px; }
   .leg-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
@@ -83,8 +79,6 @@
     margin: 10px 0 16px; overflow: hidden;
   }
   .leg-bar { background: linear-gradient(90deg, var(--accent), var(--accent2)); height: 100%; width: 0%; border-radius: 999px; transition: width 0.3s ease; }
-
-  /* ---- phases ---- */
   .phase { margin-bottom: 18px; }
   .phase:last-child { margin-bottom: 0; }
   .phase-head {
@@ -97,7 +91,6 @@
   .phase-sub { color: var(--dim); font-size: 0.72rem; }
   .phase-done { color: var(--good); font-size: 0.75rem; font-weight: 700; margin-left: auto; }
   .phase.collapsed .phase-body { display: none; }
-
   ul.items { list-style: none; }
   .item { margin: 4px 0; }
   .item-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
@@ -128,17 +121,13 @@
   ul.subs .chk:checked + .lbl { color: var(--good); }
   ul.subs ul.subs .lbl { font-size: 0.76rem; opacity: 0.9; }
   .subs.hidden { display: none; }
-
   .add-inline {
     background: none; border: 1px dashed var(--border); color: var(--dim); cursor: pointer;
     border-radius: 8px; padding: 4px 12px; font-family: inherit; font-size: 0.78rem; margin-top: 6px;
   }
   .add-inline:hover { border-color: var(--accent2); color: var(--accent2); }
-
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
   .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
-
-  /* ---- themed modal (matches trackers page) ---- */
   .confirm-overlay {
     display: none; position: fixed; inset: 0; z-index: 200;
     background: rgba(0, 0, 0, 0.65);
@@ -172,7 +161,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Legendary Workshop</h1>
   <nav class="nav-bar">
@@ -183,8 +171,6 @@
     <a href="misc.html" class="nav-btn">Misc</a>
   </nav>
 </div>
-
-
 <div class="add-card">
   <h2>Start a new legendary</h2>
   <div class="form-row">
@@ -195,11 +181,7 @@
   <p class="template-hint" id="tpl-hint"></p>
   <p class="match-note" id="match-note"></p>
 </div>
-
 <div class="leg-list" id="leg-list"></div>
-
-
-<!-- ================= THEMED MODAL ================= -->
 <div class="confirm-overlay" id="modal-overlay">
   <div class="confirm-box">
     <div class="confirm-title" id="modal-title"></div>
@@ -213,29 +195,16 @@
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-// =====================================================================
-// STORE SHIM — per-user local cache (fast loads, offline fallback).
-// Cloud (Supabase user_state) is the source of truth; cache is keyed
-// by user id so two accounts on the same device never mix.
-// =====================================================================
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
-
-// =====================================================================
-// STATE + PER-USER SYNC (createUserSync lives in db.js)
-// state shape: legs = [ {id, name, kind, phases:[...]} ]
-// One section ("legs") since the whole page is one array.
-// =====================================================================
 const KEY = "gw2-legendaries";
 let legs = [];
 let USER_ID = null;
-
 const sync = createUserSync({
   key: KEY,
   sections: ["legs"],
@@ -246,14 +215,11 @@ const sync = createUserSync({
   onRender: () => render(),
   setOnline: (ok, msg) => setSync(ok, msg)
 });
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
-// migrate old formats gracefully (same normalization the old page did)
 function normalizeLegs(arr) {
   return (Array.isArray(arr) ? arr : [])
     .filter(l => l && (l.phases || l.steps))
@@ -263,30 +229,18 @@ function normalizeLegs(arr) {
       return l;
     });
 }
-
 function save(immediate) { sync.save(immediate); }
-
-// =====================================================================
-// THEMED MODAL — replaces native confirm() / prompt() so popups match
-// the rest of the dashboard (same pattern as trackers.html).
-//   askModal({ title, text, danger, inputLabel, inputDefault,
-//              yes, no, onYes(value) })
-//   danger:true  → red YES button (deletes)
-//   inputLabel   → shows a text field; YES submits its value
-// =====================================================================
 let modalCb = null;
 function askModal(opts) {
   const ov = document.getElementById("modal-overlay");
   const yesBtn = document.getElementById("modal-yes");
   const inputRow = document.getElementById("modal-input-row");
   const input = document.getElementById("modal-input");
-
   document.getElementById("modal-title").textContent = opts.title || "Are you sure?";
   document.getElementById("modal-text").textContent = opts.text || "";
   yesBtn.textContent = opts.yes || "YES";
   document.getElementById("modal-no").textContent = opts.no || "NO";
   yesBtn.classList.toggle("safe", !opts.danger);
-
   if (opts.inputLabel !== undefined) {
     inputRow.classList.add("show");
     input.placeholder = opts.inputLabel;
@@ -320,14 +274,6 @@ document.addEventListener("keydown", e => {
     document.getElementById("modal-yes").click();
   }
 });
-
-// =====================================================================
-// TEMPLATES — phases contain items; items may carry "subs" (ingredient
-// trees, arbitrarily nested). Phase shape:
-//   { title, sub, items: [ { label, qty?, subs?: [...] } ] }
-// Steps are snapshotted onto each legend when created, so editing
-// templates never breaks saved legends.
-// =====================================================================
 const TEMPLATES = {
   "Vision": {
     label: "Vision (accessory) — FULL RECIPE",
@@ -1009,11 +955,6 @@ const TEMPLATES = {
     phases: [ { title: "My checklist", sub: "", items: [] } ]
   }
 };
-
-// =====================================================================
-// NAME MATCHING — typing a known legendary's name auto-selects its
-// full-recipe template. Keys are lowercase substrings.
-// =====================================================================
 const NAME_MATCH = [
   { keys: ["Vision", "glimpse"], tpl: "Vision" },
   { keys: ["Aurora", "spark of sentience"], tpl: "Aurora" },
@@ -1023,7 +964,6 @@ const NAME_MATCH = [
   { keys: ["endless summer", "summer"], tpl: "summer" },
   { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" }
 ];
-
 function snapshot(phases) {
   return JSON.parse(JSON.stringify(phases)).map(p => ({
     title: p.title,
@@ -1037,8 +977,6 @@ function snapshot(phases) {
     })
   }));
 }
-
-// ---------- progress helpers ----------
 function isDone(it) {
   if (it.subs && it.subs.length) return it.subs.every(isDone);
   return !!it.done;
@@ -1052,8 +990,6 @@ function countLeaves(arr) {
   });
   return { n, d };
 }
-
-// ---------- template dropdown + name auto-match ----------
 const tplSel = document.getElementById("leg-template");
 for (const k in TEMPLATES) {
   const o = document.createElement("option");
@@ -1064,17 +1000,14 @@ function updHint() {
   document.getElementById("tpl-hint").innerHTML =
     "&#9432; " + TEMPLATES[tplSel.value].hint;
 }
-
 const nameEl = document.getElementById("leg-name");
 const matchNote = document.getElementById("match-note");
-
 function autoMatch() {
   const name = nameEl.value.trim().toLowerCase();
   matchNote.classList.remove("show");
   tplSel.classList.remove("matched");
   if (!name) return;
   for (const m of NAME_MATCH) {
-    // compare case-insensitively on BOTH sides — this is the fix
     if (m.keys.some(k => name.includes(String(k).toLowerCase()))) {
       tplSel.value = m.tpl;
       tplSel.classList.add("matched");
@@ -1087,8 +1020,8 @@ function autoMatch() {
   }
 }
 nameEl.addEventListener("input", autoMatch);
-nameEl.addEventListener("change", autoMatch);   // catches autofill/IME oddities
-nameEl.addEventListener("keyup", autoMatch);    // belt-and-braces fallback
+nameEl.addEventListener("change", autoMatch);
+nameEl.addEventListener("keyup", autoMatch);
 tplSel.onchange = () => {
   tplSel.classList.remove("matched");
   matchNote.classList.remove("show");
@@ -1096,32 +1029,27 @@ tplSel.onchange = () => {
 };
 autoMatch();
 updHint();
-
 function titleCase(str) {
   const minor = ["of", "the", "and", "for", "to", "in", "a", "an", "at", "on", "vs"];
   return str.toLowerCase().split(/\s+/).map((w, i) =>
     (i > 0 && minor.includes(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)
   ).join(" ");
 }
-
 function addLegend() {
   const name = nameEl.value.trim();
   if (!name) return;
-  autoMatch();                    // re-sync dropdown to the typed name
+  autoMatch();
   const tpl = TEMPLATES[tplSel.value];
-  if (!tpl) return;               // never add from a broken dropdown state
+  if (!tpl) return;
   const phases = snapshot(tpl.phases);
   phases[0].open = true;
   legs.unshift({ id: "l" + Date.now(), name: titleCase(name), kind: tpl.label, phases: phases });
   nameEl.value = "";
-  // reset the form so the next entry can't inherit this template by accident
   matchNote.classList.remove("show");
   tplSel.classList.remove("matched");
   updHint();
   save(); render();
 }
-
-// delete goes through the themed modal
 function delLegend(li) {
   askModal({
     title: "Remove " + legs[li].name + "?",
@@ -1135,8 +1063,6 @@ function delLegend(li) {
     }
   });
 }
-
-
 function toggleAt(li, pi, path, checked) {
   const arr = legs[li].phases[pi].items;
   const idxs = path.split(".").map(Number);
@@ -1146,7 +1072,6 @@ function toggleAt(li, pi, path, checked) {
   save(); render();
 }
 
-// add-step goes through the themed modal
 function addStepTo(li, pi) {
   askModal({
     title: "Add a step",
@@ -1162,13 +1087,10 @@ function addStepTo(li, pi) {
     }
   });
 }
-
-// ---------- rendering ----------
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 function fmtQty(q) { return q ? "<span class='qty'>" + esc(q) + "</span> " : ""; }
-
 function itemHtml(item, li, pi, path) {
   const hasSubs = !!(item.subs && item.subs.length);
   const done = isDone(item);
@@ -1190,7 +1112,6 @@ function itemHtml(item, li, pi, path) {
   h += "</li>";
   return h;
 }
-
 function render() {
   const wrap = document.getElementById("leg-list");
   wrap.innerHTML = "";
@@ -1198,12 +1119,10 @@ function render() {
     wrap.innerHTML = "<div class='empty-msg'>Nothing in the workshop. Add one above and pick a template.</div>";
     return;
   }
-
   legs.forEach((leg, li) => {
     let n = 0, d = 0;
     leg.phases.forEach(p => { const r = countLeaves(p.items); n += r.n; d += r.d; });
     const pct = n ? Math.round(d / n * 100) : 0;
-
     const card = document.createElement("div");
     card.className = "leg-card" + (n && pct === 100 ? " complete" : "");
     let html = "<div class='leg-head'><div><span class='leg-name'>" + esc(leg.name) +
@@ -1211,7 +1130,6 @@ function render() {
       "<div><span class='leg-pct'>" + pct + "%</span> <span class='leg-count'>(" + d + "/" + n + " steps)</span> " +
       "<button class='leg-del' data-li='" + li + "' type='button'>delete</button></div></div>" +
       "<div class='leg-bar-outer'><div class='leg-bar' style='width:" + pct + "%'></div></div>";
-
     leg.phases.forEach((ph, pi) => {
       const t = countLeaves(ph.items);
       const phDone = t.n > 0 && t.d === t.n;
@@ -1225,11 +1143,9 @@ function render() {
       ph.items.forEach((it, ii) => { html += itemHtml(it, li, pi, String(ii)); });
       html += "</ul><button class='add-inline' data-li='" + li + "' data-pi='" + pi + "' type='button'>+ step</button></div></div>";
     });
-
     card.innerHTML = html;
     wrap.appendChild(card);
   });
-
   wrap.querySelectorAll(".phase-head").forEach(h => {
     h.onclick = () => {
       const ph = legs[h.dataset.li].phases[h.dataset.pi];
@@ -1254,35 +1170,20 @@ function render() {
     b.onclick = () => delLegend(+b.dataset.li);
   });
 }
-
-// =====================================================================
-// INIT — auth gate, migrate old localStorage data, then render.
-// The old page kept data under "gw2-legendaries" (plus a seed flag).
-// On first load we adopt it into THIS user's cloud row; the second
-// account gets its own empty workshop (their old device-local data
-// stays available on whichever browser had it).
-// =====================================================================
 (async function init() {
-  const session = await requireAuth();   // bounces to login if needed
+  const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
-
-  // legacy migration: old un-scoped localStorage key → this user's cloud
   const legacy = Store.get(KEY);
   const local = Store.get(KEY + ":" + USER_ID);
-
   await sync.init();
-
-  // if the user has nothing anywhere, adopt whatever the old key held
   const nowLocal = Store.get(KEY + ":" + USER_ID) || null;
   const remoteEmpty = (legs || []).length === 0;
   if (remoteEmpty && !nowLocal && legacy && legacy.length) {
     legs = normalizeLegs(legacy);
-    save(true);           // push adopted legacy data to the cloud NOW
+    save(true);
     render();
   }
-
-  // Seeded example: only for a user who truly has nothing
   if ((legs || []).length === 0) {
     const seedFlag = "gw2-legendaries-seeded-v3:" + USER_ID;
     if (!Store.get(seedFlag)) {
@@ -1296,10 +1197,8 @@ function render() {
       render();
     }
   }
-
   render();
 })();
 </script>
-
 </body>
 </html>

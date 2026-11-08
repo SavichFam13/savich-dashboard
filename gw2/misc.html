@@ -62,7 +62,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Misc. GW2 Stuff</h1>
   <nav class="nav-bar">
@@ -72,9 +71,7 @@
     <a href="#" class="nav-btn active">Misc</a>
   </nav>
 </div>
-
 <p class="sub">Nodes, legendaries, and the receipts for how you actually spend your playtime.</p>
-
 <h2 class="section">Trackers</h2>
 <nav class="nav-grid">
   <a href="nodes.html" class="nav-card">
@@ -83,21 +80,14 @@
   </a>
   <a href="legendaries.html" class="nav-card">
     <h3>Legendary Workshop</h3>
-    <p>Gen 1/2/3 weapon and armor templates all in one spot so you stop alt-tabbing to the wiki.</p>
+    <p>Weapons and armor templates all in one spot so you stop alt-tabbing to the wiki.</p>
   </a>
   <a href="history.html" class="nav-card">
     <h3>Dailies History</h3>
     <p>Charts showing how often you actually run each meta, farm the homestead, or grab keys.</p>
   </a>
 </nav>
-
-
 <script>
-// =====================================================================
-// STORE SHIM — every GW2 misc page uses this for all data access.
-// Version 1: localStorage. Version 2 (someday): swap these two
-// functions for fetch calls to a backend and nothing else changes.
-// =====================================================================
 window.Store = {
   get(key) {
     try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
@@ -106,6 +96,5 @@ window.Store = {
   del(key) { localStorage.removeItem(key); }
 };
 </script>
-
 </body>
 </html>
