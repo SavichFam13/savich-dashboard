@@ -1,66 +1,10 @@
-// ============================================================
-// db.js — shared cloud layer for the Savich Dashboard
-// Put this file at the ROOT of your site folder.
-//
-// CHANGE IN THIS VERSION (fix for ghost logs vanishing):
-// The daily/carry sections hold {epoch, done:{tid:ts}} maps that
-// BOTH timer.html and trackers.html write to. The old merge picked
-// the whole section from whichever side saved most recently, so
-// any tid only one page knew about (misc metas, ad-hoc & holiday
-// logs — the "ghost" chips) got silently erased by the other
-// page's next push. The merge now understands the {epoch, done}
-// shape:
-//   - same epoch  → union both done maps (nothing gets dropped)
-//   - newer epoch → that day's state wins outright (day rolled)
-//
-// Every page includes it like this:
-//   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-//   <script src="/db.js"></script>
-// (pages in home/ and gw2/ can also use "../db.js" — both work once hosted)
-//
-// THEN, near the top of the page's script:
-//   await requireAuth();   // bounces to login if not signed in
-// ============================================================
-
-// ---- PASTE YOUR VALUES HERE (Settings → API in Supabase) ----
 const SUPABASE_URL  = "https://pgmlomrttcznxmoonkgl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
-
-// ============================================================
-// ONE-TIME SQL SETUP FOR PER-USER STATE (run in Supabase SQL editor):
-//
-//   create table if not exists user_state (
-//     user_id    uuid not null references auth.users(id) on delete cascade,
-//     key        text not null,
-//     data       jsonb not null default '{}'::jsonb,
-//     updated_at timestamptz not null default now(),
-//     primary key (user_id, key)
-//   );
-//   alter table user_state enable row level security;
-//
-//   create policy "read own state"    on user_state for select
-//     using (auth.uid() = user_id);
-//   create policy "insert own state" on user_state
-//     for insert with check (auth.uid() = user_id);
-//   create policy "update own state"  on user_state
-//     for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-//   create policy "delete own state"  on user_state
-//     for delete using (auth.uid() = user_id);
-//
-// RLS makes the database itself enforce that each signed-in
-// account can only ever read/write its OWN rows. Frontend bugs
-// or console tampering cannot cross accounts.
-// ============================================================
-
 let _sb = null;
 function sb() {
   if (!_sb) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _sb;
 }
-
-// ============================================================
-// AUTH
-// ============================================================
 async function requireAuth() {
   const { data, error } = await sb().auth.getSession();
   if (error || !data.session) {
@@ -70,28 +14,18 @@ async function requireAuth() {
   }
   return data.session;
 }
-
 async function currentUser() {
   const { data } = await sb().auth.getUser();
   return data.user || null;
 }
-
 async function currentUserId() {
   const { data } = await sb().auth.getSession();
   return (data && data.session && data.session.user) ? data.session.user.id : null;
 }
-
 async function signOut() {
   await sb().auth.signOut();
   location.href = "/auth.html";
 }
-
-// ============================================================
-// SHARED BLOB STORAGE — the app_data table (one row per page-key)
-// Used by pages whose data is shared by BOTH household accounts.
-//   key    text primary key   (e.g. "savich-vault-config")
-//   data   jsonb              (whatever JSON the page saves)
-// ============================================================
 async function loadBlob(key, fallback = null) {
   const { data, error } = await sb()
     .from("app_data").select("data").eq("key", key).maybeSingle();
@@ -101,7 +35,6 @@ async function loadBlob(key, fallback = null) {
   }
   return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
 }
-
 async function saveBlob(key, value) {
   const { error } = await sb()
     .from("app_data")
@@ -111,23 +44,6 @@ async function saveBlob(key, value) {
     throw error;
   }
 }
-
-// ============================================================
-// PER-USER BLOB STORAGE — the user_state table (one row per
-// signed-in user per page-key). RLS-enforced isolation: the
-// database only ever returns/mutates rows where user_id matches
-// the caller's auth.uid().
-//
-//   user_id  uuid   (from the auth session — set automatically)
-//   key      text   (e.g. "gw2-nodes", "gw2-legendaries",
-//                   "gw2-daily-history", "gw2-trackers",
-//                   "savich-bos", "savich-bucket")
-//   data     jsonb  (whatever JSON the page saves)
-//
-// Used by pages whose data belongs to ONE account: nodes,
-// legendaries, dailies, event timer settings, trackers,
-// Book of Shadows, bucket list, etc.
-// ============================================================
 async function loadUserState(key, fallback = null) {
   const uid = await currentUserId();
   if (!uid) throw new Error("not signed in");
@@ -143,7 +59,6 @@ async function loadUserState(key, fallback = null) {
   }
   return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
 }
-
 async function saveUserState(key, value) {
   const uid = await currentUserId();
   if (!uid) throw new Error("not signed in");
@@ -158,10 +73,6 @@ async function saveUserState(key, value) {
     throw error;
   }
 }
-
-// Lightweight poll: returns the row's updated_at epoch ms (0 if
-// no row). Lets pages detect newer data pushed from another
-// device WITHOUT transferring the payload each time.
 async function peekUserStamp(key) {
   const uid = await currentUserId();
   if (!uid) throw new Error("not signed in");
@@ -177,19 +88,6 @@ async function peekUserStamp(key) {
   }
   return data ? (Date.parse(data.updated_at) || 0) : 0;
 }
-
-// ============================================================
-// SPECIAL MERGE — {epoch, done} maps (gw2 daily/carry state).
-// Both timer.html and trackers.html write the same cloud row,
-// each with its own in-memory copy. Taking the whole section
-// from one side loses the other side's tids (ghost chips!),
-// so we merge the tid maps instead:
-//   - different epochs → the newer DAY wins outright (never mix days)
-//   - same epoch      → union of both done maps
-// Note: with a union, an un-log done on one device can reappear
-// if the other device hasn't synced since — it merges away once
-// both sides have pulled, which the 60s polls / focus checks do.
-// ============================================================
 function isEpochDone(v) {
   return v && typeof v === "object" && !Array.isArray(v) &&
          typeof v.epoch === "number" &&
@@ -199,61 +97,30 @@ function isEpochDone(v) {
 function mergeEpochDone(lv, rv) {
   if (!isEpochDone(lv)) return rv;
   if (!isEpochDone(rv)) return lv;
-  if (lv.epoch > rv.epoch) return lv;      // local day is newer
-  if (rv.epoch > lv.epoch) return rv;      // remote day is newer
-  const done = { ...lv.done };             // same day → union, keep both sides' tids
+  if (lv.epoch > rv.epoch) return lv;
+  if (rv.epoch > lv.epoch) return rv;
+  const done = { ...lv.done };
   for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
   return { epoch: lv.epoch, done: done };
 }
 
-// ============================================================
-// USER SYNC CONTROLLER — a reusable per-page sync engine.
-// Wrap your page's state in it once; it handles debounced pushes,
-// background polls (every 60s + on tab focus), and offline flags.
-//
-//   const sync = createUserSync({
-//     key: "gw2-nodes",
-//     loadLocal:  () => Store.get("gw2-nodes:" + uid),
-//     saveLocal: (s) => Store.set("gw2-nodes:" + uid, s),
-//     onRender:  (s) => { state = s; render(); },   // newer cloud data arrived
-//     setOnline: (ok) => setSync(ok)                // status label hook
-//   });
-//
-// Page lifecycle:
-//   await sync.init();     // auth check + merge + initial render hook
-//   sync.save();            // after ANY local change (debounced push)
-//   sync.save(true);        // push immediately (imports, restores)
-//
-// Merge strategy: cloud-vs-local is decided per top-level state
-// section using state.updatedAt[field] timestamps (epoch ms), so
-// a stale device can never clobber newer edits from another
-// device. Sections shaped like {epoch, done} (the shared daily /
-// carry rows written by BOTH timer.html and trackers.html) are
-// instead merged tid-by-tid — union within the same day, newest
-// day wins across days — so neither page can erase the other's
-// ghost-chip logs again.
-// ============================================================
 function createUserSync(opts) {
-  // ---- required opts ----
-  const key = opts.key;                       // user_state row key
-  const loadLocal = opts.loadLocal;           // () -> cached object|null
-  const saveLocal = opts.saveLocal;           // (obj) -> void
-  const getState = opts.getState;             // () -> current state object
-  const setState = opts.setState;             // (obj) -> void
-  // ---- optional opts ----
-  const onRender = opts.onRender || function () {};   // repaint after pull
-  const setOnline = opts.setOnline || function () {}; // status hook
-  const sections = opts.sections || null;    // array of section names; default: all top-level keys
-
+  const key = opts.key;
+  const loadLocal = opts.loadLocal;
+  const saveLocal = opts.saveLocal;
+  const getState = opts.getState;
+  const setState = opts.setState;
+  const onRender = opts.onRender || function () {};
+  const setOnline = opts.setOnline || function () {};
+  const sections = opts.sections || null;
   let uid = null;
   let cacheKey = null;
-  let stamp = 0;            // server updated_at of last seen/pushed row
-  let savedAt = 0;          // savedAt inside data blob we last saw/pushed
+  let stamp = 0;
+  let savedAt = 0;
   let online = false;
   let pushTimer = null;
   let pushInFlight = false;
   let pushPending = false;
-
   function stampSections(obj) {
     obj.updatedAt = obj.updatedAt || {};
     for (const s of (sections || Object.keys(obj))) {
@@ -261,20 +128,17 @@ function createUserSync(opts) {
         obj.updatedAt[s] = Date.now();
     }
   }
-
   function isEmpty(v) {
     if (v === null || v === undefined) return true;
     if (Array.isArray(v)) return v.length === 0;
     if (typeof v === "object") return Object.keys(v).length === 0;
     return false;
   }
-
   function mergeSectionValue(f, lv, rv, lt, rt) {
     // Shared {epoch, done} rows: union tid maps instead of picking a side.
     if (isEpochDone(lv) || isEpochDone(rv)) return mergeEpochDone(lv, rv);
     return rt > lt ? rv : lv;
   }
-
   function merge(local, remote) {
     const out = {};
     const fields = sections ||
@@ -294,7 +158,6 @@ function createUserSync(opts) {
     }
     return out;
   }
-
   async function load() {
     const data = await loadUserState(key, null);
     if (data && data.state) {
@@ -305,7 +168,6 @@ function createUserSync(opts) {
     }
     return null;
   }
-
   async function push() {
     if (!uid) return;
     pushInFlight = true;
@@ -326,13 +188,10 @@ function createUserSync(opts) {
       if (pushPending) { pushPending = false; schedule(0); }
     }
   }
-
   function schedule(delay) {
     clearTimeout(pushTimer);
     pushTimer = setTimeout(push, delay);
   }
-
-  // ---- background poll: pull if another device pushed newer ----
   async function poll() {
     if (!online || pushInFlight || document.hidden) return;
     try {
@@ -348,15 +207,12 @@ function createUserSync(opts) {
       }
     } catch (e) { /* transient — next poll retries */ }
   }
-
   document.addEventListener("visibilitychange", poll);
   setInterval(poll, 60000);
-
-  // ---- lifecycle API ----
   return {
     get uid() { return uid; },
     async init() {
-      const session = await requireAuth();   // bounces to login if needed
+      const session = await requireAuth();
       if (!session) return false;
       uid = session.user && session.user.id;
       cacheKey = key + ":" + uid;
@@ -370,13 +226,11 @@ function createUserSync(opts) {
         online = false;
         setOnline(false);
         if (local) setState(local);
-        return true; // offline mode: local data still usable
+        return true;
       }
-
       if (remoteState) {
         setState(merge(local || {}, remoteState));
       } else {
-        // first run for this user: adopt local (migration), stamp sections
         const s = (local && Object.keys(local).length) ? local : {};
         stampSections(s);
         setState(s);
@@ -405,11 +259,6 @@ function createUserSync(opts) {
     }
   };
 }
-
-// ============================================================
-// TABLE HELPERS — for the row-per-item tables
-// (inventory_items, recipes, vault_history, daily_log)
-// ============================================================
 async function listRows(table, { orderBy = null, ascending = true, eq = null } = {}) {
   let q = sb().from(table).select("*");
   if (eq) for (const col in eq) q = q.eq(col, col);
@@ -418,42 +267,32 @@ async function listRows(table, { orderBy = null, ascending = true, eq = null } =
   if (error) { console.error("listRows:", error.message); return []; }
   return data || [];
 }
-
 async function insertRow(table, obj) {
   const { data, error } = await sb().from(table).insert(obj).select().single();
   if (error) throw error;
   return data;
 }
-
 async function insertRows(table, objs) {
   // bulk insert — handy for importing a year of dailies or a pile of inventory
   const { data, error } = await sb().from(table).insert(objs).select();
   if (error) throw error;
   return data;
 }
-
 async function updateRow(table, id, patch) {
   const { data, error } = await sb().from(table).update(patch).eq("id", id).select().single();
   if (error) throw error;
   return data;
 }
-
 async function deleteRow(table, id) {
   const { error } = await sb().from(table).delete().eq("id", id);
   if (error) throw error;
 }
-
 async function upsertRow(table, obj, conflictCol = "id") {
   const { data, error } = await sb()
     .from(table).upsert(obj, { onConflict: conflictCol }).select().single();
   if (error) throw error;
   return data;
 }
-
-// ============================================================
-// TOAST-STYLE ERROR REPORTING (optional convenience)
-// Logs sync failures loudly so data loss is never silent.
-// ============================================================
 window.addEventListener("unhandledrejection", e => {
   if (e.reason && e.reason.message) console.error("Unhandled sync failure:", e.reason.message);
 });
