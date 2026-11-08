@@ -40,11 +40,11 @@
   }
   .year-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .backup-btn {
-    background: var(--panel); border: 1px solid var(--accent2); color: var(--accent2);
-    border-radius: 8px; padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
-    font-weight: 700; cursor: pointer; margin-left: auto;
-  }
-  .backup-btn:hover { background: var(--accent2); color: var(--bg); }
+  background: var(--panel); border: 1px dashed var(--border); color: var(--dim);
+  border-radius: 999px; padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
+  font-weight: 700; cursor: pointer; margin-left: auto;
+}
+.backup-btn:hover { color: var(--accent2); border-color: var(--accent2); }
   .backup-btn.import {
     margin-left: 0; border-style: dashed;
     color: var(--dim); border-color: var(--border);
@@ -341,13 +341,13 @@ function render() {
   if (years.length) {
     const exp = document.createElement("button");
     exp.className = "backup-btn";
-    exp.textContent = "\u2913 Export ";
+    exp.textContent = "\u2913 Export Data";
     exp.onclick = exportYear;
     yrRow.appendChild(exp);
 
     const impLabel = document.createElement("label");
     impLabel.className = "backup-btn import";
-    impLabel.textContent = "\u2913 Import Your Data";
+    impLabel.textContent = "\u2913 Import Data";
     const impInput = document.createElement("input");
     impInput.type = "file";
     impInput.accept = ".json";
