@@ -41,7 +41,7 @@
   .year-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .backup-btn {
     background: var(--panel); border: 1px solid var(--accent2); color: var(--accent2);
-    border-radius: 999px; padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
+    border-radius: 8px; padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
     font-weight: 700; cursor: pointer; margin-left: auto;
   }
   .backup-btn:hover { background: var(--accent2); color: var(--bg); }
@@ -341,13 +341,13 @@ function render() {
   if (years.length) {
     const exp = document.createElement("button");
     exp.className = "backup-btn";
-    exp.textContent = "\u2913 Export " + currentYear + " JSON";
+    exp.textContent = "\u2913 Export ";
     exp.onclick = exportYear;
     yrRow.appendChild(exp);
 
     const impLabel = document.createElement("label");
     impLabel.className = "backup-btn import";
-    impLabel.textContent = "\u2913 Import Year JSON ";
+    impLabel.textContent = "\u2913 Import Your Data";
     const impInput = document.createElement("input");
     impInput.type = "file";
     impInput.accept = ".json";

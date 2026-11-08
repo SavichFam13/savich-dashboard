@@ -30,12 +30,26 @@
     margin: 0 auto;
   }
   .top {
-    display: flex; justify-content: space-between; align-items: baseline;
+    display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
-  .back { color: var(--dim); text-decoration: none; font-size: 0.8rem; }
-  .back:hover { color: var(--accent); }
+  .top-right {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+  }
+  /* Navigation Bar — house style, same as trackers/misc/timer/recipes */
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
@@ -235,12 +249,12 @@
 
 <div class="top">
   <h1>Household Inventory</h1>
-  <div style="display:flex; gap:14px; align-items:baseline;">
+  <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="back">&larr; Back to Dashboard</a>
+    <a href="../index.html" class="nav-btn">Dashboard</a>
   </div>
 </div>
-<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</span></p>
+<p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</p>
 
 <nav>
   <button id="tab-inventory" class="active">INVENTORY</button>

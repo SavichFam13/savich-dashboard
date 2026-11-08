@@ -28,6 +28,17 @@
   }
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* ---- backup buttons: top of the page, under the nav bar ---- */
+  .backup-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; align-items: center; justify-content: flex-end; }
+  .backup-btn {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 0.78rem;
+    cursor: pointer; font-weight: 600;
+  }
+  .backup-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .backup-row input[type="file"] { display: none; }
+
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 20px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
@@ -111,25 +122,6 @@
   }
   .info-input:focus { outline: none; border-color: var(--accent2); }
 
-  .add-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
-  .add-row select, .add-row input[type="text"], .add-row button {
-    background: var(--panel); border: 1px solid var(--border); color: var(--text);
-    border-radius: 8px; padding: 9px 14px; font-family: inherit; font-size: 0.88rem;
-  }
-  .add-row input[type="text"] { flex: 1; min-width: 220px; }
-  .add-row button { cursor: pointer; font-weight: 700; border-color: var(--accent2); color: var(--accent2); }
-  .add-row button:hover { background: var(--accent2); color: var(--bg); }
-
-  .backup-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
-  .backup-btn {
-    background: none; border: 1px solid var(--border); color: var(--dim);
-    border-radius: 8px; padding: 8px 16px; font-family: inherit; font-size: 0.8rem;
-    cursor: pointer; font-weight: 600;
-  }
-  .backup-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-  .backup-label { color: var(--dim); font-size: 0.72rem; }
-  .backup-row input[type="file"] { display: none; }
-
   .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
   .filter-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
@@ -201,7 +193,16 @@
   </nav>
 </div>
 
-<p class="sub">Left-click = toggle owned &middot; Right-click = details popup. Popup can store a chat-link code per node &mdash; click "copy code", paste into GW2 chat, click the link. </span></p>
+<!-- BACKUP / RESTORE — under the nav bar, right-aligned -->
+<div class="backup-row">
+  <button class="backup-btn" onclick="exportState()">Export Backup</button>
+  <label class="backup-btn" style="cursor:pointer;">
+    Import Backup
+    <input type="file" accept=".json" onchange="importState(event)">
+  </label>
+</div>
+
+<p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
 
 <div class="stats-line" id="stats"></div>
 <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
@@ -213,30 +214,6 @@
 </div>
 
 <div id="groups"></div>
-
-<div class="add-row">
-  <select id="new-group">
-    <option value="Packs & Racks">Packs & Racks</option>
-    <option value="Mining (Trading Post)">Mining (TP)</option>
-    <option value="Logging (Trading Post)">Logging (TP)</option>
-    <option value="Harvesting (Trading Post)">Harvesting (TP)</option>
-    <option value="Currency Vendor Nodes">Currency Vendors</option>
-    <option value="Achievement &amp; Festival Unlocks">Achievements &amp; Festivals</option>
-    <option value="Expedition Contracts (Mail Delivery)">Contracts</option>
-    <option value="Custom">Custom</option>
-  </select>
-  <input type="text" id="new-name" placeholder="Node name">
-  <button onclick="addNode()">+ Add Node</button>
-</div>
-
-<!-- BACKUP / RESTORE -->
-<div class="backup-row">
-  <button class="backup-btn" onclick="exportState()">Export Backup</button>
-  <label class="backup-btn" style="cursor:pointer;">
-    Import Backup
-    <input type="file" accept=".json" onchange="importState(event)">
-  </label>
-</div>
 
 <!-- POPUP PANEL -->
 <div class="info-panel" id="info-panel">
@@ -361,32 +338,32 @@ const INFO = {
   "Advanced Cloth Rack":        { src: "Trading Post or Black Lion Chest", drops: "Linen, Silk & Gossamer scraps daily" },
   "Advanced Leather Rack":      { src: "Trading Post or Black Lion Chest", drops: "Rugged, Thick & Hardened leather sections daily" },
   "Orichalcum Mining Node":     { src: "Trading Post or Black Lion Chest", drops: "Orichalcum ore" },
-  "Platinum Mining Node":       { src: "Trading Post or Black Lion Chest", drops: "Platinum ore" },
-  "Mithril Mining Node":        { src: "Trading Post or Black Lion Chest", drops: "Mithril ore" },
-  "Iron Mining Node":           { src: "Trading Post or Black Lion Chest", drops: "Iron ore" },
+  "Platinum Mining Node":      { src: "Trading Post or Black Lion Chest", drops: "Platinum ore" },
+  "Mithril Mining Node":       { src: "Trading Post or Black Lion Chest", drops: "Mithril ore" },
+  "Iron Mining Node":          { src: "Trading Post or Black Lion Chest", drops: "Iron ore" },
   "Ancient Wood Logging Node":  { src: "Trading Post or Black Lion Chest", drops: "Ancient wood logs" },
-  "Elder Wood Logging Node":    { src: "Trading Post or Black Lion Chest", drops: "Elder wood logs" },
-  "Hard Wood Logging Node":     { src: "Trading Post or Black Lion Chest", drops: "Hard wood logs" },
+  "Elder Wood Logging Node":   { src: "Trading Post or Black Lion Chest", drops: "Elder wood logs" },
+  "Hard Wood Logging Node":    { src: "Trading Post or Black Lion Chest", drops: "Hard wood logs" },
   "Orrian Truffle Harvesting Node": { src: "Trading Post or Black Lion Chest", drops: "Orrian truffles + pigments" },
-  "Lotus Harvesting Node":      { src: "Trading Post or Black Lion Chest", drops: "Lotus roots + pigments" },
-  "Flaxseed Harvesting Node":   { src: "Trading Post or Black Lion Chest", drops: "Flax seeds, fiber & blossoms" },
-  "Omnomberry Bush":            { src: "Trading Post or Black Lion Chest", drops: "Omnomberrys daily" },
-  "Bloodstone Crystal Node":    { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Blood rubies + bloodstone dust" },
-  "Fire Orchid Node":           { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fire orchid blossoms + empyreal fragments" },
-  "Petrified Wood Node":        { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Petrified wood + empyreal fragments" },
-  "Winterberry Bush Node":      { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fresh winterberries" },
-  "Orrian Oyster Node":         { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Orrian pearls + dragonite ore" },
-  "Brandstone Node":            { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Kralkatite ore, rose quartz" },
-  "Jade Fragment Node":         { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Jade shards + bloodstone dust" },
+  "Lotus Harvesting Node":     { src: "Trading Post or Black Lion Chest", drops: "Lotus roots + pigments" },
+  "Flaxseed Harvesting Node":  { src: "Trading Post or Black Lion Chest", drops: "Flax seeds, fiber & blossoms" },
+  "Omnomberry Bush":           { src: "Trading Post or Black Lion Chest", drops: "Omnomberrys daily" },
+  "Bloodstone Crystal Node":   { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Blood rubies + bloodstone dust" },
+  "Fire Orchid Node":          { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fire orchid blossoms + empyreal fragments" },
+  "Petrified Wood Node":       { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Petrified wood + empyreal fragments" },
+  "Winterberry Bush Node":     { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Fresh winterberries" },
+  "Orrian Oyster Node":        { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Orrian pearls + dragonite ore" },
+  "Brandstone Node":           { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Kralkatite ore, rose quartz" },
+  "Jade Fragment Node":        { src: "Must have LWS3: 10,000 Unbound Magic + 50g", drops: "Jade shards + bloodstone dust" },
   "Difluorite Crystal Cluster Node": { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Difluorite crystals + empyreal fragments" },
-  "Mistonium Node":             { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Lumps of mistonium + dragonite ore" },
-  "Dragon Crystal Node":         { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Branded mass, dragonite ore, serpentite jewels" },
+  "Mistonium Node":            { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Lumps of mistonium + dragonite ore" },
+  "Dragon Crystal Node":       { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Branded mass, dragonite ore, serpentite jewels" },
   "Hatched Chili Pepper Node":  { src: "Must have IBS: 5,000 Volatile Magic + 60g", drops: "Hatched chilis" },
   "Eternal Ice Shard Node":     { src: "Must have IBS: 245,000 Karma + 50g", drops: "Eternal ice shards" },
   "Honey Flower Node":         { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Honey flowers" },
   "Lowland Pine Sapling Node":  { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Lowland pine logs" },
-  "Charged Titan Ore Node":     { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Charged titan ore" },
-  "Mistborn Mote Node":         { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Mistborn motes + empyreal fragments" },
+  "Charged Titan Ore Node":    { src: "Home instance: 1,000 Ursus Oblige + 122,500 Karma + 50g", drops: "Charged titan ore" },
+  "Mistborn Mote Node":        { src: "Must have LWS4: 10,000 Unbound Magic + 50g", drops: "Mistborn motes + empyreal fragments" },
   "Greater Gift of Candy Corn":  { src: "Must have Gift of Candy Corn + 5 Candy Corn Cobs", drops: "Candy corn" },
   "Black Lion Industry Contract":  { src: "Gem Store (1,000 gems)", drops: "Daily box of basic resources" },
   "Black Lion Hunters Contract":   { src: "Gem Store (1,200 gems)", drops: "Daily box of trophies" },
@@ -754,18 +731,6 @@ function toggle(name) {
   if (state.owned[name]) delete state.owned[name];
   else state.owned[name] = true;
   save(); render();
-}
-
-function addNode() {
-  const nameEl = document.getElementById("new-name");
-  const group = document.getElementById("new-group").value;
-  const name = nameEl.value.trim();
-  if (!name) { showToast("Type a node name first."); return; }
-  state.custom = state.custom || [];
-  state.custom.push({ group: group === "Custom" ? "Custom" : group, name: name, details: "" });
-  nameEl.value = "";
-  save(); render();
-  showToast("Added \"" + name + "\".");
 }
 
 async function confirmAndRemove(name) {
