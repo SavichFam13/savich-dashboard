@@ -592,7 +592,7 @@ function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
   render();
   saveState(key, s);
 }
-
+let flashTimer = null;
 function flash(msg) {
   const el = document.getElementById("flash-msg");
   el.textContent = msg;
