@@ -54,17 +54,15 @@
 
   .wrap { position: relative; z-index: 1; }
 
-  /* ---- top bar: nav buttons on the right, backups underneath ---- */
+  /* ---- top bar: sync note left, backup buttons + nav on one line right ---- */
   .top {
-    display: flex; justify-content: space-between; align-items: flex-start;
+    display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
   }
-  .top-spacer { flex: 1; }
   .top-right {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
   }
   /* Navigation Bar — house style, same as trackers/misc/timer */
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -77,7 +75,6 @@
     transition: all 0.2s ease;
   }
   .nav-btn:hover { border-color: var(--lf-teal); color: var(--lf-teal); }
-  .backup-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
   .sync-note.live { color: var(--lf-teal); }
   .backup-btn {
@@ -328,19 +325,14 @@
 
 <div class="wrap">
 
-  <!-- ============ TOP BAR: nav right, backups underneath ============ -->
+  <!-- ============ TOP BAR: sync note left, export/import + Dashboard right ============ -->
   <div class="top">
-    <span class="top-spacer"></span>
+    <span class="sync-note" id="sync-note">checking account…</span>
     <div class="top-right">
-      <nav class="nav-bar">
-        <a href="../index.html" class="nav-btn">Dashboard</a>
-      </nav>
-      <div class="backup-btns">
-        <span class="sync-note" id="sync-note">checking account…</span>
-        <button class="backup-btn" onclick="exportData()">Back dat data up</button>
-        <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
-        <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
-      </div>
+      <button class="backup-btn" onclick="exportData()">Back dat data up</button>
+      <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
+      <a href="../index.html" class="nav-btn">Dashboard</a>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
   </div>
 
