@@ -254,9 +254,9 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="quiet" onclick="exportHistory()">Export Backup</button>
-      <button class="quiet" onclick="document.getElementById('import-file').click()">Import Backup</button>
-      <button class="quiet" id="btn-clear-history" onclick="clearHistory()">Clear All History</button>
+      <button class="quiet" onclick="exportHistory()">Export Data</button>
+      <button class="quiet" onclick="document.getElementById('import-file').click()">Import Data</button>
+      <button class="quiet" id="btn-clear-history" onclick="clearHistory()">Clear History</button>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
