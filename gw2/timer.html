@@ -653,7 +653,7 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
       const z = zoneFor(ev, nextT);
       const cdText = isActive ? "" : fmtCDShort(mu);
 
-      cls += (isActive ? " active" : (mu <= 6 ? " next" : "")) +
+      cls += (isActive ? " active" : (mu <= 11 ? " next" : "")) +
              (logged ? " logged" : "") +
              (selectedEv === ev ? " selected" : "");
 
@@ -742,7 +742,7 @@ function updateClock() {
     const since = minutesSince(ev, now);
     const isActive = since < 15;
     chip.classList.toggle("active", isActive);
-    chip.classList.toggle("next", !isActive && mu <= 6);
+    chip.classList.toggle("next", !isActive && mu <= 11);
     const cd = chip.querySelector(".chip-cd");
     if (cd) {
       cd.textContent = isActive ? "" : fmtCDShort(mu);
