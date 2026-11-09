@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recipe Book</title>
 <style>
@@ -29,28 +30,36 @@
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
-  .back-link {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--dim);
-  text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-.back-link:hover { border-color: var(--accent); color: var(--accent); }
-button.back {
-  color: var(--accent2); font-size: 0.8rem; background: none;
-  border: none; font-family: inherit; cursor: pointer;
-  padding: 0; margin-bottom: 14px; display: inline-block;
-}
-button.back:hover { color: var(--accent); }
+  .top-right {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .nav-btn.active { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
+  button.back {
+    color: var(--accent2); font-size: 0.8rem; background: none;
+    border: none; font-family: inherit; cursor: pointer;
+    padding: 0; margin-bottom: 14px; display: inline-block;
+  }
+  button.back:hover { color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
 
   .view { display: none; }
   .view.visible { display: block; }
+
+  body.read-only .owner-only { display: none !important; }
 
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
@@ -224,7 +233,10 @@ button.back:hover { color: var(--accent); }
 
 <div class="top">
   <h1>Recipe Book</h1>
-  <a href="../index.html" class="back-link">&larr; Back to Dashboard</a>
+  <div class="top-right">
+    <span class="sync-note" id="sync-note">syncing&hellip;</span>
+    <a href="../index.html" class="nav-btn">Dashboard</a>
+  </div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
 
@@ -233,21 +245,23 @@ button.back:hover { color: var(--accent); }
     <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
            oninput="setSearch(this.value)">
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="newRecipe()">+ New Recipe</button>
-      <button class="btn" onclick="exportData()">Export Backup</button>
-      <label class="btn" style="cursor:pointer;">
-        Import Backup<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+      <button class="btn btn-primary owner-only" onclick="newRecipe()">+ New Recipe</button>
+      <button class="btn" onclick="exportData()">Export Data</button>
+      <label class="btn owner-only" style="cursor:pointer;">
+        Import Data<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
       </label>
     </div>
   </div>
   <div class="toc-heading">Table of Contents</div>
   <div id="recipe-list"></div>
 </div>
+
 <div class="view" id="view-recipe">
   <button class="back" id="back-btn" onclick="showView('index')">&larr; Table of Contents</button>
   <div class="print-header" id="print-header"></div>
   <div id="recipe-body"></div>
 </div>
+
 <div class="view" id="view-edit">
   <button class="back" onclick="cancelEdit()">&larr; Cancel</button>
   <h2 class="recipe-title" id="editor-heading" style="margin-bottom:20px;">New Recipe</h2>
@@ -255,7 +269,7 @@ button.back:hover { color: var(--accent); }
   <div class="form-grid">
     <div class="field">
       <label for="f-name">Recipe Name</label>
-      <input type="text" id="f-name" placeholder="Bacon, Jalapeño, Sausage &amp; Cheese Soup">
+      <input type="text" id="f-name" placeholder="Bacon, Jalape&ntilde;o, Sausage &amp; Cheese Soup">
     </div>
     <div class="field">
       <label for="f-servings">Base Servings</label>
@@ -280,12 +294,12 @@ button.back:hover { color: var(--accent); }
   <div class="field" style="margin-bottom:18px;">
     <label for="f-ingredients">Ingredients</label>
     <textarea id="f-ingredients" rows="9" placeholder="One ingredient per line. Any of these work:
-½ cup heavy cream
+&#189; cup heavy cream
 1/2 cup heavy cream
 1 1/2 tsp salt
-½–¾ cup diced jalapeños
+&#189;&#8211;&#190; cup diced jalape&ntilde;os
 3 cups of Marinara Sauce"></textarea>
-    <div class="hint">One per line, lead with the amount. Fractions, decimals, and ½-style characters all scale. Mention another recipe by its exact name and it becomes a clickable link.</div>
+    <div class="hint">One per line, lead with the amount. Fractions, decimals, and &#189;-style characters all scale. Mention another recipe by its exact name and it becomes a clickable link.</div>
   </div>
 
   <div class="field" style="margin-bottom:18px;">
@@ -321,34 +335,65 @@ button.back:hover { color: var(--accent); }
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
+const OWNER_EMAIL = "ALYSAVICH@PM.ME";
+
 const STORAGE_KEY = "savich-recipes-v1";
-let recipes = loadStorage(STORAGE_KEY, []);
+const CLOUD_BLOB_KEY = "recipes";
+let recipes = [];
 let searchTerm = "";
 let currentId = null;
 let editId = null;
 let scale = 1;
 let navStack = [];
+let isOwner = false;
+let cloudReady = false;
 
-function loadStorage(key, fallback) {
-  try {
-    const v = JSON.parse(localStorage.getItem(key));
-    return v !== null && v !== undefined ? v : fallback;
-  } catch { return fallback; }
-}
-function saveStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-}
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
+async function saveStorage() {
+  if (cloudReady) {
+    try {
+      await saveBlob(CLOUD_BLOB_KEY, recipes);
+      setSyncNote(true);
+    } catch (err) {
+      setSyncNote(false, "offline \u2014 changes NOT saved");
+      return;
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+}
+
+function setSyncNote(ok, msg) {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = msg || (ok ? "\u2713" : "offline");
+  el.classList.toggle("live", !!ok);
+}
+
+function requireOwner(action) {
+  if (!isOwner) { showToast("Read-only access \u2014 ask the chef."); return false; }
+  return true;
+}
+
+function adoptCloudBook(cloud) {
+  recipes = Array.isArray(cloud) ? cloud : [];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+  renderList();
+}
+
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("visible"));
   document.getElementById("view-" + name).classList.add("visible");
   window.scrollTo(0, 0);
 }
+
 function setSearch(term) {
   searchTerm = term.trim().toLowerCase();
   renderList();
@@ -425,13 +470,13 @@ function evalAmt(str) {
 
 function parseAmount(line) {
   const s = normalizeGlyphs(line);
+
   let m = s.match(RANGE_RE);
   if (m) {
     const lo = evalAmt(m[1]), hi = evalAmt(m[2]);
     if (lo && hi) return { low: lo, high: hi, rest: m[3] };
   }
 
-  // Single amount
   m = s.match(SINGLE_RE);
   if (m) {
     const n = evalAmt(m[1]);
@@ -439,6 +484,7 @@ function parseAmount(line) {
   }
   return null;
 }
+
 const DISPLAY_GLYPHS = [
   [0.125, "\u215B"], [0.25, "\u00BC"], [1/3, "\u2153"], [0.375, "\u215C"],
   [0.5, "\u00BD"], [0.625, "\u215D"], [2/3, "\u2154"], [0.75, "\u00BE"],
@@ -456,6 +502,7 @@ function formatAmount(n) {
   }
   return String(Math.round(n * 100) / 100);
 }
+
 function scaleYieldText(text, mult) {
   if (mult === 1) return text;
   return text.replace(/\d+(?:\.\d+)?(?!\s*-?\s*(?:inch|in|cm)\b)/g, function (m) {
@@ -471,7 +518,7 @@ function linkifyText(text, selfId) {
   let rest = String(text);
 
   while (rest.length) {
-    let best = null;
+    let best = null; 
     for (const r of others) {
       const idx = rest.toLowerCase().indexOf(r.name.toLowerCase());
       if (idx !== -1 &&
@@ -578,15 +625,17 @@ function renderRecipe() {
 
   html += '<div class="recipe-title">' + esc(r.name) + "</div>";
 
-let yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
-if (yieldText) yieldText = scaleYieldText(yieldText, scale);
+  let yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
+  if (yieldText) yieldText = scaleYieldText(yieldText, scale);
   if (yieldText) html += '<div class="yield-line"><b>Yield:</b> ' + esc(yieldText) + "</div>";
+
   if (r.calories || r.carbs) {
     const bits = [];
     if (r.calories) bits.push("<b>" + r.calories + "</b> calories");
     if (r.carbs) bits.push("<b>" + r.carbs + " g</b> carbs");
     html += '<div class="nutrition">Per serving (as written): ' + bits.join(" \u00B7 ") + "</div>";
   }
+
   const effServ = r.servings ? Math.round(r.servings * scale * 10) / 10 : null;
   const servText = effServ ? "&nbsp;\u00B7&nbsp;makes about <b>" + effServ + "</b> serving" +
     (effServ === 1 ? "" : "s") : "";
@@ -636,9 +685,9 @@ if (yieldText) yieldText = scaleYieldText(yieldText, scale);
   html += '</div>';
 
   html += '<div class="detail-actions">' +
-    '<button class="btn btn-primary" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
+    '<button class="btn btn-primary owner-only" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
     '<button class="btn" onclick="printRecipe()">Print</button>' +
-    '<button class="btn btn-danger" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
+    '<button class="btn btn-danger owner-only" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
     "</div>";
 
   body.innerHTML = html;
@@ -651,7 +700,9 @@ function printRecipe() {
     (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
   window.print();
 }
+
 function newRecipe() {
+  if (!requireOwner()) return;
   editId = null;
   document.getElementById("editor-heading").textContent = "New Recipe";
   ["f-name", "f-servings", "f-calories", "f-carbs", "f-yield",
@@ -660,7 +711,9 @@ function newRecipe() {
   showView("edit");
   document.getElementById("f-name").focus();
 }
+
 function editRecipe(id) {
+  if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
   if (!r) return;
   editId = id;
@@ -683,6 +736,7 @@ function cancelEdit() {
 }
 
 function saveRecipe() {
+  if (!requireOwner()) return;
   const name = document.getElementById("f-name").value.trim();
   if (!name) { showToast("Give the recipe a name first."); return; }
 
@@ -717,7 +771,9 @@ function saveRecipe() {
   }
   saveStorage();
 }
+
 async function deleteRecipe(id) {
+  if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
   if (!r) return;
   const ok = await askConfirm(
@@ -747,6 +803,7 @@ function exportData() {
 }
 
 function importData(e) {
+  if (!requireOwner()) { e.target.value = ""; return; }
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -762,10 +819,10 @@ function importData(e) {
       if (!ok) return;
       recipes = data;
       navStack = [];
-      saveStorage();
+      await saveStorage();
       renderList();
       showView("index");
-      showToast("Backup restored.");
+      showToast("Backup restored and pushed to the cloud.");
     } catch (err) { showToast("Couldn't read that file."); }
   };
   reader.readAsText(file);
@@ -808,7 +865,38 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
-renderList();
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+
+  const email = ((session.user && session.user.email) || "").toLowerCase();
+  isOwner = email === OWNER_EMAIL.trim().toLowerCase();
+  if (!isOwner) document.body.classList.add("read-only");
+
+  try {
+    const cloud = await loadBlob(CLOUD_BLOB_KEY, null);
+    cloudReady = true;
+
+    if (cloud !== null) {
+
+      adoptCloudBook(cloud);
+    } else {
+
+      adoptCloudBook([]);
+    }
+    setSyncNote(true);
+  } catch (err) {
+
+    setSyncNote(false, "offline \u2014 showing last synced copy");
+    try {
+      const cached = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (Array.isArray(cached)) {
+        recipes = cached;
+        renderList();
+      }
+    } catch (e) { /* no usable cache — page stays empty */ }
+  }
+})();
 </script>
 
 </body>
