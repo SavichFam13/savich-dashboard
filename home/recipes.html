@@ -41,12 +41,12 @@
   transition: all 0.2s ease;
 }
 .back-link:hover { border-color: var(--accent); color: var(--accent); }
-  button.back {
-    color: var(--dim); font-size: 0.8rem; background: none;
-    border: none; font-family: inherit; cursor: pointer;
-    padding: 0; margin-bottom: 14px; display: inline-block;
-  }
-  button.back:hover { color: var(--accent); }
+button.back {
+  color: var(--accent2); font-size: 0.8rem; background: none;
+  border: none; font-family: inherit; cursor: pointer;
+  padding: 0; margin-bottom: 14px; display: inline-block;
+}
+button.back:hover { color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
 
   .view { display: none; }
@@ -456,6 +456,12 @@ function formatAmount(n) {
   }
   return String(Math.round(n * 100) / 100);
 }
+function scaleYieldText(text, mult) {
+  if (mult === 1) return text;
+  return text.replace(/\d+(?:\.\d+)?(?!\s*-?\s*(?:inch|in|cm)\b)/g, function (m) {
+    return formatAmount(parseFloat(m) * mult);
+  });
+}
 function linkifyText(text, selfId) {
   const others = recipes
     .filter(r => r.id !== selfId && r.name)
@@ -572,7 +578,8 @@ function renderRecipe() {
 
   html += '<div class="recipe-title">' + esc(r.name) + "</div>";
 
-  const yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
+let yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
+if (yieldText) yieldText = scaleYieldText(yieldText, scale);
   if (yieldText) html += '<div class="yield-line"><b>Yield:</b> ' + esc(yieldText) + "</div>";
   if (r.calories || r.carbs) {
     const bits = [];
