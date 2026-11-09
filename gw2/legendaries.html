@@ -368,6 +368,77 @@ const TEMPLATES = {
                 { label: "Fang", qty: "100x" } ]} ]} ]} ]} ]}
     ]
   },
+   "eikasia": {
+    label: "Eikasia (Mists-Grasper) — FULL RECIPE",
+    hint: "Fractalline Spark + Icy Runestones, then Gift of Magical Prosperity and Gift of Mighty Prosperity — buy the gloves from the vendor.",
+    phases: [
+      { title: "Craft Eikasia (Mists-Grasper)", sub: "Craft the two gifts in the Forge, then buy from vendor", items: [
+        { label: "Fractalline Spark", subs: [
+          { label: "Fractalline Dust", qty: "150x" } ]},
+        { label: "Icy Runestone", qty: "200x" },
+        { label: "Gift of Magical Prosperity", subs: [
+          { label: "Gift of Craftsmanship", qty: "1x", subs: [
+            { label: "Provisioner Token", qty: "50x" } ]},
+          { label: "Mystic Clover", qty: "9x" },
+          { label: "Gift of Research", qty: "1x", subs: [
+            { label: "Exotic Essence of Luck", qty: "250x" },
+            { label: "Thermocatalytic Reagent", qty: "250x" },
+            { label: "Hydrocatalytic Reagent", qty: "500x" } ]},
+          { label: "Gift of Condensed Magic", qty: "1x", subs: [
+            { label: "Gift of Blood", qty: "1x", subs: [
+              { label: "Vial of Powerful Blood", qty: "100x" },
+              { label: "Vial of Potent Blood", qty: "250x" },
+              { label: "Vial of Thick Blood", qty: "50x" },
+              { label: "Vial of Blood", qty: "50x" } ]},
+            { label: "Gift of Venom", qty: "1x", subs: [
+              { label: "Powerful Venom Sac", qty: "100x" },
+              { label: "Potent Venom Sac", qty: "250x" },
+              { label: "Full Venom Sac", qty: "50x" },
+              { label: "Venom Sac", qty: "50x" } ]},
+            { label: "Gift of Totems", qty: "1x", subs: [
+              { label: "Elaborate Totem", qty: "100x" },
+              { label: "Intricate Totem", qty: "250x" },
+              { label: "Engraved Totem", qty: "50x" },
+              { label: "Totem", qty: "50x" } ]},
+            { label: "Gift of Dust", qty: "1x", subs: [
+              { label: "Pile of Crystalline Dust", qty: "100x" },
+              { label: "Pile of Incandescent Dust", qty: "250x" },
+              { label: "Pile of Luminous Dust", qty: "50x" },
+              { label: "Pile of Radiant Dust", qty: "50x" } ]} ]},
+          { label: "Combine Gift of Magical Prosperity in the Mystic Forge" } ]},
+        { label: "Gift of Mighty Prosperity", subs: [
+          { label: "Gift of Craftsmanship", qty: "1x", subs: [
+            { label: "Provisioner Token", qty: "50x" } ]},
+          { label: "Mystic Clover", qty: "9x" },
+          { label: "Gift of Research", qty: "1x", subs: [
+            { label: "Exotic Essence of Luck", qty: "250x" },
+            { label: "Thermocatalytic Reagent", qty: "250x" },
+            { label: "Hydrocatalytic Reagent", qty: "500x" } ]},
+          { label: "Gift of Condensed Might", qty: "1x", subs: [
+            { label: "Gift of Claws", qty: "1x", subs: [
+              { label: "Vicious Claw", qty: "100x" },
+              { label: "Large Claw", qty: "250x" },
+              { label: "Sharp Claw", qty: "50x" },
+              { label: "Claw", qty: "50x" } ]},
+            { label: "Gift of Scales", qty: "1x", subs: [
+              { label: "Armored Scale", qty: "100x" },
+              { label: "Large Scale", qty: "250x" },
+              { label: "Smooth Scale", qty: "50x" },
+              { label: "Scale", qty: "50x" } ]},
+            { label: "Gift of Bones", qty: "1x", subs: [
+              { label: "Ancient Bone", qty: "100x" },
+              { label: "Large Bone", qty: "250x" },
+              { label: "Heavy Bone", qty: "50x" },
+              { label: "Bone", qty: "50x" } ]},
+            { label: "Gift of Fangs", qty: "1x", subs: [
+              { label: "Vicious Fang", qty: "100x" },
+              { label: "Large Fang", qty: "250x" },
+              { label: "Sharp Fang", qty: "50x" },
+              { label: "Fang", qty: "50x" } ]} ]},
+          { label: "Combine Gift of Mighty Prosperity in the Mystic Forge" } ]},
+        { label: "Take gifts + Fractalline Spark + 200x Icy Runestones to vendor to buy Eikasia" } ]}
+    ]
+  },
   "Aurora": {
     label: "Aurora (accessory) — FULL RECIPE",
     hint: "Four achievements → Gleam of Sentience → Sentient Seed, the six Hero collections, 21 Electrum infusions, then Spark of Sentience via three big gifts.",
@@ -957,6 +1028,7 @@ const TEMPLATES = {
 };
 const NAME_MATCH = [
   { keys: ["Vision", "glimpse"], tpl: "Vision" },
+  { keys: ["eikasia", "mists-grasper", "mists grasper"], tpl: "eikasia" },
   { keys: ["Aurora", "spark of sentience"], tpl: "Aurora" },
   { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
   { keys: ["coalescence", "infinity"], tpl: "accessory-other" },
