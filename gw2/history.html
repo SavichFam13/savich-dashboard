@@ -220,6 +220,7 @@ const TASK_NAMES = {
   bear: "Cum Stained Bear", twatwaffle: "Twatwaffle the Spineless",
   peasants: "Rob my Peasants", princess: "Princess",
   purple: "Daily Purple Shiny", frecs: "Daily Frecs",
+  raids: "Raids", refa: "REFA (Retard Fractals)",
   fmlife: "Fuck My Life for Eternity!", family: "Family Time",
   furby: "Bondage Furby", vault: "Daily Wizards Vault",
   // world bosses
@@ -260,7 +261,7 @@ const CATEGORIES = {
   "Vault & Misc": ["wvw","talent","princess","purple","vault"],
   "Seasonal": ["madking","wintersday","lny","sab","dragonbash","fourwinds"],
   "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
-  "Fractals": ["frecs"]
+  "Fractals & Raids": ["frecs", "raids", "refa"]
 };
 const CAT_COLORS = {
   "World Bosses": "#ff8a8a",
@@ -269,7 +270,7 @@ const CAT_COLORS = {
   "Vault & Misc": "#148eb4",
   "Seasonal": "#ebdd11",
   "Homestead / Keys": "#7ddba3",
-  "Fractals": "#94a3ff"
+  "Fractals & Raids": "#94a3ff"
 };
 const TASK_CAT = {};
 for (const c in CATEGORIES) for (const t of CATEGORIES[c]) TASK_CAT[t] = c;

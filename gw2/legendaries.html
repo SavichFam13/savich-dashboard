@@ -56,8 +56,6 @@
   }
   .form-row button:hover { background: var(--accent2); color: var(--bg); }
   .template-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
-  .match-note { color: var(--accent2); font-size: 0.78rem; font-weight: 700; margin-top: 8px; display: none; }
-  .match-note.show { display: block; }
   .leg-list { display: flex; flex-direction: column; gap: 16px; }
   .leg-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
@@ -174,12 +172,10 @@
 <div class="add-card">
   <h2>Start a new legendary</h2>
   <div class="form-row">
-    <input type="text" id="leg-name" placeholder="Name it (e.g. Vision, Aurora, Nevermore...)">
     <select id="leg-template"></select>
     <button onclick="addLegend()">+ Add</button>
   </div>
   <p class="template-hint" id="tpl-hint"></p>
-  <p class="match-note" id="match-note"></p>
 </div>
 <div class="leg-list" id="leg-list"></div>
 <div class="confirm-overlay" id="modal-overlay">
@@ -275,90 +271,8 @@ document.addEventListener("keydown", e => {
   }
 });
 const TEMPLATES = {
-  "gen1": {
-    label: "Gen 1 Legendary Weapon",
-    hint: "Precursor hunt, Gift of Mastery, Gift of Fortune, specialty gift, forge it.",
-    phases: [
-      { title: "The Forge", sub: "", items: [
-        { label: "Precursor (hunt or buy)" },
-        { label: "Gift of Mastery", subs: [
-          { label: "Bloodstone Shard" },
-          { label: "Obsidian Shards" },
-          { label: "Dungeon gift" },
-          { label: "MAP COMPLETION" } ] },
-        { label: "Gift of Fortune", subs: [
-          { label: "Mystic Clovers (gamble)", qty: "77x" },
-          { label: "Mystic Coins", qty: "250x" },
-          { label: "T6 mats" },
-          { label: "Lodestones" } ] },
-        { label: "Specialty Gift (map-specific mats & dungeons)" },
-        { label: "Combine in the Mystic Forge" }
-      ]}
-    ]
-  },
-  "gen2": {
-    label: "Gen 2 Legendary Weapon (craft)",
-    hint: "Collection-driven: precursor collection, then the two big gifts.",
-    phases: [
-      { title: "Collection & Precursor", sub: "", items: [
-        { label: "Unlock collection" },
-        { label: "Complete precursor collection" },
-        { label: "Craft Precursor" } ]},
-      { title: "The Gifts", sub: "", items: [
-        { label: "Gift of Mastery", subs: [
-          { label: "Bloodstone Shard" },
-          { label: "Map currencies" },
-          { label: "Elder Wood Planks" },
-          { label: "Mastery track (Istan/Kourna etc.)" } ]},
-        { label: "Gift of Craftsmanship", subs: [
-          { label: "Icy Runestones", qty: "100x" },
-          { label: "Mystic Clovers", qty: "250x" },
-          { label: "Ascended materials" } ]},
-        { label: "Combine in the Mystic Forge" } ]}
-    ]
-  },
-  "gen3": {
-    label: "Gen 3 Legendary Weapon (Aurene) — outline",
-    hint: "Generic outline. Full recipes exist for Dragon's Fang — type 'Primordus Fang' or 'Dragon's Fang' to use it.",
-    phases: [
-      { title: "Per Piece", sub: "repeat for each of the 4 pieces", items: [
-        { label: "Obtain Runesteel weapon precursor" },
-        { label: "Craft Research Notes", qty: "500x" },
-        { label: "Craft the Unbound / Empowered components" },
-        { label: "Gift of Research and Heroics" },
-        { label: "Combine in the Mystic Forge" } ]}
-    ]
-  },
-  "armor": {
-    label: "Legendary Armor (raid / WvW / PvP)",
-    hint: "Envoy/Belligerent/Ascension — achievement tiers plus the gift grind.",
-    phases: [
-      { title: "Achievements", sub: "", items: [
-        { label: "Achievement tier 1 (collection unlock)" },
-        { label: "Achievement tier 2" },
-        { label: "Achievement tier 3" } ]},
-      { title: "The Gifts", sub: "", items: [
-        { label: "Gift of Prosperity / Prowess / Compassion" },
-        { label: "Gift of Dedication" },
-        { label: "Gift of Mastery (armor)" },
-        { label: "Envoy Insignia / final gift" },
-        { label: "Forge the armor piece" } ]}
-    ]
-  },
-  "accessory-other": {
-    label: "Other Accessory/Ring/Back (Coalescence, Infinity...) — outline",
-    phases: [
-      { title: "Prerequisites", sub: "", items: [
-        { label: "Complete prerequisite story/achievements" } ]},
-      { title: "Materials", sub: "", items: [
-        { label: "Map currency bundle (VoT, etched crystals, etc.)" },
-        { label: "Gift of Concordia / Boreal items" },
-        { label: "Mystic Clovers", qty: "77x" },
-        { label: "Combine / purchase final item" } ]}
-    ]
-  },
   "Aurora": {
-    label: "Aurora (accessory) — FULL RECIPE",
+    label: "Aurora (accessory)",
     hint: "Four achievements → Gleam of Sentience → Sentient Seed, the six Hero collections, 21 Electrum infusions, then Spark of Sentience via three big gifts.",
     phases: [
       { title: "Prerequisites", sub: "Achievements → Gleam of Sentience → Sentient Seed", items: [
@@ -483,8 +397,8 @@ const TEMPLATES = {
               { label: "Fang", qty: "100x" } ]} ]} ]} ]}
     ]
   },
-      "dreamer": {
-    label: "The Dreamer (Gen 1 short bow) — FULL RECIPE",
+  "dreamer": {
+    label: "The Dreamer (Gen 1 short bow)",
     hint: "Three collections (Experimental Short Bow → Perfected Short Bow → The Lover), then The Lover + three gifts in the Mystic Forge.",
     phases: [
       { title: "The Dreamer I: The Experimental Short Bow", sub: "Prereq: Revered Antiquarian — Unlock: The Dreamer Vol. 1 — Reward: Chest of Love", items: [
@@ -617,7 +531,7 @@ const TEMPLATES = {
     ]
   },
      "eikasia": {
-    label: "Eikasia (Armor) — FULL RECIPE",
+    label: "Eikasia (Armor)",
     hint: "Fractalline Spark + Icy Runestones, then Gift of Magical Prosperity and Gift of Mighty Prosperity — buy the gloves from the vendor.",
     phases: [
       { title: "Craft Eikasia (Mists-Grasper)", sub: "Craft the two gifts in the Forge, then buy from vendor", items: [
@@ -688,7 +602,7 @@ const TEMPLATES = {
     ]
   },
   "summer": {
-    label: "Endless Summer (Accessory) — FULL RECIPE",
+    label: "Endless Summer (Accessory)",
     hint: "Four specialty gifts: Gift of Rays, Gift of the Survivors, Gift of the People, and Gift of the Hylek.",
     phases: [
       { title: "Craft Endless Summer", sub: "The four specialty gifts", items: [
@@ -791,7 +705,7 @@ const TEMPLATES = {
     ]
   },
     "kotaki": {
-    label: "Kamohoali'i Kotaki (Gen 1 underwater spear) — FULL RECIPE",
+    label: "Kamohoali'i Kotaki (Gen 1 underwater spear)",
     hint: "Three collections (Experimental Spear → Perfected Spear → Carcharias), then Carcharias + three gifts in the Mystic Forge.",
     phases: [
       { title: "Kamohoali'i Kotaki I: The Experimental Spear", sub: "Prereq: Revered Antiquarian — Unlock: Kotaki Vol. 1 — Reward: Chest of Sharks", items: [
@@ -917,7 +831,7 @@ const TEMPLATES = {
     ]
   },
     "orrax": {
-    label: "Orrax (Armor) — FULL RECIPE",
+    label: "Orrax (Armor)",
     hint: "Manifested via Gift of the Mistburned Isles, Gift of Shadows, and Gift of the Feast; Contained via Binding of the Dragon, Draconic Tribute, and two mastery backpieces.",
     phases: [
       { title: "Orrax Manifested", sub: "Three gifts → Mystic Forge", items: [
@@ -1072,7 +986,7 @@ const TEMPLATES = {
     ]
   },
   "Fang": {
-    label: "Primordus Fang (Gen 3 sword) — FULL RECIPE",
+    label: "Primordus Fang (Gen 3 sword)",
     hint: "Dragon's Fang precursor, Gift of Jade Mastery, Draconic Tribute, Gift of Aurene's Fang, plus the Aurene's Facet of Fire collection for the empowered skin.",
     phases: [
       { title: "Dragon's Fang (Precursor)", sub: "Fortified components + Transcendent Crystal", items: [
@@ -1196,7 +1110,7 @@ const TEMPLATES = {
     ]
   },
     "regalia": {
-    label: "Prismatic Champion's Regalia (Accessory) — FULL RECIPE",
+    label: "Prismatic Champion's Regalia (Accessory)",
     hint: "Complete Seasons of the Dragons (all 24 Return-to collections plus End Conjecture).",
     phases: [
       { title: "Prismatic Champion's Regalia", sub: "Seasons of the Dragons achievement", items: [
@@ -1228,7 +1142,7 @@ const TEMPLATES = {
     ]
   },
   "selachimorpha": {
-    label: "Selachimorpha (Armor) — FULL RECIPE",
+    label: "Selachimorpha (Armor)",
     hint: "Gift of the Survivors + Gift of the People + Gift of Castoran Mastery, with Agaleus as the precursor.",
     phases: [
       { title: "Craft Selachimorpha", sub: "Vendor gifts, Castoran Mastery tree, and the Agaleus precursor", items: [
@@ -1313,7 +1227,7 @@ const TEMPLATES = {
     ]
   },
   "twilight": {
-    label: "Twilight (Gen 1 greatsword) — FULL RECIPE",
+    label: "Twilight (Gen 1 greatsword)",
     hint: "Three collections (Experimental Nightsword → Perfected Nightsword → Dusk), then Dusk + Gift of Twilight, Gift of Mastery, and Gift of Fortune in the Mystic Forge.",
     phases: [
       { title: "Twilight I: The Experimental Nightsword", sub: "Unlock: Twilight Vol. I — Reward: Chest of the End", items: [
@@ -1459,7 +1373,7 @@ const TEMPLATES = {
     ]
   },
       "Vision": {
-    label: "Vision (accessory) — FULL RECIPE",
+    label: "Vision (accessory)",
     hint: "Vision I & II achievements, then Glimpse via Gift of Prescience, Gift of Arid Mastery, and Mystic Tribute.",
     phases: [
       { title: "Vision I: Awakening", sub: "Unlock: Trance Stone — Reward: Shattered Gift of Prescience", items: [
@@ -1552,19 +1466,6 @@ const TEMPLATES = {
     ]
   },
 };
-const NAME_MATCH = [
-  { keys: ["Aurora", "spark of sentience"], tpl: "Aurora" },
-  { keys: ["dreamer", "the lover"], tpl: "dreamer" },
-  { keys: ["eikasia", "mists-grasper", "mists grasper"], tpl: "eikasia" },
-  { keys: ["endless summer", "summer"], tpl: "summer" },
-  { keys: ["kamohoali'i", "kotaki", "carcharias"], tpl: "kotaki" },
-  { keys: ["orrax"], tpl: "orrax" },
-  { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
-  { keys: ["prismatic", "regalia"], tpl: "regalia" },
-  { keys: ["selachimorpha", "shark fucker", "agaleus"], tpl: "selachimorpha" },
-  { keys: ["twilight", "dusk"], tpl: "twilight" }, 
-  { keys: ["Vision", "glimpse"], tpl: "Vision" },
-];
 function snapshot(phases) {
   return JSON.parse(JSON.stringify(phases)).map(p => ({
     title: p.title,
@@ -1601,54 +1502,15 @@ function updHint() {
   document.getElementById("tpl-hint").innerHTML =
     "&#9432; " + TEMPLATES[tplSel.value].hint;
 }
-const nameEl = document.getElementById("leg-name");
-const matchNote = document.getElementById("match-note");
-function autoMatch() {
-  const name = nameEl.value.trim().toLowerCase();
-  matchNote.classList.remove("show");
-  tplSel.classList.remove("matched");
-  if (!name) return;
-  for (const m of NAME_MATCH) {
-    if (m.keys.some(k => name.includes(String(k).toLowerCase()))) {
-      tplSel.value = m.tpl;
-      tplSel.classList.add("matched");
-      updHint();
-      matchNote.innerHTML = "&#10003; Recognized &quot;" + m.tpl +
-        "&quot; — loaded its template. Change it here if that's not what you meant.";
-      matchNote.classList.add("show");
-      return;
-    }
-  }
-}
-nameEl.addEventListener("input", autoMatch);
-nameEl.addEventListener("change", autoMatch);
-nameEl.addEventListener("keyup", autoMatch);
-tplSel.onchange = () => {
-  tplSel.classList.remove("matched");
-  matchNote.classList.remove("show");
-  updHint();
-};
-autoMatch();
+tplSel.onchange = updHint;
 updHint();
-function titleCase(str) {
-  const minor = ["of", "the", "and", "for", "to", "in", "a", "an", "at", "on", "vs"];
-  return str.toLowerCase().split(/\s+/).map((w, i) =>
-    (i > 0 && minor.includes(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)
-  ).join(" ");
-}
 function addLegend() {
-  autoMatch();
   const tpl = TEMPLATES[tplSel.value];
   if (!tpl) return;
-  let name = nameEl.value.trim();
-  if (!name) name = tpl.label.replace(/\s*\(.*?\)\s*—.*$/, "").trim() || tpl.label;
+  const name = tpl.label.replace(/\s*\(.*?\)(\s*—.*)?$/, "").trim() || tpl.label;
   const phases = snapshot(tpl.phases);
   phases[0].open = true;
-  legs.unshift({ id: "l" + Date.now(), name: titleCase(name), kind: tpl.label, phases: phases });
-  nameEl.value = "";
-  matchNote.classList.remove("show");
-  tplSel.classList.remove("matched");
-  updHint();
+  legs.unshift({ id: "l" + Date.now(), name: name, kind: tpl.label, phases: phases });
   save(); render();
 }
 function delLegend(li) {
