@@ -1423,20 +1423,152 @@ const TEMPLATES = {
         { label: "Combine Carcharias + gifts in the Mystic Forge" } ]}
     ]
   },
+    "dreamer": {
+    label: "The Dreamer (Gen 1 short bow) — FULL RECIPE",
+    hint: "Three collections (Experimental Short Bow → Perfected Short Bow → The Lover), then The Lover + three gifts in the Mystic Forge.",
+    phases: [
+      { title: "The Dreamer I: The Experimental Short Bow", sub: "Prereq: Revered Antiquarian — Unlock: The Dreamer Vol. 1 — Reward: Chest of Love", items: [
+        { label: "Dessa's Sadness" },
+        { label: "Ikkhit'ch's Friend" },
+        { label: "True Love of the Dwarves" },
+        { label: "Love of Ascalonian Girl" },
+        { label: "Harpy's Love" },
+        { label: "Love of Shinies" },
+        { label: "Love of Revolution" },
+        { label: "Love of Freedom" },
+        { label: "Love of Solitude" },
+        { label: "Love of Gardening" },
+        { label: "Love of Animals" },
+        { label: "Quaggan Love" },
+        { label: "Love Among the Weeds" },
+        { label: "Love Driven to Madness" },
+        { label: "The Lover Experiment", subs: [
+          { label: "Essence of Love", qty: "1x" },
+          { label: "Experimental Short Bow Stave", qty: "1x", subs: [
+            { label: "Spiritwood Plank", qty: "20x" },
+            { label: "Memory of Battle", qty: "100x" },
+            { label: "Shard of Glory", qty: "100x" } ]},
+          { label: "Experimental Short Bow String", qty: "1x", subs: [
+            { label: "Elonian Leather Square", qty: "15x" },
+            { label: "Memory of Battle", qty: "100x" },
+            { label: "Shard of Glory", qty: "100x" } ]},
+          { label: "Legendary Inscription", qty: "1x", subs: [
+            { label: "Glob of Ectoplasm", qty: "10x" },
+            { label: "Pile of Crystalline Dust", qty: "5x" },
+            { label: "Orichalcum Plated Dowel", qty: "1x" },
+            { label: "Elonian Leather Square", qty: "10x" } ]} ]} ]},
+      { title: "The Dreamer II: The Perfected Short Bow", sub: "Prereq: Magister of Legends — Unlock: The Lover Experiment — Reward: Tips for Advanced Short Bow Crafting", items: [
+        { label: "Basic Elder Short Bow Requisition" },
+        { label: "The Art of Woodworking: Short Bow Stave Edition" },
+        { label: "Elder Short Bow Stave Requisition" },
+        { label: "Balanced Short Bow Stave" },
+        { label: "The Art of Tanning: Short Bow String Edition" },
+        { label: "Thick Short Bow String Requisition" },
+        { label: "Reinforced Short Bow String" },
+        { label: "Superior Short Bow Woodworking Tools" },
+        { label: "Desert Magics: Short Bow Edition" },
+        { label: "Jungle Magics: Short Bow Edition" },
+        { label: "Old World Magics: Short Bow Edition" },
+        { label: "Ancient Water Magics: Short Bow Edition" },
+        { label: "Herbal Magics: Short Bow Edition" },
+        { label: "Stabilizing Magics: Short Bow Edition" },
+        { label: "The Dreamer Vol. 2" },
+        { label: "The Lover Experiment (salvage)" },
+        { label: "Perfected Short Bow", subs: [
+          { label: "Expertise in Short Bow Crafting", qty: "1x" },
+          { label: "Spirit of The Lover Experiment", qty: "1x" },
+          { label: "Jar of Luminesce Polish", qty: "1x", subs: [
+            { label: "Pile of Bloodstone Dust", qty: "250x" },
+            { label: "Amalgamated Gemstone", qty: "1x" },
+            { label: "Thermocatalytic Reagent", qty: "10x" },
+            { label: "Master Maintenance Oil", qty: "10x" } ]},
+          { label: "Prismatic Lodestone", qty: "1x", subs: [
+            { label: "Glacial Lodestone", qty: "1x" },
+            { label: "Molten Lodestone", qty: "1x" },
+            { label: "Onyx Lodestone", qty: "1x" },
+            { label: "Charged Lodestone", qty: "1x" } ]} ]} ]},
+      { title: "The Dreamer III: The Lover", sub: "Prereq: Historian of the Armaments — Unlock: Perfected Short Bow — Reward: Chest of Dreams", items: [
+        { label: "Evon's Dreams of Economic Dominance" },
+        { label: "Kiel's Dreams for Lion's Arch" },
+        { label: "Ventari's Dream" },
+        { label: "Owain's Dreams for Southsun Cove" },
+        { label: "Dream of the Future" },
+        { label: "Mossman's Dream" },
+        { label: "Dream of Ancestral Ascalon" },
+        { label: "Dream of the Ascalonians" },
+        { label: "Dream of Jormag" },
+        { label: "Dream of Mordremoth" },
+        { label: "Dream of Kralkatorrik" },
+        { label: "Dream of Primordus" },
+        { label: "Dream of Zhaitan" },
+        { label: "Dream of the Ancient" },
+        { label: "Dream of Ancient Tyria" },
+        { label: "Dream of the Flame Temple" },
+        { label: "Dream of Peace" },
+        { label: "Dream of the Deep" },
+        { label: "Dream of Ancient Orr" },
+        { label: "Dream of the Titans" },
+        { label: "Suwash's Dream" },
+        { label: "Dream of Dwayna" },
+        { label: "Dream of Melandru" },
+        { label: "Dream of Lyssa" },
+        { label: "Dream of Grenth" },
+        { label: "Dream of Balthazar" },
+        { label: "Scarlet's Dream" },
+        { label: "The Dreamer Vol. 3" },
+        { label: "Perfected Short Bow (salvage)" },
+        { label: "The Lover", subs: [
+          { label: "Essence of Dreams", qty: "1x" },
+          { label: "Spirit of the Perfected Short Bow", qty: "1x" } ]} ]},
+      { title: "The Dreamer", sub: "The Lover + three gifts in the Mystic Forge", items: [
+        { label: "The Lover (precursor)" },
+        { label: "Gift of the Dreamer", subs: [
+          { label: "Gift of Wood", qty: "1x", subs: [
+            { label: "Ancient Wood Plank", qty: "250x" },
+            { label: "Elder Wood Plank", qty: "500x" },
+            { label: "Seasoned Wood Plank", qty: "250x" } ]},
+          { label: "Unicorn Statue", qty: "1x", subs: [
+            { label: "Gift of Thorns", qty: "1x", subs: [
+              { label: "Tale of Dungeon Delving", qty: "500x" } ]},
+            { label: "Orichalcum Ingot", qty: "250x" },
+            { label: "Chrysocola Orb", qty: "100x" },
+            { label: "Opal Orb", qty: "100x" } ]},
+          { label: "Icy Runestone", qty: "100x" },
+          { label: "Superior Sigil of Purity", qty: "1x" } ]},
+        { label: "Gift of Fortune", subs: [
+          { label: "Mystic Clover", qty: "77x" },
+          { label: "Glob of Ectoplasm", qty: "250x" },
+          { label: "Gift of Magic", qty: "1x", subs: [
+            { label: "Vial of Powerful Blood", qty: "250x" },
+            { label: "Powerful Venom Sac", qty: "250x" },
+            { label: "Elaborate Totem", qty: "250x" },
+            { label: "Pile of Crystalline Dust", qty: "250x" } ]},
+          { label: "Gift of Might", qty: "1x", subs: [
+            { label: "Vicious Claw", qty: "250x" },
+            { label: "Armored Scale", qty: "250x" },
+            { label: "Vicious Fang", qty: "250x" },
+            { label: "Ancient Bone", qty: "250x" } ]} ]},
+        { label: "Gift of Mastery", subs: [
+          { label: "Bloodstone Shard", qty: "1x" },
+          { label: "Obsidian Shard", qty: "250x" },
+          { label: "Gift of Exploration", qty: "1x" },
+          { label: "Gift of Battle", qty: "1x" } ]},
+        { label: "Combine The Lover + gifts in the Mystic Forge" } ]}
+    ]
+  },
 };
 const NAME_MATCH = [
-  { keys: ["Vision", "glimpse"], tpl: "Vision" },
-  { keys: ["selachimorpha", "agaleus"], tpl: "selachimorpha" },
-  { keys: ["eikasia", "mists-grasper", "mists grasper"], tpl: "eikasia" },
   { keys: ["Aurora", "spark of sentience"], tpl: "Aurora" },
-  { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
-  { keys: ["coalescence", "infinity"], tpl: "accessory-other" },
-  { keys: ["twilight", "dusk"], tpl: "twilight" },
+  { keys: ["dreamer", "the lover"], tpl: "dreamer" },
+  { keys: ["eikasia", "mists-grasper", "mists grasper"], tpl: "eikasia" },
   { keys: ["endless summer", "summer"], tpl: "summer" },
-  { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" },
-  { keys: ["prismatic", "regalia"], tpl: "regalia" },
+  { keys: ["kamohoali'i", "kotaki", "carcharias"], tpl: "kotaki" },
   { keys: ["orrax"], tpl: "orrax" },
-  { keys: ["kamohoali'i", "kotaki", "carcharias"], tpl: "kotaki" }
+  { keys: ["primordus", "dragon's fang", "dragons fang"], tpl: "fang" },
+  { keys: ["prismatic", "regalia"], tpl: "regalia" },
+  { keys: ["selachimorpha", "agaleus"], tpl: "selachimorpha" },
+  { keys: ["twilight", "dusk"], tpl: "twilight" }, 
+  { keys: ["Vision", "glimpse"], tpl: "Vision" },
 ];
 function snapshot(phases) {
   return JSON.parse(JSON.stringify(phases)).map(p => ({
