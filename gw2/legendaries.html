@@ -275,6 +275,93 @@ document.addEventListener("keydown", e => {
   }
 });
 const TEMPLATES = {
+  "gen1": {
+    label: "Gen 1 Legendary Weapon",
+    hint: "Precursor hunt, Gift of Mastery, Gift of Fortune, specialty gift, forge it.",
+    phases: [
+      { title: "The Forge", sub: "", items: [
+        { label: "Precursor (hunt or buy)" },
+        { label: "Gift of Mastery", subs: [
+          { label: "Bloodstone Shard" },
+          { label: "Obsidian Shards" },
+          { label: "Dungeon gift" },
+          { label: "MAP COMPLETION" } ] },
+        { label: "Gift of Fortune", subs: [
+          { label: "Mystic Clovers (gamble)", qty: "77x" },
+          { label: "Mystic Coins", qty: "250x" },
+          { label: "T6 mats" },
+          { label: "Lodestones" } ] },
+        { label: "Specialty Gift (map-specific mats & dungeons)" },
+        { label: "Combine in the Mystic Forge" }
+      ]}
+    ]
+  },
+  "gen2": {
+    label: "Gen 2 Legendary Weapon (craft)",
+    hint: "Collection-driven: precursor collection, then the two big gifts.",
+    phases: [
+      { title: "Collection & Precursor", sub: "", items: [
+        { label: "Unlock collection" },
+        { label: "Complete precursor collection" },
+        { label: "Craft Precursor" } ]},
+      { title: "The Gifts", sub: "", items: [
+        { label: "Gift of Mastery", subs: [
+          { label: "Bloodstone Shard" },
+          { label: "Map currencies" },
+          { label: "Elder Wood Planks" },
+          { label: "Mastery track (Istan/Kourna etc.)" } ]},
+        { label: "Gift of Craftsmanship", subs: [
+          { label: "Icy Runestones", qty: "100x" },
+          { label: "Mystic Clovers", qty: "250x" },
+          { label: "Ascended materials" } ]},
+        { label: "Combine in the Mystic Forge" } ]}
+    ]
+  },
+  "gen3": {
+    label: "Gen 3 Legendary Weapon (Aurene) — outline",
+    hint: "Generic outline. Full recipes exist for Dragon's Fang — type 'Primordus Fang' or 'Dragon's Fang' to use it.",
+    phases: [
+      { title: "Per Piece", sub: "repeat for each of the 4 pieces", items: [
+        { label: "Obtain Runesteel weapon precursor" },
+        { label: "Craft Research Notes", qty: "500x" },
+        { label: "Craft the Unbound / Empowered components" },
+        { label: "Gift of Research and Heroics" },
+        { label: "Combine in the Mystic Forge" } ]}
+    ]
+  },
+  "armor": {
+    label: "Legendary Armor (raid / WvW / PvP)",
+    hint: "Envoy/Belligerent/Ascension — achievement tiers plus the gift grind.",
+    phases: [
+      { title: "Achievements", sub: "", items: [
+        { label: "Achievement tier 1 (collection unlock)" },
+        { label: "Achievement tier 2" },
+        { label: "Achievement tier 3" } ]},
+      { title: "The Gifts", sub: "", items: [
+        { label: "Gift of Prosperity / Prowess / Compassion" },
+        { label: "Gift of Dedication" },
+        { label: "Gift of Mastery (armor)" },
+        { label: "Envoy Insignia / final gift" },
+        { label: "Forge the armor piece" } ]}
+    ]
+  },
+  "accessory-other": {
+    label: "Other Accessory/Ring/Back (Coalescence, Infinity...) — outline",
+    phases: [
+      { title: "Prerequisites", sub: "", items: [
+        { label: "Complete prerequisite story/achievements" } ]},
+      { title: "Materials", sub: "", items: [
+        { label: "Map currency bundle (VoT, etched crystals, etc.)" },
+        { label: "Gift of Concordia / Boreal items" },
+        { label: "Mystic Clovers", qty: "77x" },
+        { label: "Combine / purchase final item" } ]}
+    ]
+  },
+  "custom": {
+    label: "Custom (blank slate)",
+    hint: "Add your own phases and steps after creating.",
+    phases: [ { title: "My checklist", sub: "", items: [] } ]
+  }, 
   "Vision": {
     label: "Vision (accessory) — FULL RECIPE",
     hint: "Vision I & II achievements, then Glimpse via Gift of Prescience, Gift of Arid Mastery, and Mystic Tribute.",
@@ -1210,93 +1297,132 @@ const TEMPLATES = {
         { label: "Combine Binding + Draconic Tribute + backpieces in the Mystic Forge" } ]}
     ]
   },
-  "gen1": {
-    label: "Gen 1 Legendary Weapon",
-    hint: "Precursor hunt, Gift of Mastery, Gift of Fortune, specialty gift, forge it.",
+  "kotaki": {
+    label: "Kamohoali'i Kotaki (Gen 1 underwater spear) — FULL RECIPE",
+    hint: "Three collections (Experimental Spear → Perfected Spear → Carcharias), then Carcharias + three gifts in the Mystic Forge.",
     phases: [
-      { title: "The Forge", sub: "", items: [
-        { label: "Precursor (hunt or buy)" },
-        { label: "Gift of Mastery", subs: [
-          { label: "Bloodstone Shard" },
-          { label: "Obsidian Shards" },
-          { label: "Dungeon gift" },
-          { label: "MAP COMPLETION" } ] },
+      { title: "Kamohoali'i Kotaki I: The Experimental Spear", sub: "Prereq: Revered Antiquarian — Unlock: Kotaki Vol. 1 — Reward: Chest of Sharks", items: [
+        { label: "Tropical Shark Tooth" },
+        { label: "Freshwater Shark Tooth" },
+        { label: "Sawtooth Shark Tooth" },
+        { label: "Icy Shark Tooth" },
+        { label: "Risen Bull Shark Tooth" },
+        { label: "Enormous Megalodon Tooth" },
+        { label: "Carcharias Experiment", subs: [
+          { label: "Essence of Sharks", qty: "1x" },
+          { label: "Experimental Spear Head", qty: "1x", subs: [
+            { label: "Deldrimor Steel Ingot", qty: "1x" },
+            { label: "Memory of Battle", qty: "5x" },
+            { label: "Shard of Glory", qty: "5x" } ]},
+          { label: "Experimental Spear Haft", qty: "1x", subs: [
+            { label: "Spiritwood Plank", qty: "1x" },
+            { label: "Memory of Battle", qty: "5x" },
+            { label: "Shard of Glory", qty: "5x" } ]},
+          { label: "Legendary Underwater Inscription", qty: "1x", subs: [
+            { label: "Elonian Leather Square", qty: "1x" },
+            { label: "Orichalcum Plated Dowel", qty: "1x" },
+            { label: "Glob of Ectoplasm", qty: "1x" },
+            { label: "Pile of Crystalline Dust", qty: "5x" } ]} ]} ]},
+      { title: "Kamohoali'i Kotaki II: The Perfected Spear", sub: "Prereq: Magister of Legends — Unlock: Carcharias Experiment — Reward: Tips for Advanced Spear Crafting", items: [
+        { label: "Weighted Spearhead" },
+        { label: "Balanced Spear Haft" },
+        { label: "Desert Magics: Spear Edition" },
+        { label: "Jungle Magics: Spear Edition" },
+        { label: "Old Magics: Spear Edition" },
+        { label: "Kamohoali'i Kotaki Vol. 2" },
+        { label: "Carcharias Experiment (salvage)" },
+        { label: "Perfected Spear", subs: [
+          { label: "Expertise in Spear Crafting", qty: "1x" },
+          { label: "Spirit of the Carcharias Experiment", qty: "1x" },
+          { label: "Jar of Luminesce Polish", qty: "1x", subs: [
+            { label: "Pile of Bloodstone Dust", qty: "250x" },
+            { label: "Amalgamated Gemstone", qty: "1x" },
+            { label: "Thermocatalytic Reagent", qty: "10x" },
+            { label: "Master Maintenance Oil", qty: "10x" } ]},
+          { label: "Prismatic Lodestone", qty: "1x", subs: [
+            { label: "Glacial Lodestone", qty: "1x" },
+            { label: "Molten Lodestone", qty: "1x" },
+            { label: "Onyx Lodestone", qty: "1x" },
+            { label: "Charged Lodestone", qty: "1x" } ]} ]} ]},
+      { title: "Kamohoali'i Kotaki III: Carcharias", sub: "Prereq: Historian of the Armaments — Unlock: Perfected Spear — Reward: Chest of Diving", items: [
+        { label: "Bloody Bill's Plunge" },
+        { label: "Titan's Plunge" },
+        { label: "Mausollus Plunge" },
+        { label: "Verdant Plunge" },
+        { label: "Malchor's Plunge" },
+        { label: "Trinity Plunge" },
+        { label: "Vizier's Plunge" },
+        { label: "Icy Plunge" },
+        { label: "Penzan's Lost Treasure" },
+        { label: "Lost Weapon Shipment" },
+        { label: "Ash Horizon Treasure" },
+        { label: "Sunken Pirate Treasure" },
+        { label: "Lost Wisdom Treasure" },
+        { label: "Sorrowful Treasure" },
+        { label: "Starfish Souvenir" },
+        { label: "Sunken Anchor" },
+        { label: "Fryxx's Souvenir" },
+        { label: "Pilfered Inquest Research" },
+        { label: "Gilded Shipwreck Souvenir" },
+        { label: "Inquest Data Crystal" },
+        { label: "Captain's Insignia" },
+        { label: "Stashed Harbinger Jewel" },
+        { label: "Tainted Quaggan Egg" },
+        { label: "Bioluminescent Wreckage Sample" },
+        { label: "Dwarven Pottery Shard" },
+        { label: "Luscious Kelp" },
+        { label: "Kamohoali'i Kotaki Vol. 3" },
+        { label: "Perfected Spear (salvage)" },
+        { label: "Carcharias", subs: [
+          { label: "Essence of Diving", qty: "1x" },
+          { label: "Spirit of the Perfected Spear", qty: "1x" },
+          { label: "Shark Figurine", qty: "1x", subs: [
+            { label: "Glob of Ectoplasm", qty: "5x" },
+            { label: "Armored Scale", qty: "10x" },
+            { label: "Vicious Fang", qty: "10x" },
+            { label: "Cured Rugged Leather Square", qty: "50x" } ]},
+          { label: "Serrated Harpoon", qty: "1x", subs: [
+            { label: "Orichalcum Ingot", qty: "20x" },
+            { label: "Superior Sharpening Stone", qty: "10x" },
+            { label: "Orichalcum Plated Dowel", qty: "1x" },
+            { label: "Ancient Wood Plank", qty: "20x" } ]} ]} ]},
+      { title: "Kamohoali'i Kotaki", sub: "Carcharias + three gifts in the Mystic Forge", items: [
+        { label: "Carcharias (precursor)" },
+        { label: "Gift of Kamohoali'i Kotaki", subs: [
+          { label: "Gift of Metal", qty: "1x", subs: [
+            { label: "Orichalcum Ingot", qty: "250x" },
+            { label: "Mithril Ingot", qty: "250x" },
+            { label: "Darksteel Ingot", qty: "250x" },
+            { label: "Platinum Ingot", qty: "250x" } ]},
+          { label: "Shark Statue", qty: "1x", subs: [
+            { label: "Gift of Zhaitan", qty: "1x", subs: [
+              { label: "Tale of Dungeon Delving", qty: "500x" } ]},
+            { label: "Orichalcum Ingot", qty: "250x" },
+            { label: "Armored Scale", qty: "250x" },
+            { label: "Vial of Powerful Blood", qty: "250x" } ]},
+          { label: "Icy Runestone", qty: "100x" },
+          { label: "Superior Sigil of Agony", qty: "1x" } ]},
         { label: "Gift of Fortune", subs: [
-          { label: "Mystic Clovers (gamble)", qty: "77x" },
-          { label: "Mystic Coins", qty: "250x" },
-          { label: "T6 mats" },
-          { label: "Lodestones" } ] },
-        { label: "Specialty Gift (map-specific mats & dungeons)" },
-        { label: "Combine in the Mystic Forge" }
-      ]}
-    ]
-  },
-  "gen2": {
-    label: "Gen 2 Legendary Weapon (craft)",
-    hint: "Collection-driven: precursor collection, then the two big gifts.",
-    phases: [
-      { title: "Collection & Precursor", sub: "", items: [
-        { label: "Unlock collection" },
-        { label: "Complete precursor collection" },
-        { label: "Craft Precursor" } ]},
-      { title: "The Gifts", sub: "", items: [
+          { label: "Mystic Clover", qty: "77x" },
+          { label: "Glob of Ectoplasm", qty: "250x" },
+          { label: "Gift of Magic", qty: "1x", subs: [
+            { label: "Vial of Powerful Blood", qty: "250x" },
+            { label: "Powerful Venom Sac", qty: "250x" },
+            { label: "Elaborate Totem", qty: "250x" },
+            { label: "Pile of Crystalline Dust", qty: "250x" } ]},
+          { label: "Gift of Might", qty: "1x", subs: [
+            { label: "Vicious Fang", qty: "250x" },
+            { label: "Armored Scale", qty: "250x" },
+            { label: "Vicious Claw", qty: "250x" },
+            { label: "Ancient Bone", qty: "250x" } ]} ]},
         { label: "Gift of Mastery", subs: [
-          { label: "Bloodstone Shard" },
-          { label: "Map currencies" },
-          { label: "Elder Wood Planks" },
-          { label: "Mastery track (Istan/Kourna etc.)" } ]},
-        { label: "Gift of Craftsmanship", subs: [
-          { label: "Icy Runestones", qty: "100x" },
-          { label: "Mystic Clovers", qty: "250x" },
-          { label: "Ascended materials" } ]},
-        { label: "Combine in the Mystic Forge" } ]}
+          { label: "Bloodstone Shard", qty: "1x" },
+          { label: "Obsidian Shard", qty: "250x" },
+          { label: "Gift of Exploration", qty: "1x" },
+          { label: "Gift of Battle", qty: "1x" } ]},
+        { label: "Combine Carcharias + gifts in the Mystic Forge" } ]}
     ]
   },
-  "gen3": {
-    label: "Gen 3 Legendary Weapon (Aurene) — outline",
-    hint: "Generic outline. Full recipes exist for Dragon's Fang — type 'Primordus Fang' or 'Dragon's Fang' to use it.",
-    phases: [
-      { title: "Per Piece", sub: "repeat for each of the 4 pieces", items: [
-        { label: "Obtain Runesteel weapon precursor" },
-        { label: "Craft Research Notes", qty: "500x" },
-        { label: "Craft the Unbound / Empowered components" },
-        { label: "Gift of Research and Heroics" },
-        { label: "Combine in the Mystic Forge" } ]}
-    ]
-  },
-  "armor": {
-    label: "Legendary Armor (raid / WvW / PvP)",
-    hint: "Envoy/Belligerent/Ascension — achievement tiers plus the gift grind.",
-    phases: [
-      { title: "Achievements", sub: "", items: [
-        { label: "Achievement tier 1 (collection unlock)" },
-        { label: "Achievement tier 2" },
-        { label: "Achievement tier 3" } ]},
-      { title: "The Gifts", sub: "", items: [
-        { label: "Gift of Prosperity / Prowess / Compassion" },
-        { label: "Gift of Dedication" },
-        { label: "Gift of Mastery (armor)" },
-        { label: "Envoy Insignia / final gift" },
-        { label: "Forge the armor piece" } ]}
-    ]
-  },
-  "accessory-other": {
-    label: "Other Accessory/Ring/Back (Coalescence, Infinity...) — outline",
-    phases: [
-      { title: "Prerequisites", sub: "", items: [
-        { label: "Complete prerequisite story/achievements" } ]},
-      { title: "Materials", sub: "", items: [
-        { label: "Map currency bundle (VoT, etched crystals, etc.)" },
-        { label: "Gift of Concordia / Boreal items" },
-        { label: "Mystic Clovers", qty: "77x" },
-        { label: "Combine / purchase final item" } ]}
-    ]
-  },
-  "custom": {
-    label: "Custom (blank slate)",
-    hint: "Add your own phases and steps after creating.",
-    phases: [ { title: "My checklist", sub: "", items: [] } ]
-  }
 };
 const NAME_MATCH = [
   { keys: ["Vision", "glimpse"], tpl: "Vision" },
@@ -1310,6 +1436,7 @@ const NAME_MATCH = [
   { keys: ["nevermore", "the mystery", "howler", "bite of arachnia"], tpl: "gen1" },
   { keys: ["prismatic", "regalia"], tpl: "regalia" },
   { keys: ["orrax"], tpl: "orrax" },
+  { keys: ["kamohoali'i", "kotaki", "carcharias"], tpl: "kotaki" }
 ];
 function snapshot(phases) {
   return JSON.parse(JSON.stringify(phases)).map(p => ({
