@@ -7,31 +7,23 @@
 <title>Misc GW2 Stuff</title>
 <style>
   :root {
-    --bg: #121016;
-    --panel: #1c1922;
-    --text: #f2eef7;
-    --accent: #c9a0ff;
-    --accent2: #5fd3c4;
-    --dim: #a89bbd;
-    --border: #332c3e;
+    --bg: #121016; --panel: #1c1922; --text: #f2eef7; --accent: #c9a0ff;
+    --accent2: #5fd3c4; --dim: #a89bbd; --border: #332c3e; --good: #7ddba3;
+    --bad: #ff8a8a; --hot-pink: #e10ab2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
-    padding: 40px 20px;
-    max-width: 1060px;
-    margin: 0 auto;
+    font-size: 15px; line-height: 1.6;
+    padding: 40px 20px; max-width: 1180px; margin: 0 auto;
   }
   .top {
     display: flex; justify-content: space-between; align-items: baseline;
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.5rem; color: var(--accent); margin-bottom: 10px; letter-spacing: 0.5px; }
-  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
   .nav-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
     text-decoration: none; padding: 6px 14px; border-radius: 8px;
@@ -40,6 +32,9 @@
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   p.sub { color: var(--dim); margin-bottom: 34px; font-size: 0.9rem; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
+
   h2.section {
     font-size: 0.75rem; letter-spacing: 2px; color: var(--accent2);
     text-transform: uppercase; margin: 0 0 16px 0; font-weight: 700;
@@ -58,13 +53,119 @@
   .nav-card:hover { transform: translateY(-3px); border-color: var(--accent); }
   .nav-card h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: 9px; }
   .nav-card p { font-size: 0.83rem; color: var(--dim); margin: 0; line-height: 1.55; }
-  .note { font-size: 0.73rem; color: var(--dim); padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* ---- Dailies History ---- */
+  .year-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
+  .year-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
+    border-radius: 999px; padding: 5px 16px; font-family: inherit; font-size: 0.8rem;
+    font-weight: 700; cursor: pointer;
+  }
+  .year-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .backup-btn {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 0.78rem;
+    cursor: pointer; font-weight: 600; margin-left: auto;
+  }
+  .backup-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .backup-btn.import {
+    margin-left: 0;
+    color: var(--dim); border-color: var(--border);
+  }
+  .backup-btn.import:hover { color: var(--accent2); border-color: var(--accent2); background: none; }
+  .backup-btn input[type="file"] { display: none; }
+
+  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
+  .stat-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; min-width: 150px;
+  }
+  .stat-box .num { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+  .stat-box .lab { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+
+  .charts-row { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 30px; }
+  .chart-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px; flex: 1; min-width: 320px;
+  }
+  .chart-card h2 {
+    font-size: 0.78rem; letter-spacing: 1.5px;
+    color: var(--accent2); text-transform: uppercase; margin-bottom: 14px; font-weight: 700;
+  }
+  #donut-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .legend { display: flex; flex-direction: column; gap: 7px; font-size: 0.8rem; }
+  .legend .li { display: flex; align-items: center; gap: 8px; color: var(--text); }
+  .legend .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .legend .lc-n { color: var(--dim); }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
+  .bar-label { width: 150px; text-align: right; color: var(--text); flex-shrink: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: #16131c; border-radius: 999px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+  .bar-num { color: var(--dim); width: 34px; flex-shrink: 0; }
+  #task-bars {
+    max-height: 336px;
+    overflow-y: auto;
+  }
+
+  .section-title {
+    font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
+    letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
+  }
+  .empty-msg { color: var(--dim); font-size: 0.85rem; padding: 30px 0; text-align: center; }
+  .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--hot-pink);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 110; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
+
 <div class="top">
   <h1>Misc. GW2 Stuff</h1>
   <nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
     <a href="timer.html" class="nav-btn">Event Timers</a>
     <a href="trackers.html" class="nav-btn">Trackers</a>
@@ -72,6 +173,7 @@
   </nav>
 </div>
 <p class="sub">The receipts for how you actually spend your playtime.</p>
+
 <h2 class="section">Trackers</h2>
 <nav class="nav-grid">
   <a href="nodes.html" class="nav-card">
@@ -80,23 +182,476 @@
   <a href="legendaries.html" class="nav-card">
     <h3>Legendary Workshop</h3>
   </a>
-  <a href="history.html" class="nav-card">
-    <h3>Dailies History</h3>
-  </a>
-</nav>
-<nav class="nav-grid">
   <a href="crafting.html" class="nav-card">
-    <h3>Cooking & Crafting Shit</h3>
+    <h3>All things Crafting</h3>
     <p>UNDER CONSTRUCTION!</p>
   </a>
+</nav>
+
+<h2 class="section">Dailies History</h2>
+<div class="year-row" id="year-row"></div>
+<div class="stat-row" id="stat-row"></div>
+<div class="charts-row">
+  <div class="chart-card">
+    <h2>Time spent by category</h2>
+    <div id="donut-wrap">
+      <canvas id="donut" width="240" height="240"></canvas>
+      <div class="legend" id="cat-legend"></div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h2>Most-completed dailies</h2>
+    <div id="task-bars"></div>
+  </div>
+</div>
+<div class="section-title">Days on record</div>
+<div id="day-list"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
 <script>
-window.Store = {
-  get(key) {
-    try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
-  },
-  set(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
-  del(key) { localStorage.removeItem(key); }
+const Store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 };
+const KEY = "gw2-daily-log";
+let USER_ID = null;
+let currentYear = null;
+let logs = {};
+function normalizeLogs(l) {
+  const out = {};
+  if (l && typeof l === "object" && !Array.isArray(l)) {
+    for (const y in l) {
+      if (/^\d{4}$/.test(y) && l[y] && typeof l[y] === "object") out[y] = l[y];
+    }
+  }
+  return out;
+}
+const sync = createUserSync({
+  key: KEY,
+  sections: ["logs"],
+  loadLocal: () => Store.get(KEY + ":" + USER_ID),
+  saveLocal: (s) => Store.set(KEY + ":" + USER_ID, s),
+  getState: () => ({ logs: logs }),
+  setState: (s) => { logs = normalizeLogs(s && s.logs); },
+  onRender: () => render(),
+  setOnline: (ok, msg) => setSync(ok, msg)
+});
+
+function save(immediate) { sync.save(immediate); }
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+const TASK_NAMES = {
+  // core dailies
+  nakedman: "Naked Man", facehugger: "Face Hugger", brahmance: "Brahmance",
+  talent: "Pretend I have Talent", witch: "Cum Stained Witch",
+  pinata: "Chode Pinata", bigg: "The Big G", squid: "Forest Squid",
+  bear: "Cum Stained Bear", twatwaffle: "Twatwaffle the Spineless",
+  peasants: "Rob my Peasants", princess: "Princess",
+  purple: "Daily Purple Shiny", frecs: "Daily Frecs",
+  raids: "Raids", refa: "REFA (Retard Fractals)",
+  fmlife: "Fuck My Life for Eternity!", family: "Family Time",
+  furby: "Bondage Furby", vault: "Daily Wizards Vault",
+  // world bosses
+  wb_mega: "Megadestroyer", wb_fire: "Fire Elemental",
+  wb_shatterer: "Shatterer", wb_wurm: "Jungle Wurm",
+  wb_ulgoth: "Modniir Ulgoth", wb_svanir: "Svanir Shaman Chief",
+  wb_behemoth: "Shadow Behemoth", wb_taidha: "Taidha Covington",
+  wb_golem: "Golem Mark II", wb_jormag: "Claw of Jormag",
+  tt: "Triple Trouble", karka: "Karka Queen",
+  // metas
+  depths: "Depths of Cruelty", shackles: "Shackles of Death",
+  dragonstand: "Dragon's Stand", nightbosses: "Night Bosses",
+  island: "The Island", lutgardis: "Lutgardis", trashcan: "Trash Can",
+  shitsnake: "Shit Snake", drakkar: "Drakkar",
+  doomlore: "Grothmar Doomlore", effigy: "Grothmar Effigy",
+  concert: "Grothmar Metal Concert", oozepits: "Grothmar Ooze Pits",
+  path: "Path to Ascension", deaddoggies: "Dead Doggies",
+  maws: "Maws of Torment", skywatch: "Skywatch",
+  octopussy: "Octopussy", titanic: "Dick'tacles",
+  turtlepower: "Turtle Power",
+  // adhoc / seasonal
+  wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
+  fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
+  madking: "Mad King", wintersday: "Wintersday", lny: "Lunar New Year",
+  sab: "Super Adventure Box", dragonbash: "Dragon Bash",
+  fourwinds: "Four Winds"
+};
+const CATEGORIES = {
+  "World Bosses": ["wb_mega","wb_fire","wb_shatterer","wb_wurm","wb_ulgoth",
+                   "wb_svanir","wb_behemoth","wb_taidha","wb_golem","wb_jormag",
+                   "tt","karka","twatwaffle"],
+  "Convergences": ["fmlife","brahmance","witch","bear"],
+  "Metas": ["family","depths","shackles","furby","nakedman","facehugger","pinata",
+            "bigg","squid","dragonstand","nightbosses","island","lutgardis",
+            "trashcan","shitsnake","drakkar","doomlore","effigy","concert",
+            "oozepits","path","deaddoggies","maws","skywatch","octopussy",
+            "titanic","turtlepower","joras"],
+  "Vault & Misc": ["wvw","talent","princess","purple","vault"],
+  "Seasonal": ["madking","wintersday","lny","sab","dragonbash","fourwinds"],
+  "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
+  "Fractals & Raids": ["frecs", "raids", "refa"]
+};
+const CAT_COLORS = {
+  "World Bosses": "#ff8a8a",
+  "Convergences": "#ff9f43",
+  "Metas": "#c9a0ff",
+  "Vault & Misc": "#148eb4",
+  "Seasonal": "#ebdd11",
+  "Homestead / Keys": "#7ddba3",
+  "Fractals & Raids": "#94a3ff"
+};
+const TASK_CAT = {};
+for (const c in CATEGORIES) for (const t of CATEGORIES[c]) TASK_CAT[t] = c;
+function nameOf(t) { return TASK_NAMES[t] || t; }
+function findYears() {
+  return Object.keys(logs).sort();
+}
+function loadYear(y) {
+  const log = logs[y] || {};
+  const days = Object.keys(log).sort();
+  return { log, days };
+}
+function render() {
+  const years = findYears();
+  const yrRow = document.getElementById("year-row");
+  yrRow.innerHTML = "";
+  years.forEach(y => {
+    const b = document.createElement("button");
+    b.className = "year-btn" + (y === currentYear ? " on" : "");
+    b.textContent = y;
+    b.onclick = () => { currentYear = y; render(); };
+    yrRow.appendChild(b);
+  });
+  if (years.length) {
+    const exp = document.createElement("button");
+    exp.className = "backup-btn";
+    exp.textContent = "\u2913 Export Data";
+    exp.onclick = exportYear;
+    yrRow.appendChild(exp);
+    const impLabel = document.createElement("label");
+    impLabel.className = "backup-btn import";
+    impLabel.textContent = "\u2913 Import Data";
+    const impInput = document.createElement("input");
+    impInput.type = "file";
+    impInput.accept = ".json";
+    impInput.onchange = importYear;
+    impLabel.appendChild(impInput);
+    yrRow.appendChild(impLabel);
+  }
+  if (!years.length) {
+    document.getElementById("stat-row").innerHTML = "";
+    document.getElementById("cat-legend").innerHTML = "";
+    document.getElementById("task-bars").innerHTML =
+      "<div class='empty-msg'>No archived days yet. Do today's dailies, come back tomorrow.</div>";
+    document.getElementById("day-list").innerHTML = "";
+    clearDonut();
+    const impLabel = document.createElement("label");
+    impLabel.className = "backup-btn import";
+    impLabel.style.marginLeft = "auto";
+    impLabel.textContent = "\u2913 Import Year JSON ";
+    const impInput = document.createElement("input");
+    impInput.type = "file";
+    impInput.accept = ".json";
+    impInput.onchange = importYear;
+    impLabel.appendChild(impInput);
+    yrRow.appendChild(impLabel);
+    return;
+  }
+  const { log, days } = loadYear(currentYear);
+  const taskCounts = {};
+  const catCounts = {};
+  let totalCompletions = 0, totalPerDay = 0;
+  days.forEach(d => {
+    const done = log[d] || {};
+    const ids = Object.keys(done);
+    totalPerDay += ids.length;
+    ids.forEach(t => {
+      taskCounts[t] = (taskCounts[t] || 0) + 1;
+      const c = TASK_CAT[t] || "Vault & Misc";
+      catCounts[c] = (catCounts[c] || 0) + 1;
+      totalCompletions++;
+    });
+  });
+  const avg = days.length ? (totalPerDay / days.length).toFixed(1) : "0";
+  document.getElementById("stat-row").innerHTML =
+    statBox(days.length, "days archived") +
+    statBox(totalCompletions, "dailies done") +
+    statBox(avg, "avg per day") +
+    statBox(topCategory(catCounts), "top category");
+
+  drawDonut(catCounts, totalCompletions);
+  const ranked = Object.entries(taskCounts).sort((a, b) => b[1] - a[1]);
+  const max = ranked.length ? ranked[0][1] : 1;
+  const bars = document.getElementById("task-bars");
+  bars.innerHTML = "";
+  if (!ranked.length) {
+    bars.innerHTML = "<div class='empty-msg'>No completions recorded this year.</div>";
+  }
+  ranked.forEach(([t, n]) => {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    const col = CAT_COLORS[TASK_CAT[t] || "Vault & Misc"];
+    row.innerHTML =
+      "<div class='bar-label' title='" + esc(nameOf(t)) + "'>" + esc(nameOf(t)) + "</div>" +
+      "<div class='bar-track'><div class='bar-fill' style='width:" +
+      (n / max * 100) + "%; background:" + col + "'></div></div>" +
+      "<div class='bar-num'>" + n + "</div>";
+    bars.appendChild(row);
+  });
+  const dl = document.getElementById("day-list");
+  dl.innerHTML = "";
+  days.slice(-7).reverse().forEach(d => {
+    const ids = Object.keys(log[d] || {});
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML =
+      "<div class='bar-label'>" + d + "</div>" +
+      "<div style='flex:1; color:var(--dim); font-size:0.78rem;'>" +
+      (ids.length ? ids.length + " done: " + ids.map(nameOf).join(", ") : "nothing logged") +
+      "</div>";
+    dl.appendChild(row);
+  });
+}
+function statBox(num, lab) {
+  return "<div class='stat-box'><div class='num'>" + num + "</div><div class='lab'>" + lab + "</div></div>";
+}
+function topCategory(cc) {
+  const e = Object.entries(cc).sort((a, b) => b[1] - a[1]);
+  return e.length ? e[0][0] : "\u2014";
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function drawDonut(catCounts, total) {
+  const cv = document.getElementById("donut");
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const leg = document.getElementById("cat-legend");
+  leg.innerHTML = "";
+  const entries = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return;
+  const cx = cv.width / 2, cy = cv.height / 2, r = 100, w = 42;
+  let ang = -Math.PI / 2;
+  entries.forEach(([cat, n]) => {
+    const slice = (n / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, ang, ang + slice);
+    ctx.closePath();
+    ctx.fillStyle = CAT_COLORS[cat] || "#888";
+    ctx.fill();
+    ang += slice;
+    const li = document.createElement("div");
+    li.className = "li";
+    li.innerHTML = "<span class='swatch' style='background:" + (CAT_COLORS[cat] || "#888") + "'></span>" +
+      esc(cat) + " <span class='lc-n'>" + n + " (" + Math.round(n / total * 100) + "%)</span>";
+    leg.appendChild(li);
+  });
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - w, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "#f2eef7";
+  ctx.font = "700 26px Verdana";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(total), cx, cy - 8);
+  ctx.fillStyle = "#a89bbd";
+  ctx.font = "11px Verdana";
+  ctx.fillText("total", cx, cy + 14);
+}
+function clearDonut() {
+  const cv = document.getElementById("donut");
+  cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+}
+function exportYear() {
+  const data = logs[currentYear] || {};
+  const dayCount = Object.keys(data).length;
+  if (dayCount === 0) {
+    showToast("Nothing archived for " + currentYear + " yet.");
+    return;
+  }
+  const payload = JSON.stringify({ year: currentYear, log: data }, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "gw2-dailies-" + currentYear + "-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded: " + dayCount + " archived days from " + currentYear + ".");
+}
+function inferYearFromLog(log) {
+  const keys = Object.keys(log);
+  if (!keys.length) return null;
+  const m = keys[0].match(/^(\d{4})-/);
+  return m ? m[1] : null;
+}
+function validateLog(log) {
+  if (!log || typeof log !== "object" || Array.isArray(log)) return false;
+  return Object.keys(log).every(d =>
+    /^\d{4}-\d{2}-\d{2}$/.test(d) &&
+    log[d] && typeof log[d] === "object" && !Array.isArray(log[d]));
+}
+async function importYear(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const raw = JSON.parse(reader.result);
+      let year, incoming;
+      if (raw && typeof raw === "object" && !Array.isArray(raw) && raw.log && typeof raw.year === "string") {
+        year = raw.year;
+        incoming = raw.log;
+      } else {
+        incoming = raw;
+        year = inferYearFromLog(incoming);
+      }
+      if (!year || !/^\d{4}$/.test(year) || !validateLog(incoming)) {
+        showToast("That file isn't a valid dailies backup. Expected a gw2-dailies YEAR export.");
+        e.target.value = "";
+        return;
+      }
+      const inDays = Object.keys(incoming).length;
+      const cur = logs[year] || {};
+      const curDays = Object.keys(cur).length;
+      const overlap = Object.keys(incoming).filter(d => cur[d]).length;
+      const details =
+        "Backup file: " + inDays + " days\n" +
+        "In your cloud archive: " + curDays + " days" +
+        (overlap ? "\nOverlap: " + overlap + " days exist in both" : "");
+      let mode;
+      if (curDays > 0) {
+        mode = await askChoice(
+          "Restore " + year + " archive from backup?",
+          details + "\n\nMERGE adds the backup's days on top of what's here (backup wins on overlapping days). REPLACE wipes the year and uses only the backup.",
+          [
+            { label: "MERGE", value: "MERGE", primary: true },
+            { label: "REPLACE", value: "REPLACE", destructive: true },
+            { label: "CANCEL", value: null }
+          ]
+        );
+      } else {
+        mode = await askChoice(
+          "Restore " + year + " archive from backup?",
+          details + "\n\nNo existing data for " + year + " — nothing will be overwritten.",
+          [
+            { label: "RESTORE", value: "REPLACE", primary: true },
+            { label: "CANCEL", value: null }
+          ]
+        );
+      }
+      if (mode === null || mode === undefined) { e.target.value = ""; return; }
+      let merged;
+      if (mode === "MERGE") {
+        merged = { ...cur };
+        for (const d in incoming) merged[d] = incoming[d];
+      } else if (mode === "REPLACE") {
+        merged = { ...incoming };
+      }
+      logs[year] = merged;
+      currentYear = year;
+      save(true);
+      render();
+      showToast(year + " archive restored: " + Object.keys(merged).length + " days on record (" +
+        (mode === "MERGE" ? "merged" : "replaced") + ").");
+    } catch (err) {
+      showToast("Couldn't read that file.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+}
+let modalResolve = null;
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+(async function init() {
+  const session = await requireAuth();   // bounces to login if needed
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+  await sync.init();
+  const legacyKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (/^gw2-daily-log-\d{4}$/.test(k)) legacyKeys.push(k);
+  }
+  if (legacyKeys.length) {
+    let adopted = 0;
+    legacyKeys.forEach(k => {
+      const y = k.slice(-4);
+      const data = Store.get(k);
+      if (data && Object.keys(data).length) {
+        logs[y] = { ...(logs[y] || {}), ...data };
+        adopted++;
+      }
+    });
+    if (adopted) {
+      save(true);
+      legacyKeys.forEach(k => localStorage.removeItem(k));
+    }
+  }
+  const yrs = findYears();
+  currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
+  render();
+})();
 </script>
 </body>
 </html>
