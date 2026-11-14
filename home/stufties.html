@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iri's Stufties — Savich Dashboard</title>
+<style>
+  :root {
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #f2eef7;
+    --accent: #ffb3d9;
+    --accent2: #5fd3c4;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --bad: #ff8a8a;
+    --lf-pink: #ff4fa3;
+    --lf-magenta: #d81b7f;
+    --lf-blush: #ff9ecf;
+    --lf-gold: #ffd93d;
+    --lf-teal: #12d6b0;
+    --lf-blue: #00c2e0;
+    --lf-purple: #8b2fc9;
+    /* pink playpen wood */
+    --wood: #ff9ecf;
+    --wood-dark: #d81b7f;
+    --pastel-pink: rgba(255,79,163,.12);
+    --pastel-blush: rgba(255,158,207,.10);
+    --pastel-magenta: rgba(216,27,127,.13);
+    --pastel-gold: rgba(255,217,61,.10);
+    --pastel-lilac: rgba(139,47,201,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 40px 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 650px 340px at 12% 8%, rgba(216,27,127,.28), transparent 70%),
+      radial-gradient(ellipse 560px 300px at 88% 14%, rgba(255,79,163,.22), transparent 70%),
+      radial-gradient(ellipse 600px 320px at 50% 100%, rgba(255,158,207,.16), transparent 70%),
+      radial-gradient(ellipse 450px 260px at 78% 65%, rgba(216,27,127,.16), transparent 70%),
+      radial-gradient(ellipse 400px 240px at 20% 70%, rgba(255,79,163,.12), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .sky span { position: absolute; opacity: .6; animation: drift 10s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translateY(0) rotate(-10deg);} to { transform: translateY(-28px) rotate(12deg);} }
+
+  .glitter-field { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .glitter-field::before, .glitter-field::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 20px 30px, rgba(255,217,61,.9), transparent 60%),
+      radial-gradient(1.5px 1.5px at 140px 90px, rgba(255,179,217,.95), transparent 60%),
+      radial-gradient(2px 2px at 240px 160px, rgba(255,79,163,.85), transparent 60%),
+      radial-gradient(1.5px 1.5px at 60px 220px, rgba(255,255,255,.8), transparent 60%),
+      radial-gradient(2px 2px at 320px 40px, rgba(255,217,61,.8), transparent 60%),
+      radial-gradient(1.5px 1.5px at 180px 280px, rgba(255,179,217,.9), transparent 60%),
+      radial-gradient(2px 2px at 380px 200px, rgba(255,79,163,.7), transparent 60%),
+      radial-gradient(1.5px 1.5px at 100px 120px, rgba(255,255,255,.75), transparent 60%);
+    background-size: 420px 340px;
+    animation: twinkle 2.6s ease-in-out infinite;
+  }
+  .glitter-field::after { animation-delay: 1.3s; background-position: 210px 170px; }
+  @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+
+  .fall-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .fall { position: absolute; top: -8vh; animation: fall linear infinite; }
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    8% { opacity: .8; }
+    92% { opacity: .8; }
+    100% { transform: translateY(116vh) rotate(200deg); opacity: 0; }
+  }
+
+  .wrap { position: relative; z-index: 1; }
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+  }
+  .top-right {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .nav-btn:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
+  .sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
+  .sync-note.live { color: var(--lf-teal); }
+  .backup-btn {
+    background: var(--panel);
+    border: 1px solid var(--lf-blush);
+    color: var(--lf-blush);
+    border-radius: 8px;
+    padding: 5px 16px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .backup-btn:hover { filter: brightness(1.15); }
+
+  header { text-align: center; margin-bottom: 36px; position: relative; }
+  .rainbow-bar {
+    height: 10px; border-radius: 999px;
+    background: linear-gradient(90deg,
+      var(--lf-pink), var(--lf-blush), var(--lf-gold), var(--lf-blush), var(--lf-pink));
+    background-size: 200% 100%;
+    animation: shimmer 4s linear infinite;
+    margin-bottom: 22px;
+    box-shadow: 0 0 24px rgba(255,79,163,.55);
+  }
+  @keyframes shimmer { from { background-position: 0% 0;} to { background-position: 200% 0;} }
+
+  h1 {
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--lf-pink), var(--lf-blush), var(--lf-gold), var(--lf-blush), var(--lf-pink));
+    background-size: 200% 100%;
+    animation: shimmer 5s linear infinite;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transform: rotate(-1.2deg);
+    text-shadow: 0 0 30px rgba(255,79,163,.25);
+  }
+  .tagline {
+    display: inline-block;
+    color: var(--dim);
+    font-size: 0.88rem;
+    border: 1px dashed var(--lf-pink);
+    border-radius: 999px;
+    padding: 8px 20px;
+    transform: rotate(0.8deg);
+    background: rgba(255,79,163,.10);
+  }
+
+  h2.section {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 34px 0 14px;
+    color: var(--lf-blush);
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2.section .n {
+    display: grid; place-items: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--lf-pink);
+    color: var(--lf-gold);
+    font-size: 0.95rem;
+    box-shadow: 0 0 10px rgba(255,79,163,.5);
+  }
+
+  .stats {
+    display: flex; gap: 14px; justify-content: center;
+    margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-size: 0.8rem;
+    color: var(--dim);
+  }
+  .stat b { color: var(--lf-gold); font-size: 0.95rem; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 10px;
+  }
+  .card:hover { border-color: var(--lf-pink); transition: border-color .2s; }
+
+  .addgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit; font-size: 0.88rem;
+    outline: none;
+  }
+  textarea { border-radius: 14px; resize: vertical; min-height: 58px; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
+  input:focus, textarea:focus { border-color: var(--lf-blush); box-shadow: 0 0 10px rgba(255,158,207,.3); }
+  .full { grid-column: 1 / -1; }
+
+  .squish-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .squish-row .lbl { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+  .squish {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.25rem; filter: grayscale(1) opacity(.4);
+    transition: all .15s; padding: 0 2px;
+  }
+  .squish.lit { filter: none; transform: scale(1.15); }
+  .squish:hover { transform: scale(1.25); filter: none; }
+
+  button.go {
+    margin-top: 12px;
+    padding: 10px 26px;
+    border: none; border-radius: 20px; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 0.85rem;
+    color: #fff;
+    background: linear-gradient(90deg, var(--lf-pink), var(--lf-magenta));
+    transition: transform .1s, box-shadow .1s;
+    box-shadow: 0 0 16px rgba(255,79,163,.5);
+    white-space: nowrap;
+  }
+  button.go:hover { box-shadow: 0 0 26px rgba(255,79,163,.75); }
+  button.go:active { transform: scale(.96); }
+  .playpen {
+    position: relative;
+    margin-top: 18px;
+    padding: 56px 26px 46px;
+    border-radius: 30px;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 105%, rgba(255,79,163,.13), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 15% 100%, rgba(255,158,207,.10), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 85% 100%, rgba(216,27,127,.10), transparent 70%);
+    box-shadow:
+      inset 0 0 0 6px var(--wood),
+      inset 0 0 0 7px var(--wood-dark),
+      inset 0 0 0 1px rgba(255,255,255,.08),
+      0 0 36px rgba(216,27,127,.18);
+  }
+
+  .playpen::after {
+    content: "";
+    position: absolute;
+    top: 26px; left: 12px; right: 12px;
+    height: 8px;
+    border-radius: 8px;
+    background: linear-gradient(to bottom, var(--wood), var(--wood-dark));
+    box-shadow: 0 2px 0 rgba(0,0,0,.35);
+  }
+
+  .post {
+    position: absolute;
+    width: 16px; height: calc(100% - 20px);
+    background: linear-gradient(to right, var(--wood), var(--wood-dark));
+    border-radius: 10px;
+    z-index: 2;
+  }
+  .post.tl { top: 10px; left: 8px; }
+  .post.tr { top: 10px; right: 8px; }
+  .post::before {
+    content: "";
+    position: absolute; top: -14px; left: 50%;
+    transform: translateX(-50%);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe98a, var(--lf-gold) 60%, #c9a026);
+    box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+
+  .slats {
+    position: absolute;
+    top: 12px; bottom: 12px;
+    width: 8px;
+    z-index: 1;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom,
+      transparent 0px, transparent 16px,
+      rgba(255,158,207,.55) 16px, rgba(255,158,207,.55) 23px,
+      transparent 23px);
+  }
+  .slats.left  { left: 15px; }
+  .slats.right { right: 15px; }
+
+  .pen-sign {
+    position: absolute;
+    top: 40px; right: 38px;
+    z-index: 3;
+    background: var(--panel);
+    border: 1px solid var(--lf-pink);
+    color: var(--lf-blush);
+    font-size: 0.66rem; font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transform: rotate(4deg);
+    box-shadow: 0 3px 10px rgba(0,0,0,.4);
+  }
+  .pen-sign::before { content: "🦄 "; }
+
+  .pen {
+    position: relative; z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 26px 18px;
+  }
+
+  .plushie {
+    position: relative;
+    padding: 20px 15px 12px;
+    background: var(--panel);
+    border: 2px dashed rgba(255,158,207,.4);
+  
+    border-radius: 46px 46px 16px 16px;
+    transition: box-shadow .25s ease, border-color .25s ease;
+    animation: floaty 5s ease-in-out infinite;
+    will-change: transform;
+  }
+  .plushie:nth-child(3n)   { border-radius: 46px 46px 10px 10px; }   
+  .plushie:nth-child(3n+1) { border-radius: 50%; }                
+  .plushie:nth-child(3n+2) { border-radius: 60px 22px 60px 22px; }  
+
+
+  @keyframes floaty {
+    0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+    50%      { transform: translateY(-6px) rotate(calc(var(--tilt, 0deg) * -0.6)); }
+  }
+  .plushie:nth-child(4n+1) { --tilt: -2deg; }
+  .plushie:nth-child(4n+2) { --tilt: 1.5deg; }
+  .plushie:nth-child(4n+3) { --tilt: -1deg; }
+  .plushie:nth-child(4n)   { --tilt: 2deg; }
+
+  .plushie:nth-child(4n+1) { background-color: var(--pastel-pink); }
+  .plushie:nth-child(4n+2) { background-color: var(--pastel-blush); }
+  .plushie:nth-child(4n+3) { background-color: var(--pastel-magenta); }
+  .plushie:nth-child(4n)   { background-color: var(--pastel-lilac); }
+
+
+  .plushie::before, .plushie::after {
+    content: "";
+    position: absolute;
+    top: -13px;
+    width: 26px; height: 26px;
+    background: var(--panel);
+    border: 2px dashed rgba(255,158,207,.4);
+    border-bottom: none;
+    border-radius: 50% 50% 40% 40%;
+  }
+
+  .plushie:nth-child(odd)::before { left: 26px; transform: rotate(-18deg); }
+  .plushie:nth-child(odd)::after  { right: 26px; transform: rotate(18deg); }
+
+  .plushie:nth-child(even)::before {
+    left: 38px; width: 20px; height: 30px;
+    border-radius: 50%;
+    transform: rotate(-24deg);
+  }
+  .plushie:nth-child(even)::after {
+    right: 38px; width: 20px; height: 30px;
+    border-radius: 50%;
+    transform: rotate(24deg);
+  }
+
+  .plushie:nth-child(4n+1)::before, .plushie:nth-child(4n+1)::after { background-color: var(--pastel-pink); }
+  .plushie:nth-child(4n+2)::before, .plushie:nth-child(4n+2)::after { background-color: var(--pastel-blush); }
+  .plushie:nth-child(4n+3)::before, .plushie:nth-child(4n+3)::after { background-color: var(--pastel-magenta); }
+  .plushie:nth-child(4n)::before,   .plushie:nth-child(4n)::after   { background-color: var(--pastel-lilac); }
+
+
+  .plushie:hover {
+    animation-play-state: paused;
+    transform: translateY(-10px) scale(1.04);
+    box-shadow: 0 14px 34px rgba(255,79,163,.25);
+    border-color: var(--lf-gold);
+  }
+  .plushie.fav {
+    border-color: var(--lf-pink);
+    box-shadow: 0 0 22px rgba(255,79,163,.25);
+  }
+  .plushie.fav::before, .plushie.fav::after { border-color: var(--lf-pink); }
+
+  .plushie .emoji {
+    font-size: 2.2rem; line-height: 1;
+    margin-bottom: 8px;
+    display: inline-block;
+    animation: wobble 3s ease-in-out infinite;
+  }
+  @keyframes wobble { 0%,100% { transform: rotate(-7deg);} 50% { transform: rotate(7deg);} }
+
+  .plushie h3 {
+    font-size: 1.02rem; color: var(--accent);
+    margin-bottom: 2px; line-height: 1.35;
+    word-wrap: break-word;
+  }
+  .plushie .species {
+    font-size: 0.74rem; color: var(--lf-blush);
+    text-transform: lowercase; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .plushie .meta {
+    font-size: 0.74rem; color: var(--dim); margin-bottom: 6px;
+  }
+  .plushie .meta b { color: var(--lf-gold); font-weight: 700; }
+  .plushie .note {
+    display: block; margin-top: 8px;
+    font-size: 0.76rem; color: var(--accent);
+    background: rgba(255,158,207,.08);
+    border-left: 3px solid var(--lf-pink);
+    border-radius: 0 8px 8px 0;
+    padding: 7px 11px;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+  .plushie .tools {
+    display: flex; gap: 6px; margin-top: 12px;
+    align-items: center;
+  }
+  .tool-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer;
+    font-family: inherit; font-size: 0.72rem;
+    border-radius: 6px; padding: 4px 10px;
+    transition: all .15s;
+  }
+  .tool-btn:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
+  .tool-btn.del { border: none; opacity: .35; padding: 4px 6px; font-size: 0.95rem; }
+  .tool-btn.del:hover { opacity: 1; color: var(--lf-pink); transform: rotate(15deg) scale(1.15); }
+  .fav-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.1rem; filter: grayscale(1) opacity(.45);
+    transition: all .15s; padding: 0 4px;
+  }
+  .fav-btn.on { filter: none; transform: scale(1.2); }
+  .fav-btn:hover { transform: scale(1.3); filter: none; }
+  .spacer { flex: 1; }
+
+  .empty-msg {
+    grid-column: 1 / -1;
+    text-align: center; padding: 40px 20px;
+    color: var(--dim); font-size: 0.85rem;
+  }
+
+  .footer-note {
+    font-size: 0.73rem;
+    color: var(--dim);
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    text-align: center;
+  }
+
+  .toast {
+    position: fixed; top: 18px; right: 18px; z-index: 300;
+    background: var(--panel); border: 1px solid var(--lf-pink);
+    color: var(--lf-blush); border-radius: 10px; padding: 10px 18px;
+    font-weight: 700; font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    display: none;
+  }
+  .toast.show { display: block; }
+
+  .glitter {
+    position: fixed; pointer-events: none; font-size: 1.4rem;
+    animation: pop 900ms ease-out forwards; z-index: 50;
+  }
+  @keyframes pop {
+    0% { transform: scale(.4) translateY(0); opacity: 1; }
+    100% { transform: scale(1.7) translateY(-60px); opacity: 0; }
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 {
+    font-size: 0.96rem; color: var(--lf-pink);
+    margin-bottom: 12px; line-height: 1.4;
+  }
+  .modal-box p {
+    font-size: 0.81rem; color: var(--dim);
+    line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
+  }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--accent2); color: #121016; border: none; }
+  .modal-yes.destructive { background: var(--bad); }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .modal-no:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plushie, .plushie .emoji, .sky span, .fall { animation: none; }
+  }
+
+  @media (max-width: 640px) {
+    .addgrid { grid-template-columns: 1fr; }
+    .playpen { padding: 50px 14px 36px; }
+    .pen-sign { right: 20px; top: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glitter-field"></div>
+<div class="fall-layer" id="fall"></div>
+<div class="sky" id="sky"></div>
+
+<div class="wrap">
+
+  <div class="top">
+    <span class="sync-note" id="sync-note">checking the cloud…</span>
+    <div class="top-right">
+      <button class="backup-btn" onclick="exportData()">Back dat data up</button>
+      <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
+      <a href="../index.html" class="nav-btn">Dashboard</a>
+      <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
+    </div>
+  </div>
+
+  <header>
+    <div class="rainbow-bar"></div>
+    <h1>🦄 Iri's Stufties 🧸</h1>
+    <p class="tagline">a very pink playpen of floof, glitter & squeaky smells ✨💖</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <h2 class="section"><span class="n">🌟</span> Drop Someone in the Pen</h2>
+  <div class="card">
+    <div class="addgrid">
+      <input type="text" id="f-name" placeholder="name it something majestic 🦄">
+      <input type="text" id="f-species" placeholder="species (bear, unicorn, dragon…) 🐉">
+      <div class="squish-row full" id="squishRow">
+        <span class="lbl">squish level:</span>
+      </div>
+      <textarea id="f-note" class="full" placeholder="tell its story… the lore runs deep 📖✨"></textarea>
+    </div>
+    <button class="go" onclick="addStuffie()">into the playpen 💖</button>
+  </div>
+
+  <h2 class="section"><span class="n">🪵</span> Inside the Playpen</h2>
+  <div class="playpen">
+    <div class="post tl"></div>
+    <div class="post tr"></div>
+    <div class="slats left"></div>
+    <div class="slats right"></div>
+    <div class="pen-sign">STUFTIES LIVE HERE</div>
+    <div class="pen" id="pen"></div>
+  </div>
+
+  <p class="footer-note">✦ hungriest hearts collect the softest things ✦💖✨</p>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script>
+const CLOUD_KEY = "savich-stufties";
+const CACHE_KEY = "savich-stufties-cache"; 
+
+let data = { list: [] };
+let cloudReady = false;
+
+function normalizeState(value) {
+  const source = value && typeof value === "object" ? value : {};
+  return { list: Array.isArray(source.list) ? source.list : [] };
+}
+
+const Store = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem(key)); }
+    catch (e) { return null; }
+  },
+  set(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+
+function setSync(ok, message) {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = ok ? (message || "✓ synced to the cloud") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+
+let saveTimer = null;
+function save(immediate) {
+  if (!cloudReady) return;
+  clearTimeout(saveTimer);
+  if (immediate) {
+    saveBlob(CLOUD_KEY, data)
+      .then(() => setSync(true))
+      .catch(err => {
+        console.error("Stufties cloud save failed:", err.message);
+        setSync(false);
+      });
+  } else {
+    setSync(true, "☁️ saving…");
+    saveTimer = setTimeout(() => {
+      saveBlob(CLOUD_KEY, data)
+        .then(() => setSync(true))
+        .catch(err => {
+          console.error("Stufties cloud save failed:", err.message);
+          setSync(false);
+        });
+    }, 900);
+  }
+}
+
+function cacheLocal() {
+  Store.set(CACHE_KEY, data);
+}
+
+const SPECIES_EMOJI = [
+  ["uni", "🦄"], ["unicorn", "🦄"], ["bear", "🧸"], ["teddy", "🧸"], ["dragon", "🐉"],
+  ["cat", "🐱"], ["kitten", "🐱"], ["dog", "🐶"], ["puppy", "🐶"], ["bunny", "🐰"],
+  ["rabbit", "🐰"], ["frog", "🐸"], ["axolotl", "🦎"], ["pig", "🐷"], ["duck", "🦆"],
+  ["penguin", "🐧"], ["owl", "🦉"], ["octopus", "🐙"], ["shark", "🦈"], ["whale", "🐳"],
+  ["llama", "🦙"], ["alpaca", "🦙"], ["fox", "🦊"], ["bee", "🐝"], ["dino", "🦕"],
+  ["dinosaur", "🦕"], ["turtle", "🐢"], ["monkey", "🐵"], ["mouse", "🐭"], ["sheep", "🐑"]
+];
+
+function emojiFor(species, txt) {
+  const hay = ((species || "") + " " + (txt || "")).toLowerCase();
+  for (const [word, emo] of SPECIES_EMOJI) {
+    if (hay.includes(word)) return emo;
+  }
+  return "✨";
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function renderStats() {
+  const total = data.list.length;
+  const favs = data.list.filter(i => i.fav).length;
+  const avgSquish = total
+    ? (data.list.reduce((a, i) => a + (i.squish || 0), 0) / total).toFixed(1)
+    : "0";
+  document.getElementById("stats").innerHTML =
+    `<span class="stat">🧸 <b>${total}</b> stufties</span>
+     <span class="stat">💖 <b>${favs}</b> favorites</span>
+     <span class="stat">🖐️ <b>${avgSquish}</b> avg squish</span>`;
+}
+
+function render() {
+  const pen = document.getElementById("pen");
+  pen.innerHTML = "";
+  if (!data.list.length) {
+    pen.innerHTML = '<div class="empty-msg">the playpen is suspiciously quiet... 🕳️ put someone in here! 🦄</div>';
+    return;
+  }
+  data.list.forEach((item, i) => {
+    const div = document.createElement("div");
+    div.className = "plushie" + (item.fav ? " fav" : "");
+    // stagger the float so a big herd ripples instead of bouncing in sync
+    div.style.animationDelay = (i * 0.45) + "s";
+    div.querySelector && div.setAttribute("data-i", i);
+    div.innerHTML = `
+      <span class="emoji">${emojiFor(item.species, item.name)}</span>
+      <h3>${escapeHtml(item.name)}</h3>
+      ${item.species ? `<div class="species">${escapeHtml(item.species)}</div>` : ""}
+      <div class="meta">🖐️ squish: <b>${"🌟".repeat(item.squish || 0) || "—"}</b></div>
+      ${item.note ? `<span class="note">📖 ${escapeHtml(item.note)}</span>` : ""}
+      <div class="tools">
+        <button class="fav-btn ${item.fav ? "on" : ""}" onclick="toggleFav(${i})" title="favorite">${item.fav ? "💖" : "🤍"}</button>
+        <span class="spacer"></span>
+        <button class="tool-btn del" onclick="removeStuffie(${i})" title="re-home... 😢">🗑️</button>
+      </div>`;
+    pen.appendChild(div);
+  });
+}
+
+function renderAll() {
+  render();
+  renderStats();
+}
+
+let squishValue = 0;
+(function buildSquish() {
+  const row = document.getElementById("squishRow");
+  for (let n = 1; n <= 5; n++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "squish";
+    b.textContent = "🫧";
+    b.title = n + " squish";
+    b.onclick = () => {
+      squishValue = n;
+      row.querySelectorAll(".squish").forEach((el, idx) =>
+        el.classList.toggle("lit", idx < n));
+    };
+    row.appendChild(b);
+  }
+})();
+
+function addStuffie() {
+  const g = id => document.getElementById(id);
+  const name = g("f-name").value.trim();
+  if (!name) {
+    g("f-name").focus();
+    g("f-name").placeholder = "it needs a NAME, silly 🙃";
+    return;
+  }
+  data.list.push({
+    name,
+    species: g("f-species").value.trim(),
+    note: g("f-note").value.trim(),
+    squish: squishValue,
+    fav: false
+  });
+  g("f-name").value = ""; g("f-species").value = ""; g("f-note").value = "";
+  squishValue = 0;
+  document.querySelectorAll(".squish").forEach(el => el.classList.remove("lit"));
+  cacheLocal();
+  save();
+  renderAll();
+  burst(event);
+  showToast("Welcome to the playpen! 🧸✨");
+}
+
+function toggleFav(i) {
+  data.list[i].fav = !data.list[i].fav;
+  cacheLocal();
+  save();
+  renderAll();
+  if (data.list[i].fav) showToast("Extra special floof detected 💖");
+}
+
+async function removeStuffie(i) {
+  const item = data.list[i];
+  const ok = await askConfirm(
+    "Re-home this stufty?",
+    item.name + " 🥺\n\nThis banishes them from the playpen FOREVER. No take-backs on a banishing.",
+    true
+  );
+  if (!ok) return;
+  data.list.splice(i, 1);
+  cacheLocal();
+  save(true);
+  renderAll();
+  showToast("Off to a new adventure. 👋");
+}
+
+function burst(ev) {
+  const icons = ["✨","💖","🦄","⭐","🌟","💕","🌈","💫"];
+  const x = ev && ev.clientX ? ev.clientX : window.innerWidth / 2;
+  const y = ev && ev.clientY ? ev.clientY : 200;
+  for (let n = 0; n < 12; n++) {
+    const s = document.createElement("div");
+    s.className = "glitter";
+    s.textContent = icons[Math.floor(Math.random() * icons.length)];
+    s.style.left = (x + (Math.random() * 110 - 55)) + "px";
+    s.style.top = (y + (Math.random() * 50 - 25)) + "px";
+    s.style.animationDelay = (n * 45) + "ms";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "savich-stufties-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Guard it with glitter.");
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!parsed || !Array.isArray(parsed.list)) {
+        showToast("That file isn't a valid stufties backup.");
+        return;
+      }
+      const ok = await askConfirm(
+        "Empty the playpen and start over?",
+        "This overwrites EVERYONE'S playpen with the contents of the backup file — the whole household sees this list.",
+        true
+      );
+      if (!ok) return;
+      data = normalizeState(parsed);
+      cacheLocal();
+      save(true);
+      renderAll();
+      showToast("Playpen restored. 🧸");
+    } catch (err) {
+      showToast("Couldn't read that file.");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+let modalResolve = null;
+
+function askChoice(title, message, choices) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    const btns = document.getElementById("modal-buttons");
+    btns.innerHTML = "";
+    choices.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.className = c.primary
+        ? ("modal-yes" + (c.destructive ? " destructive" : ""))
+        : "modal-no";
+      b.onclick = () => closeModal(c.value);
+      btns.appendChild(b);
+    });
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+
+function askConfirm(title, message, destructive) {
+  return askChoice(title, message, [
+    { label: "NO", value: false },
+    { label: "YES", value: true, primary: true, destructive: !!destructive }
+  ]);
+}
+
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(null);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(null);
+  }
+});
+
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+(function() {
+  const sky = document.getElementById("sky");
+  const doodles = ["🦄","🦄","🦄","💖","✨","🦄","🌈","⭐","💫","🦄","💗","✨"];
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement("span");
+    s.textContent = doodles[i % doodles.length];
+    s.style.left = Math.random() * 95 + "vw";
+    s.style.top = Math.random() * 95 + "vh";
+    s.style.fontSize = (0.8 + Math.random() * 1.3) + "rem";
+    s.style.animationDelay = (Math.random() * 9) + "s";
+    sky.appendChild(s);
+  }
+  const fall = document.getElementById("fall");
+  const falling = ["✨","💖","✨","🦄","💫","💗","✨","⭐"];
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement("span");
+    s.className = "fall";
+    s.textContent = falling[i % falling.length];
+    s.style.left = (Math.random() * 98) + "vw";
+    s.style.fontSize = (0.55 + Math.random() * 0.8) + "rem";
+    s.style.animationDuration = (7 + Math.random() * 9) + "s";
+    s.style.animationDelay = (Math.random() * 12) + "s";
+    s.style.opacity = 0;
+    fall.appendChild(s);
+  }
+})();
+data = normalizeState(Store.get(CACHE_KEY));
+renderAll();
+
+(async function initSharedCloud() {
+  try {
+    const session = await requireAuth();
+    if (!session) return; // bounced to login
+
+    const cloud = await loadBlob(CLOUD_KEY);
+    if (cloud) {
+      data = normalizeState(cloud);
+      cacheLocal();
+      renderAll();
+    } else {
+      await saveBlob(CLOUD_KEY, data);
+    }
+    cloudReady = true;
+    setSync(true, "✓ synced — one playpen, whole household");
+  } catch (error) {
+    console.error("Stufties shared cloud init failed:", error.message);
+    setSync(false);
+  }
+})();
+</script>
+
+</body>
+</html>

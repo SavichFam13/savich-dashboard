@@ -386,6 +386,35 @@ function esc(str) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+let rtChannel = null;
+let rtReloadTimer = null;
+
+function setupRealtime() {
+  rtChannel = sb()
+    .channel("household-inv-realtime")
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "inventory_items" },
+      () => scheduleRemoteReload())
+    .subscribe();
+}
+
+function scheduleRemoteReload() {
+  if (Object.keys(pendingQtyTimers).length > 0) {
+    clearTimeout(rtReloadTimer);
+    rtReloadTimer = setTimeout(scheduleRemoteReload, 400);
+    return;
+  }
+  clearTimeout(rtReloadTimer);
+  rtReloadTimer = setTimeout(async () => {
+    try {
+      await loadRows();
+      renderInventory();
+      renderGrocery();
+    } catch (e) {
+      console.warn("realtime reload skipped:", e);
+    }
+  }, 250);
+}
 
 function buildColumns() {
   const wrap = document.getElementById("columns");
@@ -472,6 +501,7 @@ async function adjustQty(id, delta) {
 
   clearTimeout(pendingQtyTimers[id]);
   pendingQtyTimers[id] = setTimeout(async () => {
+    delete pendingQtyTimers[id];
     try { await updateRow(id, { qty: row.qty }); setSync(true); }
     catch (e) { console.error(e); setSync(false); }
   }, 350);
@@ -783,6 +813,7 @@ function switchTab(name) {
 
   try {
     await loadRows();
+    setupRealtime();
     setSync(true);
   } catch (err) {
     console.error(err);
