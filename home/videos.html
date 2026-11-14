@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Media Collection</title>
+<style>
+:root {
+  --bg: #121016;
+  --panel: #1c1922;
+  --text: #f2eef7;
+  --accent: #c9a0ff;
+  --accent2: #5fd3c4;
+  --hot-pink: #e10ab2;
+  --dim: #a89bbd;
+  --border: #332c3e;
+  --good: #7ddba3;
+  --bad: #ff8a8a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+.top {
+  display: flex; justify-content: flex-end; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+}
+.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
+.sync-note.live { color: var(--good); }
+header h1 { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
+header .sub { color: var(--dim); font-size: 0.8rem; margin-top: 4px; }
+.btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  padding: 8px 14px; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent2); }
+.btn-primary {
+  background: var(--accent2);
+  color: #121016;
+  border: 1px solid var(--accent2);
+  font-weight: 700;
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-pink {
+  background: none;
+  border: 1px solid var(--hot-pink);
+  color: var(--hot-pink);
+}
+.btn-pink:hover { filter: brightness(1.2); }
+.btn-danger {
+  background: none;
+  border: 1px solid var(--bad);
+  color: var(--bad);
+}
+.btn-danger:hover { background: #2a1620; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+a.btn { text-decoration: none; display: inline-block; }
+input[type="text"], select {
+  background: #16131d;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-family: inherit; font-size: 0.82rem;
+  padding: 8px 10px;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent2); }
+input[type="checkbox"] { accent-color: var(--accent2); width: 16px; height: 16px; cursor: pointer; }
+label.f-label {
+  display: block;
+  color: var(--dim);
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.check-row {
+  display: flex; align-items: center; gap: 10px;
+  background: #16131d; border: 1px solid var(--border); border-radius: 5px;
+  padding: 10px 12px; cursor: pointer; user-select: none;
+}
+.check-row:hover { border-color: var(--accent2); }
+.check-row span { font-size: 0.82rem; }
+nav.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin: 22px 0 20px; flex-wrap: wrap; }
+nav.tabs button {
+  background: none; border: none; color: var(--dim);
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+}
+nav.tabs button:hover { color: var(--text); }
+nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.page { display: none; }
+.page.visible { display: block; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.section-title {
+  color: var(--hot-pink);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+
+.owned-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .owned-cols { grid-template-columns: 1fr; } }
+.type-col { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.type-col > h2 {
+  color: var(--accent2); font-size: 0.9rem; text-transform: uppercase;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.type-count { color: var(--dim); font-size: 0.75rem; margin-bottom: 14px; }
+.cat-group { margin-bottom: 16px; }
+.cat-head {
+  color: var(--hot-pink);
+  font-size: 0.74rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.cat-head .chev { color: var(--dim); }
+.cat-body { padding-top: 4px; }
+.cat-body.collapsed { display: none; }
+.media-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px;
+  border-bottom: 1px solid #26212e;
+}
+.media-item:nth-child(even) { background: #171420; }
+.media-item:hover { background: #1d1926; }
+.mi-title { font-size: 0.85rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cc-badge {
+  display: inline-block;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px;
+  border-radius: 3px; padding: 0 5px; line-height: 1.5;
+}
+.cc-has { color: var(--good); border: 1px solid var(--good); }
+.cc-no { color: var(--dim); border: 1px dashed var(--border); }
+.mi-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.mini-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--dim); font-family: inherit; font-size: 0.7rem;
+  padding: 2px 8px; cursor: pointer;
+}
+.mini-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+.mini-btn.del:hover { border-color: var(--bad); color: var(--bad); }
+.mini-btn.cc-toggle:hover { border-color: var(--good); color: var(--good); }
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  color: var(--dim); font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+td { padding: 6px 10px; border-bottom: 1px solid #26212e; font-size: 0.83rem; }
+tr:nth-child(even) td { background: #171420; }
+tr:hover td { background: #1d1926; }
+.badge {
+  display: inline-block;
+  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  border-radius: 4px; padding: 1px 8px;
+}
+.badge.movie { color: var(--accent2); border: 1px solid var(--accent2); }
+.badge.tv { color: var(--hot-pink); border: 1px solid var(--hot-pink); }
+
+.random-zone { text-align: center; padding: 34px 20px; }
+.slot {
+  min-height: 96px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: 8px; margin: 18px 0;
+}
+.slot-title {
+  font-size: 1.6rem; font-weight: 700; color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.slot-meta { color: var(--dim); font-size: 0.8rem; }
+.slot-meta .badge { margin-right: 8px; }
+.spinning { color: var(--accent2); font-size: 1.2rem; animation: blink 0.35s infinite alternate; }
+@keyframes blink { from { opacity: 1; } to { opacity: 0.25; } }
+.rand-stats { color: var(--dim); font-size: 0.75rem; margin-top: 6px; }
+
+.summary-strip {
+  display: flex; gap: 24px; flex-wrap: wrap;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;
+}
+.sum-item .sum-num { color: var(--accent2); font-size: 1.3rem; font-weight: 700; }
+.sum-item .sum-label { color: var(--dim); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; }
+
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.toolbar input[type="text"] { flex: 1; min-width: 160px; }
+
+.empty-note { color: var(--dim); font-size: 0.8rem; font-style: italic; padding: 8px 8px; }
+
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,8,14,0.75);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 24px; max-width: 420px; width: 90%;
+}
+.modal-box h3 { color: var(--hot-pink); font-size: 1rem; margin-bottom: 10px; }
+.modal-box p { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; white-space: pre-line; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--panel); border: 1px solid var(--accent2);
+  color: var(--text); font-size: 0.82rem;
+  border-radius: 5px; padding: 10px 20px;
+  opacity: 0; transition: all 0.3s ease; z-index: 200; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-right">
+    <span class="sync-note" id="sync-note">checking the cloud…</span>
+    <button class="btn" id="btnExport">Export</button>
+    <button class="btn" id="btnImport">Import</button>
+    <a href="../index.html" class="btn" id="backBtn">Dashboard</a>
+    <input type="file" id="importFile" accept=".json" style="display:none;">
+  </div>
+</div>
+
+<header>
+  <h1>Media Collection</h1>
+  <p class="sub">Own it. Want it. Spin the wheel and watch it.</p>
+</header>
+
+<nav class="tabs">
+  <button data-tab="owned" class="active">Owned</button>
+  <button data-tab="wishlist">Wishlist</button>
+  <button data-tab="random">Random Pick</button>
+  <button data-tab="manage">Manage</button>
+</nav>
+
+<div class="summary-strip" id="summaryStrip"></div>
+
+<section class="page visible" id="page-owned">
+  <div class="toolbar">
+    <input type="text" id="ownedSearch" placeholder="Search owned titles...">
+    <select id="ownedTypeFilter">
+      <option value="">All Types</option>
+      <option value="movie">Movies Only</option>
+      <option value="tv">TV Shows Only</option>
+    </select>
+    <select id="ownedCatFilter">
+      <option value="">All Categories</option>
+    </select>
+    <select id="ownedSubsFilter">
+      <option value="">All Subtitles</option>
+      <option value="has">Has Subtitles</option>
+      <option value="needs">Needs Subtitles</option>
+    </select>
+  </div>
+  <div class="owned-cols" id="ownedCols"></div>
+</section>
+
+<section class="page" id="page-wishlist">
+  <div class="toolbar">
+    <input type="text" id="wishSearch" placeholder="Search wishlist titles...">
+    <select id="wishTypeFilter">
+      <option value="">All Types</option>
+      <option value="movie">Movies Only</option>
+      <option value="tv">TV Shows Only</option>
+    </select>
+    <button class="btn btn-pink" id="btnAddWish">+ Add to Wishlist</button>
+  </div>
+  <div class="panel" style="padding:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Category</th>
+          <th style="width:230px;"></th>
+        </tr>
+      </thead>
+      <tbody id="wishBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="page" id="page-random">
+  <div class="panel random-zone">
+    <div class="section-title">Can't Decide? Roll For It</div>
+    <div class="slot" id="slot">
+      <div class="slot-title" id="slotTitle">Ready to roll 🎬</div>
+      <div class="slot-meta" id="slotMeta">Pick a button below and destiny takes over.</div>
+    </div>
+    <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-pink" id="btnRandMovie">🎲 Random Movie</button>
+      <button class="btn btn-pink" id="btnRandTV">🎲 Random TV Show</button>
+    </div>
+    <div class="rand-stats" id="randStats"></div>
+  </div>
+</section>
+
+<section class="page" id="page-manage">
+  <div class="panel">
+    <div class="section-title">Categories</div>
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <input type="text" id="newCatInput" placeholder="New category name (e.g. Anime, Documentary...)" style="flex:1;">
+      <button class="btn btn-pink" id="btnAddCat">+ Add Category</button>
+    </div>
+    <div id="catList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+  </div>
+</section>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle"></h3>
+    <p id="modalMsg"></p>
+    <div class="modal-actions">
+      <button class="btn" id="modalNo">No</button>
+      <button class="btn btn-danger" id="modalYes">Yes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addItemOverlay">
+  <div class="modal-box">
+    <h3 id="addItemHeading">Add Item</h3>
+    <div style="display:grid; gap:12px;">
+      <div>
+        <label class="f-label">Title</label>
+        <input type="text" id="aiTitle" style="width:100%;">
+      </div>
+      <div>
+        <label class="f-label">Type</label>
+        <select id="aiType" style="width:100%;">
+          <option value="movie">Movie</option>
+          <option value="tv">TV Show</option>
+        </select>
+      </div>
+      <div>
+        <label class="f-label">Category</label>
+        <select id="aiCat" style="width:100%;"></select>
+      </div>
+      <div>
+        <label class="f-label">Subtitles</label>
+        <label class="check-row">
+          <input type="checkbox" id="aiSubs">
+          <span>Has subtitles</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:18px;">
+      <button class="btn" id="aiCancel">Cancel</button>
+      <button class="btn btn-primary" id="aiSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="db.js"></script>
+<script>
+"use strict";
+var CLOUD_KEY = "savich-media";
+var CACHE_KEY = "savich-media-cache";
+var LEGACY_ITEMS_KEY = "savich-media-v1";     
+var LEGACY_CATS_KEY = "savich-media-cats-v1";
+var DEFAULT_CATS = ["Sci-Fi", "Horror", "Fantasy", "Action", "Comedy", "Drama", "Animation", "Documentary", "Thriller", "Other"];
+
+var items = [];
+var cats = DEFAULT_CATS.slice();
+var cloudReady = false;
+var lastSyncedPrint = null;
+var saveQueued = false;
+var saveTimer = null;
+var rtReloadTimer = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function snapshot() { return { items: items, cats: cats }; }
+
+function adoptState(value) {
+  var o = value && typeof value === "object" ? value : {};
+  items = Array.isArray(o.items) ? o.items : [];
+  cats = (Array.isArray(o.cats) && o.cats.length) ? o.cats : DEFAULT_CATS.slice();
+}
+
+function fingerprint() {
+  try { return JSON.stringify(snapshot()); } catch (e) { return ""; }
+}
+
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { return null; }
+}
+function cacheLocal() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot())); } catch (e) {}
+}
+function loadLegacy() {
+  try {
+    var li = JSON.parse(localStorage.getItem(LEGACY_ITEMS_KEY) || "null");
+    var lc = JSON.parse(localStorage.getItem(LEGACY_CATS_KEY) || "null");
+    if (Array.isArray(li) && li.length) return { items: li, cats: Array.isArray(lc) && lc.length ? lc : DEFAULT_CATS.slice() };
+  } catch (e) {}
+  return null;
+}
+
+function setSync(ok, message) {
+  var el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+
+function save(immediate) {
+  if (!cloudReady) return;
+  clearTimeout(saveTimer);
+  var finishOk = function () {
+    lastSyncedPrint = fingerprint();
+    saveQueued = false;
+    setSync(true);
+  };
+  var fail = function (err) {
+    saveQueued = false;
+    console.error("Media cloud save failed:", err && err.message);
+    setSync(false);
+  };
+  if (immediate) {
+    saveBlob(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
+  } else {
+    saveQueued = true;
+    setSync(true, "☁️ saving…");
+    saveTimer = setTimeout(function () {
+      saveBlob(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
+    }, 900);
+  }
+}
+
+function persist(immediate) {
+  cacheLocal();
+  save(immediate);
+}
+
+function setupRealtime() {
+  sb()
+    .channel("media-realtime")
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "app_data" },
+      function () { scheduleRemoteReload(); })
+    .subscribe();
+}
+
+function scheduleRemoteReload() {
+  if (saveQueued) {
+    clearTimeout(rtReloadTimer);
+    rtReloadTimer = setTimeout(scheduleRemoteReload, 1000);
+    return;
+  }
+  clearTimeout(rtReloadTimer);
+  rtReloadTimer = setTimeout(async function () {
+    try {
+      var cloud = await loadBlob(CLOUD_KEY);
+      if (!cloud) return;
+      var o = cloud && typeof cloud === "object" ? cloud : {};
+      var normalized = {
+        items: Array.isArray(o.items) ? o.items : [],
+        cats: (Array.isArray(o.cats) && o.cats.length) ? o.cats : DEFAULT_CATS.slice()
+      };
+      var fp = JSON.stringify(normalized);
+      if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
+      if (fp === fingerprint()) return;
+      adoptState(cloud);
+      lastSyncedPrint = fingerprint();
+      cacheLocal();
+      renderAll();
+    } catch (e) {
+      console.warn("realtime reload skipped:", e && e.message);
+    }
+  }, 300);
+}
+
+adoptState(loadCache());
+if (!items.length) {
+  var legacy = loadLegacy();
+  if (legacy) { items = legacy.items; cats = legacy.cats; }
+}
+
+var toastTimer = null;
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+}
+
+function askConfirm(title, msg) {
+  return new Promise(function (resolve) {
+    var ov = document.getElementById("modalOverlay");
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalMsg").textContent = msg;
+    ov.classList.add("show");
+    function done(val) {
+      ov.classList.remove("show");
+      document.getElementById("modalYes").removeEventListener("click", yes);
+      document.getElementById("modalNo").removeEventListener("click", no);
+      ov.removeEventListener("click", overlay);
+      document.removeEventListener("keydown", key);
+      resolve(val);
+    }
+    function yes() { done(true); }
+    function no() { done(false); }
+    function overlay(e) { if (e.target === ov) done(false); }
+    function key(e) { if (e.key === "Escape") done(false); }
+    document.getElementById("modalYes").addEventListener("click", yes);
+    document.getElementById("modalNo").addEventListener("click", no);
+    ov.addEventListener("click", overlay);
+    document.addEventListener("keydown", key);
+  });
+}
+
+var tabBtns = document.querySelectorAll("nav.tabs button");
+tabBtns.forEach(function (b) {
+  b.addEventListener("click", function () {
+    tabBtns.forEach(function (x) { x.classList.remove("active"); });
+    document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("visible"); });
+    b.classList.add("active");
+    document.getElementById("page-" + b.dataset.tab).classList.add("visible");
+  });
+});
+
+function countBy(type, owned) {
+  return items.filter(function (i) { return i.type === type && !!i.owned === owned; }).length;
+}
+function renderSummary() {
+  var m = countBy("movie", true), t = countBy("tv", true);
+  var wm = countBy("movie", false), wt = countBy("tv", false);
+  var needSubs = items.filter(function (i) { return i.owned && !i.subs; }).length;
+  document.getElementById("summaryStrip").innerHTML =
+    '<div class="sum-item"><div class="sum-num">' + m + '</div><div class="sum-label">Movies Owned</div></div>' +
+    '<div class="sum-item"><div class="sum-num">' + t + '</div><div class="sum-label">TV Shows Owned</div></div>' +
+    '<div class="sum-item"><div class="sum-num">' + (wm + wt) + '</div><div class="sum-label">On Wishlist</div></div>' +
+    '<div class="sum-item"><div class="sum-num" style="color:var(--bad);">' + needSubs + '</div><div class="sum-label">Need Subtitles</div></div>';
+  document.getElementById("randStats").textContent =
+    "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
+}
+
+var addItemCtx = null;
+function openAddItem(mode, existing) {
+  addItemCtx = { mode: mode, editId: existing ? existing.id : null };
+  document.getElementById("addItemHeading").textContent =
+    existing ? "Edit Item" : (mode === "wishlist" ? "Add to Wishlist" : "Add to Owned");
+  document.getElementById("aiTitle").value = existing ? existing.title : "";
+  document.getElementById("aiType").value = existing ? existing.type : "movie";
+  document.getElementById("aiSubs").checked = existing ? !!existing.subs : false;
+  fillCatSelect(document.getElementById("aiCat"), existing ? existing.cat : cats[0]);
+  document.getElementById("addItemOverlay").classList.add("show");
+  document.getElementById("aiTitle").focus();
+}
+function closeAddItem() {
+  document.getElementById("addItemOverlay").classList.remove("show");
+  addItemCtx = null;
+}
+document.getElementById("aiCancel").addEventListener("click", closeAddItem);
+document.getElementById("addItemOverlay").addEventListener("click", function (e) {
+  if (e.target === this) closeAddItem();
+});
+document.getElementById("aiSave").addEventListener("click", function () {
+  if (!addItemCtx) return;
+  var title = document.getElementById("aiTitle").value.trim();
+  var type = document.getElementById("aiType").value;
+  var cat = document.getElementById("aiCat").value;
+  var subs = document.getElementById("aiSubs").checked;
+  if (!title) { toast("Give it a title."); return; }
+  if (!cat) { toast("Add a category first in Manage."); return; }
+  if (addItemCtx.editId != null) {
+    var it = items.find(function (i) { return i.id === addItemCtx.editId; });
+    if (it) { it.title = title; it.type = type; it.cat = cat; it.subs = subs; }
+    toast("Updated.");
+  } else {
+    items.push({ id: Date.now() + "-" + Math.floor(Math.random() * 1e6), title: title, type: type, cat: cat, subs: subs, owned: addItemCtx.mode === "owned" });
+    toast(addItemCtx.mode === "owned" ? "Added to collection." : "Added to wishlist.");
+  }
+  persist();
+  closeAddItem();
+  renderAll();
+});
+function fillCatSelect(sel, chosen) {
+  sel.innerHTML = cats.map(function (c) {
+    return '<option value="' + esc(c) + '"' + (c === chosen ? " selected" : "") + '>' + esc(c) + '</option>';
+  }).join("");
+}
+
+document.getElementById("btnAddWish").addEventListener("click", function () { openAddItem("wishlist"); });
+
+var collapsedCats = {};
+
+function filteredOwned() {
+  var q = document.getElementById("ownedSearch").value.trim().toLowerCase();
+  var tf = document.getElementById("ownedTypeFilter").value;
+  var cf = document.getElementById("ownedCatFilter").value;
+  var sf = document.getElementById("ownedSubsFilter").value;
+  return items.filter(function (i) {
+    return i.owned &&
+      (!tf || i.type === tf) &&
+      (!cf || i.cat === cf) &&
+      (!sf || (sf === "has" ? !!i.subs : !i.subs)) &&
+      (!q || i.title.toLowerCase().indexOf(q) !== -1);
+  });
+}
+
+function ccBadgeHTML(i) {
+  return i.subs
+    ? '<span class="cc-badge cc-has" title="Has subtitles">CC ✓</span>'
+    : '<span class="cc-badge cc-no" title="Needs subtitles">CC?</span>';
+}
+
+function renderOwned() {
+  var list = filteredOwned();
+  var cols = document.getElementById("ownedCols");
+  var html = "";
+  ["movie", "tv"].forEach(function (type) {
+    var label = type === "movie" ? "Movies" : "TV Shows";
+    var typeCount = 0;
+    var colHtml = "";
+    cats.forEach(function (c) {
+      var g = list.filter(function (i) { return i.type === type && i.cat === c; })
+                  .sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
+      if (!g.length) return;
+      typeCount += g.length;
+      var key = type + "::" + c;
+      var collapsed = !!collapsedCats[key];
+      colHtml += '<div class="cat-group">' +
+        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
+        '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">';
+      g.forEach(function (i) {
+        colHtml += '<div class="media-item">' +
+          '<span class="mi-title">' + ccBadgeHTML(i) + '<span>' + esc(i.title) + '</span></span>' +
+          '<span class="mi-actions">' +
+            '<button class="mini-btn cc-toggle" data-cctoggle="' + i.id + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
+            '<button class="mini-btn" data-edit="' + i.id + '">Edit</button>' +
+            '<button class="mini-btn del" data-del="' + i.id + '">✕</button>' +
+          '</span></div>';
+      });
+      colHtml += '</div></div>';
+    });
+    if (!colHtml) {
+      colHtml = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
+    }
+    html += '<div class="type-col"><h2>' + label + '</h2>' +
+      '<div class="type-count">' + typeCount + ' owned</div>' +
+      '<button class="btn btn-pink" data-add-owned="' + type + '" style="margin-bottom:14px;">+ Add ' + label.slice(0, -1) + '</button>' +
+      colHtml + '</div>';
+  });
+  cols.innerHTML = html;
+
+  cols.querySelectorAll(".cat-head").forEach(function (h) {
+    h.addEventListener("click", function () {
+      var key = h.dataset.key;
+      collapsedCats[key] = !collapsedCats[key];
+      renderOwned();
+    });
+  });
+  cols.querySelectorAll("[data-cctoggle]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.cctoggle; });
+      if (!it) return;
+      it.subs = !it.subs;
+      persist(); renderAll();
+      toast(it.subs ? '"' + it.title + '" marked as having subtitles.' : '"' + it.title + '" marked as needing subtitles.');
+    });
+  });
+  cols.querySelectorAll("[data-edit]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.edit; });
+      if (it) openAddItem(it.owned ? "owned" : "wishlist", it);
+    });
+  });
+  cols.querySelectorAll("[data-del]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.del; });
+      if (!it) return;
+      askConfirm("Remove Title", 'Remove "' + it.title + '" from the collection?\n\nThe whole household sees this change.').then(function (ok) {
+        if (!ok) return;
+        items = items.filter(function (i) { return i.id !== it.id; });
+        persist(); renderAll(); toast("Removed.");
+      });
+    });
+  });
+  cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
+    b.addEventListener("click", function () { openAddItem("owned"); });
+  });
+}
+
+function filteredWish() {
+  var q = document.getElementById("wishSearch").value.trim().toLowerCase();
+  var tf = document.getElementById("wishTypeFilter").value;
+  return items.filter(function (i) {
+    return !i.owned && (!tf || i.type === tf) && (!q || i.title.toLowerCase().indexOf(q) !== -1);
+  }).sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
+}
+
+function renderWish() {
+  var list = filteredWish();
+  var body = document.getElementById("wishBody");
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="4" class="empty-note">Wishlist is empty. Add titles you want to own.</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(function (i) {
+    return '<tr>' +
+      '<td>' + ccBadgeHTML(i) + ' ' + esc(i.title) + '</td>' +
+      '<td><span class="badge ' + (i.type === "movie" ? "movie" : "tv") + '">' + (i.type === "movie" ? "Movie" : "TV") + '</span></td>' +
+      '<td>' + esc(i.cat) + '</td>' +
+      '<td style="text-align:right;">' +
+        '<button class="mini-btn" data-got="' + i.id + '">✔ Own It Now</button> ' +
+        '<button class="mini-btn" data-wedit="' + i.id + '">Edit</button> ' +
+        '<button class="mini-btn del" data-wdel="' + i.id + '">✕</button>' +
+      '</td></tr>';
+  }).join("");
+
+  body.querySelectorAll("[data-got]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.got; });
+      if (!it) return;
+      it.owned = true;
+      persist(); renderAll();
+      toast('"' + it.title + '" moved to your collection (' + it.cat + ")!");
+    });
+  });
+  body.querySelectorAll("[data-wedit]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.wedit; });
+      if (it) openAddItem("wishlist", it);
+    });
+  });
+  body.querySelectorAll("[data-wdel]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.wdel; });
+      if (!it) return;
+      askConfirm("Remove Title", 'Remove "' + it.title + '" from the wishlist?\n\nThe whole household sees this change.').then(function (ok) {
+        if (!ok) return;
+        items = items.filter(function (i) { return i.id !== it.id; });
+        persist(); renderAll(); toast("Removed.");
+      });
+    });
+  });
+}
+
+var spinning = false;
+function doRandom(type) {
+  var pool = items.filter(function (i) { return i.owned && i.type === type; });
+  var slotTitle = document.getElementById("slotTitle");
+  var slotMeta = document.getElementById("slotMeta");
+  if (!pool.length) {
+    slotTitle.textContent = "Nothing to pick from";
+    slotMeta.textContent = "Add some owned " + (type === "movie" ? "movies" : "TV shows") + " first.";
+    return;
+  }
+  if (spinning) return;
+  spinning = true;
+  document.getElementById("btnRandMovie").disabled = true;
+  document.getElementById("btnRandTV").disabled = true;
+  var ticks = 0, maxTicks = 16;
+  slotMeta.innerHTML = '<span class="spinning">Rolling...</span>';
+  var iv = setInterval(function () {
+    var r = pool[Math.floor(Math.random() * pool.length)];
+    slotTitle.textContent = r.title;
+    if (++ticks >= maxTicks) {
+      clearInterval(iv);
+      spinning = false;
+      document.getElementById("btnRandMovie").disabled = false;
+      document.getElementById("btnRandTV").disabled = false;
+      slotMeta.innerHTML = '<span class="badge ' + (r.type === "movie" ? "movie" : "tv") + '">' + (r.type === "movie" ? "Movie" : "TV") + '</span>' +
+        '<span>' + esc(r.cat) + (r.subs ? ' · subtitles ready' : ' · needs subtitles') + "</span>";
+    }
+  }, 90);
+}
+document.getElementById("btnRandMovie").addEventListener("click", function () { doRandom("movie"); });
+document.getElementById("btnRandTV").addEventListener("click", function () { doRandom("tv"); });
+
+function renderCats() {
+  var el = document.getElementById("catList");
+  el.innerHTML = cats.map(function (c) {
+    return '<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:0.78rem;">' +
+      esc(c) + '<button class="mini-btn del" data-catdel="' + esc(c) + '" title="Remove category">✕</button></span>';
+  }).join("");
+  el.querySelectorAll("[data-catdel]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var c = b.dataset.catdel;
+      var used = items.filter(function (i) { return i.cat === c; }).length;
+      askConfirm("Remove Category", '"' + c + '" has ' + used + ' item(s). Removing it moves those items to "Other".\n\nThe whole household sees this change.').then(function (ok) {
+        if (!ok) return;
+        cats = cats.filter(function (x) { return x !== c; });
+        if (cats.indexOf("Other") === -1) cats.push("Other");
+        items.forEach(function (i) { if (i.cat === c) i.cat = "Other"; });
+        persist(); renderAll(); toast("Category removed.");
+      });
+    });
+  });
+}
+document.getElementById("btnAddCat").addEventListener("click", function () {
+  var inp = document.getElementById("newCatInput");
+  var v = inp.value.trim();
+  if (!v) return;
+  if (cats.some(function (c) { return c.toLowerCase() === v.toLowerCase(); })) { toast("Already exists."); return; }
+  cats.push(v);
+  inp.value = "";
+  persist(); renderAll(); toast("Category added.");
+});
+
+function refreshFilters() {
+  var oc = document.getElementById("ownedCatFilter");
+  var cur = oc.value;
+  oc.innerHTML = '<option value="">All Categories</option>' + cats.map(function (c) {
+    return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
+  }).join("");
+  oc.value = cur;
+}
+["ownedSearch", "ownedTypeFilter", "ownedCatFilter", "ownedSubsFilter"].forEach(function (id) {
+  document.getElementById(id).addEventListener("input", renderOwned);
+});
+["wishSearch", "wishTypeFilter"].forEach(function (id) {
+  document.getElementById(id).addEventListener("input", renderWish);
+});
+
+document.getElementById("btnExport").addEventListener("click", function () {
+  var d = new Date().toISOString().slice(0, 10);
+  var blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "media-backup-" + d + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Backup exported.");
+});
+document.getElementById("btnImport").addEventListener("click", function () {
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", function (e) {
+  var f = e.target.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var parsed = JSON.parse(reader.result);
+      var inItems = Array.isArray(parsed) ? parsed : parsed.items;
+      var inCats = (Array.isArray(parsed) ? null : parsed.cats);
+      if (!Array.isArray(inItems)) throw 0;
+      askConfirm("Import Backup", "This overwrites EVERYONE'S collection with the backup file — the whole household sees this change. Continue?").then(function (ok) {
+        if (!ok) return;
+        items = inItems;
+        cats = (Array.isArray(inCats) && inCats.length) ? inCats : DEFAULT_CATS.slice();
+        persist(true); renderAll(); toast("Backup imported.");
+      });
+    } catch (err) { toast("Invalid backup file."); }
+    e.target.value = "";
+  };
+  reader.readAsText(f);
+});
+
+function renderAll() {
+  refreshFilters();
+  renderSummary();
+  renderOwned();
+  renderWish();
+  renderCats();
+}
+renderAll();
+
+(async function initSharedCloud() {
+  try {
+    var session = await requireAuth();
+    if (!session) return; 
+
+    var cloud = await loadBlob(CLOUD_KEY);
+    if (cloud && cloud.items) {
+
+      adoptState(cloud);
+      cacheLocal();
+      renderAll();
+    } else {
+
+      await saveBlob(CLOUD_KEY, snapshot());
+    }
+    lastSyncedPrint = fingerprint();
+    cloudReady = true;
+    setSync(true, "✓ One collection, whole household");
+    setupRealtime();
+  } catch (error) {
+    console.error("Media shared cloud init failed:", error && error.message);
+    setSync(false);
+  }
+})();
+</script>
+</body>
+</html>

@@ -518,7 +518,6 @@
   }
   .modal-no:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
 
-  /* ---- Edit modal ---- */
   .edit-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -578,8 +577,8 @@
   <div class="top">
     <span class="sync-note" id="sync-note">checking the cloud…</span>
     <div class="top-right">
-      <button class="backup-btn" onclick="exportData()">Back dat data up</button>
-      <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
+      <button class="backup-btn" onclick="exportData()">Restuffing</button>
+      <button class="backup-btn" onclick="document.getElementById('import-file').click()">Fill up the Fluff</button>
       <a href="../index.html" class="nav-btn">Dashboard</a>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
@@ -655,11 +654,10 @@ const CACHE_KEY = "savich-stufties-cache";
 let data = { list: [] };
 let cloudReady = false;
 
-// ---- live sync state ----
-let rtChannel = null;       // the realtime listener
-let rtReloadTimer = null;    // debounce for remote reloads
-let lastSyncedPrint = null; // fingerprint of what WE last saved (ignore our own echo)
-let saveQueued = false;      // true while our own debounced save is waiting to fire
+let rtChannel = null;
+let rtReloadTimer = null;
+let lastSyncedPrint = null; 
+let saveQueued = false;
 
 function normalizeState(value) {
   const source = value && typeof value === "object" ? value : {};
@@ -679,7 +677,7 @@ const Store = {
 function setSync(ok, message) {
   const el = document.getElementById("sync-note");
   if (!el) return;
-  el.textContent = ok ? (message || "✓ synced to the cloud") : "offline — changes NOT saved";
+  el.textContent = ok ? (message || "✓ One playpen, whole household") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 
@@ -711,11 +709,6 @@ function save(immediate) {
 function cacheLocal() {
   Store.set(CACHE_KEY, data);
 }
-
-/* ==============================================
-   LIVE SYNC — other accounts' changes appear here
-   within a second or two, no refresh needed.
-   ============================================== */
 function fingerprint(obj) {
   try { return JSON.stringify(obj); }
   catch (e) { return ""; }
@@ -731,8 +724,6 @@ function setupRealtime() {
 }
 
 function scheduleRemoteReload() {
-  // Our own save hasn't gone out yet — wait for it, otherwise the
-  // reload would flash the old playpen back on screen.
   if (saveQueued) {
     clearTimeout(rtReloadTimer);
     rtReloadTimer = setTimeout(scheduleRemoteReload, 1000);
@@ -745,21 +736,19 @@ function scheduleRemoteReload() {
       if (!cloud) return;
       const fresh = normalizeState(cloud);
       const fp = fingerprint(fresh);
-      // If it matches what we last saved, this ping was just our
-      // own change echoing back — nothing to do.
+
       if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
-      if (fp === fingerprint(data)) return; // already up to date
+      if (fp === fingerprint(data)) return;
       data = fresh;
       lastSyncedPrint = fp;
       cacheLocal();
       renderAll();
     } catch (e) {
-      // Couldn't fetch right now; the next change will retry.
+
       console.warn("realtime reload skipped:", e.message);
     }
   }, 300);
 }
-/* ============ END LIVE SYNC ============ */
 
 const SPECIES_EMOJI = [
   ["uni", "🦄"], ["unicorn", "🦄"], ["bear", "🧸"], ["teddy", "🧸"], ["dragon", "🐉"],
@@ -870,8 +859,6 @@ function addStuffie() {
   burst(event);
   showToast("Welcome to the playpen! 🧸✨");
 }
-
-/* ---------- edit a stufty ---------- */
 let editIndex = null;
 let editSquishValue = 0;
 
@@ -944,7 +931,7 @@ document.addEventListener("keydown", e => {
     closeEdit();
   }
 });
-/* ---------- end edit ---------- */
+
 
 function toggleFav(i) {
   data.list[i].fav = !data.list[i].fav;
