@@ -932,7 +932,7 @@ renderAll();
       await saveBlob(CLOUD_KEY, data);
     }
     cloudReady = true;
-    setSync(true, "✓ synced — one playpen, whole household");
+    setSync(true, "✓ One playpen, whole household");
   } catch (error) {
     console.error("Stufties shared cloud init failed:", error.message);
     setSync(false);
