@@ -55,6 +55,8 @@
     pointer-events: none;
     z-index: 0;
   }
+
+  /* ============ BACKGROUND MAGIC: unicorns + glitter everywhere ============ */
   .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   .sky span { position: absolute; opacity: .6; animation: drift 10s ease-in-out infinite alternate; }
   @keyframes drift { from { transform: translateY(0) rotate(-10deg);} to { transform: translateY(-28px) rotate(12deg);} }
@@ -653,6 +655,12 @@ const CACHE_KEY = "savich-stufties-cache";
 let data = { list: [] };
 let cloudReady = false;
 
+// ---- live sync state ----
+let rtChannel = null;       // the realtime listener
+let rtReloadTimer = null;    // debounce for remote reloads
+let lastSyncedPrint = null; // fingerprint of what WE last saved (ignore our own echo)
+let saveQueued = false;      // true while our own debounced save is waiting to fire
+
 function normalizeState(value) {
   const source = value && typeof value === "object" ? value : {};
   return { list: Array.isArray(source.list) ? source.list : [] };
@@ -679,22 +687,23 @@ let saveTimer = null;
 function save(immediate) {
   if (!cloudReady) return;
   clearTimeout(saveTimer);
+  const finishOk = () => {
+    lastSyncedPrint = fingerprint(data);
+    saveQueued = false;
+    setSync(true);
+  };
+  const fail = err => {
+    saveQueued = false;
+    console.error("Stufties cloud save failed:", err.message);
+    setSync(false);
+  };
   if (immediate) {
-    saveBlob(CLOUD_KEY, data)
-      .then(() => setSync(true))
-      .catch(err => {
-        console.error("Stufties cloud save failed:", err.message);
-        setSync(false);
-      });
+    saveBlob(CLOUD_KEY, data).then(finishOk).catch(fail);
   } else {
+    saveQueued = true;
     setSync(true, "☁️ saving…");
     saveTimer = setTimeout(() => {
-      saveBlob(CLOUD_KEY, data)
-        .then(() => setSync(true))
-        .catch(err => {
-          console.error("Stufties cloud save failed:", err.message);
-          setSync(false);
-        });
+      saveBlob(CLOUD_KEY, data).then(finishOk).catch(fail);
     }, 900);
   }
 }
@@ -702,6 +711,55 @@ function save(immediate) {
 function cacheLocal() {
   Store.set(CACHE_KEY, data);
 }
+
+/* ==============================================
+   LIVE SYNC — other accounts' changes appear here
+   within a second or two, no refresh needed.
+   ============================================== */
+function fingerprint(obj) {
+  try { return JSON.stringify(obj); }
+  catch (e) { return ""; }
+}
+
+function setupRealtime() {
+  rtChannel = sb()
+    .channel("stufties-realtime")
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "app_data" },
+      () => scheduleRemoteReload())
+    .subscribe();
+}
+
+function scheduleRemoteReload() {
+  // Our own save hasn't gone out yet — wait for it, otherwise the
+  // reload would flash the old playpen back on screen.
+  if (saveQueued) {
+    clearTimeout(rtReloadTimer);
+    rtReloadTimer = setTimeout(scheduleRemoteReload, 1000);
+    return;
+  }
+  clearTimeout(rtReloadTimer);
+  rtReloadTimer = setTimeout(async () => {
+    try {
+      const cloud = await loadBlob(CLOUD_KEY);
+      if (!cloud) return;
+      const fresh = normalizeState(cloud);
+      const fp = fingerprint(fresh);
+      // If it matches what we last saved, this ping was just our
+      // own change echoing back — nothing to do.
+      if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
+      if (fp === fingerprint(data)) return; // already up to date
+      data = fresh;
+      lastSyncedPrint = fp;
+      cacheLocal();
+      renderAll();
+    } catch (e) {
+      // Couldn't fetch right now; the next change will retry.
+      console.warn("realtime reload skipped:", e.message);
+    }
+  }, 300);
+}
+/* ============ END LIVE SYNC ============ */
 
 const SPECIES_EMOJI = [
   ["uni", "🦄"], ["unicorn", "🦄"], ["bear", "🧸"], ["teddy", "🧸"], ["dragon", "🐉"],
@@ -748,7 +806,7 @@ function render() {
     div.className = "plushie" + (item.fav ? " fav" : "");
     // stagger the float so a big herd ripples instead of bouncing in sync
     div.style.animationDelay = (i * 0.45) + "s";
-    div.querySelector && div.setAttribute("data-i", i);
+    div.setAttribute("data-i", i);
     div.innerHTML = `
       <span class="emoji">${emojiFor(item.species, item.name)}</span>
       <h3>${escapeHtml(item.name)}</h3>
@@ -1064,8 +1122,10 @@ renderAll();
     } else {
       await saveBlob(CLOUD_KEY, data);
     }
+    lastSyncedPrint = fingerprint(data);
     cloudReady = true;
     setSync(true, "✓ One playpen, whole household");
+    setupRealtime();
   } catch (error) {
     console.error("Stufties shared cloud init failed:", error.message);
     setSync(false);
