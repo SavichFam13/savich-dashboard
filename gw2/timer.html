@@ -304,13 +304,17 @@ const MISC = [
   { name: "Defense of Amnytas", short: "Octopussy", color: "#ff9f43",
     interval: 120, offset: 0, tid: "octopussy", zone: "Amnytas" },
   { name: "A Titanic Voyage", short: "Dick'tacles", color: "#94a3ff",
-    interval: 120, offset: 80, tid: "titanic", zone: "Bava Nisos" }
+    interval: 120, offset: 80, tid: "titanic", zone: "Bava Nisos" },
+  { name: "Fractal Incursion", short: "Fractal Incursion", color: "#7c01ff",
+    interval: 60, offset: 0, anchor: 0, tid: "fractalincursion",
+    zones: ["Diessa Plateau", "Brisban Wildlands", "Snowden Drifts", "Kessex Hills"],
+    wps: ["[&BN0AAAA=]", "[&BHUAAAA=]", "[&BLQAAAA=]", "[&BBIAAAA=]"] },
 ];
 
 const ADHOC = [
-  { short: "Raids", name: "Raids", tid: "raids", color: "#94a3ff",
+  { short: "Raids", name: "Raids", tid: "raids", color: "#7c01ff",
     zone: "Whatever wing we're doing", reward: "Raids are raids" },
-  { short: "REFA", name: "Retard Fractals (Quickplay)", tid: "refa", color: "#94a3ff",
+  { short: "REFA", name: "Retard Fractals (Quickplay)", tid: "refa", color: "#7c01ff",
     zone: "Fractal Lobby", reward: "Dumbed down frecs" },
   { short: "WvW", name: "WvW Roaming", tid: "wvw", color: "#959393",
     zone: "Edge of the Mists", reward: "Wherever the fun is" },
@@ -324,7 +328,7 @@ const ADHOC = [
     zone: "The Silverwastes", reward: "25 bandit crests for every 5 keys" },
   { short: "Mad King", name: "Mad King's Labyrinth", tid: "madking", color: "#8700c0",
     zone: "Lion's Arch", reward: "Sell bags or hunt ember/phospho/poly infusions" },
-  { short: "Wintersday", name: "Wintersday", tid: "wintersday", color: "#8fa8d7",
+  { short: "Wintersday", name: "Wintersday", tid: "wintersday", color: "#ffffff",
     zone: "Divinity's Reach", reward: "Winter's Heart / Snow Diamond / Toy-Shell infusions" },
   { short: "Lunar New Year", name: "Lunar New Year", tid: "lny", color: "#ebdd11",
     zone: "Divinity's Reach", reward: "Sell envelopes for gold after cheeves" },
@@ -453,6 +457,14 @@ function zoneFor(ev, tMs) {
   let idx = Math.round((Math.round(tMs / 60000) - ev.anchor) / ev.interval) % n;
   if (idx < 0) idx += n;
   return ev.zones[idx];
+}
+
+function wpFor(ev, tMs) {
+  if (!ev.wps) return "";
+  const n = ev.wps.length;
+  let idx = Math.round((Math.round(tMs / 60000) - ev.anchor) / ev.interval) % n;
+  if (idx < 0) idx += n;
+  return ev.wps[idx] || "";
 }
 
 function minutesUntil(ev, nowMs) {
@@ -617,9 +629,10 @@ function renderSchedule(now) {
     const row = document.createElement("div");
     row.className = "sched-row";
     const z = zoneFor(ev, t);
+    const wp = wpFor(ev, t);
     row.innerHTML =
       '<span class="sched-when"><b>' + fmtClock(t) + "</b>" +
-      "<span>" + fmtDay(t) + (z ? " \u00B7 " + z : "") + "</span></span>" +
+      "<span>" + fmtDay(t) + (z ? " \u00B7 " + z + (wp ? " " + wp : "") : "") + "</span></span>" +
       '<span class="sched-cd">' + (i === 0 ? fmtCD(minutesUntil(ev, now)) : "") + "</span>";
     list.appendChild(row);
   });
