@@ -324,15 +324,15 @@
     padding: 20px 15px 12px;
     background: var(--panel);
     border: 2px dashed rgba(255,158,207,.4);
-  
+
     border-radius: 46px 46px 16px 16px;
     transition: box-shadow .25s ease, border-color .25s ease;
     animation: floaty 5s ease-in-out infinite;
     will-change: transform;
   }
-  .plushie:nth-child(3n)   { border-radius: 46px 46px 10px 10px; }   
-  .plushie:nth-child(3n+1) { border-radius: 50%; }                
-  .plushie:nth-child(3n+2) { border-radius: 60px 22px 60px 22px; }  
+  .plushie:nth-child(3n)   { border-radius: 46px 46px 10px 10px; }
+  .plushie:nth-child(3n+1) { border-radius: 50%; }
+  .plushie:nth-child(3n+2) { border-radius: 60px 22px 60px 22px; }
 
 
   @keyframes floaty {
@@ -516,6 +516,44 @@
   }
   .modal-no:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
 
+  /* ---- Edit modal ---- */
+  .edit-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 220; padding: 20px;
+  }
+  .edit-overlay.open { display: flex; }
+  .edit-box {
+    background: var(--panel); border: 1px solid var(--lf-pink);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 460px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .edit-box h2 {
+    font-size: 0.96rem; color: var(--lf-pink);
+    margin-bottom: 16px; line-height: 1.4;
+  }
+  .edit-box .addgrid { margin-bottom: 4px; }
+  .edit-box textarea { min-height: 68px; }
+  .edit-save-bar {
+    display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .edit-save-bar button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .edit-confirm {
+    background: linear-gradient(90deg, var(--lf-pink), var(--lf-magenta));
+    color: #fff; border: none;
+  }
+  .edit-confirm:hover { filter: brightness(1.1); }
+  .edit-cancel {
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); font-weight: 400;
+  }
+  .edit-cancel:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
+
   @media (prefers-reduced-motion: reduce) {
     .plushie, .plushie .emoji, .sky span, .fall { animation: none; }
   }
@@ -585,13 +623,32 @@
     <div class="modal-buttons" id="modal-buttons"></div>
   </div>
 </div>
+
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-box">
+    <h2 id="edit-title">✏️ Edit stufty</h2>
+    <div class="addgrid">
+      <input type="text" id="edit-name" placeholder="name 🦄">
+      <input type="text" id="edit-species" placeholder="species (bear, unicorn, dragon…) 🐉">
+      <div class="squish-row full" id="edit-squish-row">
+        <span class="lbl">squish level:</span>
+      </div>
+      <textarea id="edit-note" class="full" placeholder="tell its story… 📖✨"></textarea>
+    </div>
+    <div class="edit-save-bar">
+      <button class="edit-cancel" onclick="closeEdit()">NEVER MIND</button>
+      <button class="edit-confirm" onclick="saveEdit()">SAVE ✨</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
 const CLOUD_KEY = "savich-stufties";
-const CACHE_KEY = "savich-stufties-cache"; 
+const CACHE_KEY = "savich-stufties-cache";
 
 let data = { list: [] };
 let cloudReady = false;
@@ -701,6 +758,7 @@ function render() {
       <div class="tools">
         <button class="fav-btn ${item.fav ? "on" : ""}" onclick="toggleFav(${i})" title="favorite">${item.fav ? "💖" : "🤍"}</button>
         <span class="spacer"></span>
+        <button class="tool-btn" onclick="openEdit(${i})" title="edit">✏️</button>
         <button class="tool-btn del" onclick="removeStuffie(${i})" title="re-home... 😢">🗑️</button>
       </div>`;
     pen.appendChild(div);
@@ -747,13 +805,88 @@ function addStuffie() {
   });
   g("f-name").value = ""; g("f-species").value = ""; g("f-note").value = "";
   squishValue = 0;
-  document.querySelectorAll(".squish").forEach(el => el.classList.remove("lit"));
+  document.querySelectorAll("#squishRow .squish").forEach(el => el.classList.remove("lit"));
   cacheLocal();
   save();
   renderAll();
   burst(event);
   showToast("Welcome to the playpen! 🧸✨");
 }
+
+/* ---------- edit a stufty ---------- */
+let editIndex = null;
+let editSquishValue = 0;
+
+function openEdit(i) {
+  const item = data.list[i];
+  if (!item) return;
+  editIndex = i;
+  editSquishValue = item.squish || 0;
+  document.getElementById("edit-title").textContent = "✏️ Edit " + (item.name || "stufty");
+  document.getElementById("edit-name").value = item.name || "";
+  document.getElementById("edit-species").value = item.species || "";
+  document.getElementById("edit-note").value = item.note || "";
+  const row = document.getElementById("edit-squish-row");
+  row.querySelectorAll(".squish").forEach((el, idx) =>
+    el.classList.toggle("lit", idx < editSquishValue));
+  document.getElementById("edit-overlay").classList.add("open");
+}
+
+(function buildEditSquish() {
+  const row = document.getElementById("edit-squish-row");
+  for (let n = 1; n <= 5; n++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "squish";
+    b.textContent = "🫧";
+    b.title = n + " squish";
+    b.onclick = () => {
+      editSquishValue = n;
+      row.querySelectorAll(".squish").forEach((el, idx) =>
+        el.classList.toggle("lit", idx < n));
+    };
+    row.appendChild(b);
+  }
+})();
+
+function closeEdit() {
+  document.getElementById("edit-overlay").classList.remove("open");
+  editIndex = null;
+  editSquishValue = 0;
+}
+
+function saveEdit() {
+  if (editIndex === null) return;
+  const item = data.list[editIndex];
+  if (!item) { closeEdit(); return; }
+  const nameEl = document.getElementById("edit-name");
+  const name = nameEl.value.trim();
+  if (!name) {
+    nameEl.focus();
+    nameEl.placeholder = "it needs a NAME, silly 🙃";
+    return;
+  }
+  item.name = name;
+  item.species = document.getElementById("edit-species").value.trim();
+  item.note = document.getElementById("edit-note").value.trim();
+  item.squish = editSquishValue;
+  cacheLocal();
+  save();
+  closeEdit();
+  renderAll();
+  showToast("Glow-up complete ✨");
+}
+
+document.getElementById("edit-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("edit-overlay")) closeEdit();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("edit-overlay").classList.contains("open")) {
+    closeEdit();
+  }
+});
+/* ---------- end edit ---------- */
 
 function toggleFav(i) {
   data.list[i].fav = !data.list[i].fav;
