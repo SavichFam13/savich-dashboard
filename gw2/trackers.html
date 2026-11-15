@@ -883,18 +883,18 @@ function renderDailyChips(now) {
     chip.innerHTML = inner;
     chip.title = tooltipFor(t, false, now);
 
-    chip.onclick = e => {
-      e.preventDefault();
-      if (ev && ROLLOVER_MINS[t.id]) {
-        logDailyEv(t.name, t.id, ev, Date.now(), e.shiftKey);
-      } else if (e.shiftKey) {
-        toggleLog(t.name, t.id, Date.now(), false, undefined, true);
-      } else {
-        const stamp = ev ? evPrevMs(ev, Date.now()) : undefined;
-        toggleLog(t.name, t.id, Date.now(), false, stamp, false);
-      }
-      render();
-    };
+chip.onclick = e => {
+  e.preventDefault();
+  if (ev && ROLLOVER_MINS[t.id]) {
+    logDailyEv(t.name, t.id, ev, Date.now(), e.shiftKey);
+  } else if (e.shiftKey) {
+    toggleLog(t.name, t.id, Date.now(), false, undefined, true);
+  } else {
+    const stamp = ev ? evPrevMs(ev, Date.now()) : undefined;
+    toggleLog(t.name, t.id, Date.now(), false, stamp, false);
+  }
+  render();
+};
 chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, false); };
 roster.appendChild(chip);
 });
