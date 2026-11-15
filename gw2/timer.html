@@ -126,6 +126,13 @@
     padding: 2px 6px; flex-shrink: 0;
   }
   .log-del:hover { color: #ff8a8a; }
+  .sched-wp {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--accent); cursor: pointer; font-family: inherit;
+    font-size: 0.82rem; padding: 1px 8px; margin-left: 8px;
+    text-decoration: underline;
+  }
+  .sched-wp:hover { border-color: var(--accent); }
 
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
@@ -212,7 +219,7 @@ const WORLD_BOSSES = [
   { name: "Admiral Taidha Covington",short: "Taidha Covington", interval: 180, offset: 0,   color: "#959393", tid: "wb_taidha", zone: "Bloodtide Coast" },
   { name: "The Shatterer",           short: "Shatterer", interval: 180, offset: 60,  color: "#959393", tid: "wb_shatterer", zone: "Blazeridge Steppes" },
   { name: "Inquest Golem Mark II",   short: "Golem Mark II", interval: 180, offset: 120, color: "#959393", tid: "wb_golem", zone: "Mount Maelstrom" },
-  { name: "Megadestroyer",           short: "Megadestroyer", interval: 180, offset: 30,  color: "#959393", tid: "wb_mega", zone: "Mount Maelstron" },
+  { name: "Megadestroyer",           short: "Megadestroyer", interval: 180, offset: 30,  color: "#959393", tid: "wb_mega", zone: "Mount Maelstrom" },
   { name: "Claw of Jormag",          short: "Claw of Jormag", interval: 180, offset: 150, color: "#959393", tid: "wb_jormag", zone: "Frostgorge Sound" }
 ];
 
@@ -529,6 +536,21 @@ function wpFor(ev, tMs) {
   if (idx < 0) idx += n;
   return ev.wps[idx] || "";
 }
+function wpBtn(wp) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "sched-wp";
+  btn.textContent = wp;
+  btn.title = "click to copy, then paste in GW2 chat";
+  btn.onclick = e => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(wp).then(
+      () => flash("\u2713 copied " + wp + " \u2014 paste it in-game"),
+      () => flash("copy blocked \u2014 select the text manually")
+    );
+  };
+  return btn;
+}
 
 function minutesUntil(ev, nowMs) {
   const nowMin = nowMs / 60000;
@@ -688,10 +710,10 @@ function appendLoggedBlock(ev, now, list) {
     row.className = "sched-row";
 
     let where = "";
+    let wp = "";
     if (ev.interval || ev.daily) {
-      const z = zoneFor(ev, t);
-      const wp = wpFor(ev, t);
-      if (z) where = z + (wp ? " " + wp : "");
+      where = zoneFor(ev, t);
+      wp = wpFor(ev, t);
     }
 
     const left = document.createElement("span");
@@ -699,6 +721,8 @@ function appendLoggedBlock(ev, now, list) {
     left.innerHTML = "<b>" + fmtClock(t) + "</b>" +
       (where ? "<span>" + where + "</span>" : "");
     row.appendChild(left);
+
+    if (wp) row.appendChild(wpBtn(wp));
 
     const del = document.createElement("button");
     del.type = "button";
@@ -741,8 +765,9 @@ function renderSchedule(now) {
     const wp = wpFor(ev, t);
     row.innerHTML =
       '<span class="sched-when"><b>' + fmtClock(t) + "</b>" +
-      "<span>" + fmtDay(t) + (z ? " \u00B7 " + z + (wp ? " " + wp : "") : "") + "</span></span>" +
+      "<span>" + fmtDay(t) + (z ? " \u00B7 " + z : "") + "</span></span>" +
       '<span class="sched-cd">' + (i === 0 ? fmtCD(minutesUntil(ev, now)) : "") + "</span>";
+    if (wp) row.insertBefore(wpBtn(wp), row.lastElementChild);
     list.appendChild(row);
   });
 }
