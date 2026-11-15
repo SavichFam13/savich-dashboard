@@ -1,0 +1,625 @@
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;");
+}
+
+function todayStr(d) {
+  const dt = d || new Date();
+  return dt.getFullYear() + "-" +
+    String(dt.getMonth() + 1).padStart(2, "0") + "-" +
+    String(dt.getDate()).padStart(2, "0");
+}
+function addDaysStr(dateStr, n) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return todayStr(dt);
+}
+function parseDateStr(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function fmtDateLong(dateStr) {
+  const dt = parseDateStr(dateStr);
+  return dt.toLocaleDateString(undefined,
+    { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+function fmtTime(hhmm) {
+  if (!hhmm) return null;
+  let [h, m] = hhmm.split(":").map(Number);
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return h + ":" + String(m).padStart(2, "0") + " " + ap;
+}
+function timeBucket(hhmm) {
+  if (!hhmm) return "Anytime";
+  const h = Number(hhmm.split(":")[0]);
+  if (h < 12) return "Morning";
+  if (h < 17) return "Afternoon";
+  if (h < 21) return "Evening";
+  return "Night";
+}
+function flash(msg) {
+  const el = document.getElementById("flash-msg");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+function nthWeekdayOfMonth(y, m, weekday, nth) {
+  const first = new Date(y, m - 1, 1);
+  const offset = (weekday - first.getDay() + 7) % 7;
+  const day = 1 + offset + (nth - 1) * 7;
+  const probe = new Date(y, m - 1, day);
+  if (probe.getMonth() !== m - 1) return null;
+  return todayStr(probe);
+}
+
+function ruleFiresOn(task, dateStr) {
+  const start = task.start_date;
+  if (dateStr < start) return false;
+  const wd = parseDateStr(dateStr).getDay();
+  switch (task.repeat_type) {
+    case "none":
+      return dateStr === start;
+    case "daily":
+      return true;
+    case "weekdays":
+      return wd >= 1 && wd <= 5;
+    case "weekly":
+      return Array.isArray(task.repeat_days) && task.repeat_days.includes(wd);
+    case "biweekly": {
+      if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
+        return false;
+      const a = parseDateStr(start);
+      const b = parseDateStr(dateStr);
+      const weekOf = dt => {
+        const d = new Date(dt);
+        d.setDate(d.getDate() - d.getDay());
+        return Math.round((d - new Date(d.getFullYear(), 0, 1)) / 604800000);
+      };
+      return weekOf(a) % 2 === weekOf(b) % 2;
+    }
+    case "monthly": {
+      const md = task.repeat_mday || Number(start.split("-")[2]);
+      return Number(dateStr.split("-")[2]) === md;
+    }
+    case "nthmonth": {
+      if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
+        return false;
+      const every = task.repeat_every || 1;
+      const [y, m] = dateStr.split("-").map(Number);
+      const [sy, sm] = start.split("-").map(Number);
+      const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
+      if (mdiff < 0 || mdiff % every !== 0) return false;
+      return nthWeekdayOfMonth(y, m, wd, task.repeat_nth || 1) === dateStr;
+    }
+    default:
+      return false;
+  }
+}
+function movedHereOn(occRows, taskId, dateStr) {
+  return occRows.find(o =>
+    o.task_id === taskId && o.moved_to === dateStr && o.status !== "done");
+}
+
+function buildDayModel(tasks, lists, occRows, dateStr, today) {
+  const listById = {};
+  for (const l of lists) listById[l.id] = l;
+  const occByTaskDate = {};
+  for (const o of occRows) {
+    occByTaskDate[o.task_id + "|" + o.orig_date] = o;
+  }
+  const out = [];
+  for (const t of tasks) {
+    if (t.archived) continue;
+    const key = t.id + "|" + dateStr;
+    const o = occByTaskDate[key];
+
+    if (o && (o.status === "skipped")) continue;
+    if (o && o.status === "done" && dateStr === today) continue;
+    if (o && o.status === "done" && dateStr !== today) continue;
+
+    if (o && o.moved_to && o.moved_to !== dateStr) continue;
+
+    const mh = movedHereOn(occRows, t.id, dateStr);
+    if (mh) {
+      out.push({ task: t, list: listById[t.list_id], occ: mh,
+                 time: t.due_time, date: mh.orig_date, moved: true });
+      continue;
+    }
+
+    if (ruleFiresOn(t, dateStr)) {
+      out.push({ task: t, list: listById[t.list_id], occ: o || null,
+                 time: t.due_time, date: dateStr, moved: false });
+    }
+  }
+  return out;
+}
+
+function collectOverdue(tasks, occRows, today, horizonDays = 60) {
+  const from = addDaysStr(today, -horizonDays);
+  const listById = {};
+  for (const l of listsCache) listById[l.id] = l;
+  const occByTD = {};
+  for (const o of occRows) occByTD[o.task_id + "|" + o.orig_date] = o;
+  const overdue = [];
+  for (const t of tasks) {
+    if (t.archived) continue;
+    if (t.repeat_type === "none") {
+      if (t.start_date >= from && t.start_date < today) {
+        const o = occByTD[t.id + "|" + t.start_date];
+        if (!o || (!o.status && !o.moved_to) ) {
+          overdue.push({ task: t, list: listById[t.list_id], occ: o || null,
+                         date: t.start_date });
+        }
+      }
+      continue;
+    }
+    for (let d = from; d < today; d = addDaysStr(d, 1)) {
+      if (!ruleFiresOn(t, d)) continue;
+      const o = occByTD[t.id + "|" + d];
+      if (o) {
+        if (o.moved_to && o.moved_to < today && !o.status) {
+          overdue.push({ task: t, list: listById[t.list_id], occ: o,
+                         date: o.moved_to });
+        }
+        continue;
+      }
+      overdue.push({ task: t, list: listById[t.list_id], occ: null, date: d });
+    }
+  }
+  return overdue;
+}
+
+let listsCache = [];
+let tasksCache = [];
+let occCache = [];
+let realtimeChannel = null;
+
+async function loadAll() {
+  [listsCache, tasksCache, occCache] = await Promise.all([
+    listRows("task_lists", { orderBy: "sort_order" }),
+    listRows("tasks", { orderBy: "created_at" }),
+    listRows("task_occurrences")
+  ]);
+}
+
+async function refreshOcc() {
+  occCache = await listRows("task_occurrences");
+}
+
+function subscribeRealtime(onChange) {
+  try {
+    if (!sb().channel) return false;
+    realtimeChannel = sb()
+      .channel("task-system-" + Math.random().toString(36).slice(2))
+      .on("postgres_changes",
+          { event: "*", schema: "public", table: "task_occurrences" },
+          onChange)
+      .on("postgres_changes",
+          { event: "*", schema: "public", table: "tasks" }, onChange)
+      .on("postgres_changes",
+          { event: "*", schema: "public", table: "task_lists" }, onChange)
+      .subscribe(status => {
+        if (status === "SUBSCRIPTION_ERROR") {
+          console.warn("realtime failed, falling back to polling");
+          setInterval(onChange, 30000);
+        }
+      });
+    return true;
+  } catch (e) {
+    console.warn("realtime unavailable:", e.message);
+    setInterval(onChange, 30000);
+    return false;
+  }
+}
+
+async function markDone(taskId, dateStr) {
+  const existing = occCache.find(o =>
+    o.task_id === taskId && o.orig_date === dateStr);
+  const uid = await currentUserId();
+  if (existing) {
+    await updateRow("task_occurrences", existing.id, {
+      status: "done", moved_to: existing.moved_to,
+      done_by: uid, updated_at: new Date().toISOString()
+    });
+  } else {
+    await insertRow("task_occurrences", {
+      task_id: taskId, orig_date: dateStr, status: "done", done_by: uid
+    });
+  }
+  await refreshOcc();
+  flash("done — shift-click to undo");
+}
+
+async function markSkipped(taskId, dateStr) {
+  const existing = occCache.find(o =>
+    o.task_id === taskId && o.orig_date === dateStr);
+  if (existing) {
+    await updateRow("task_occurrences", existing.id, {
+      status: "skipped", updated_at: new Date().toISOString()
+    });
+  } else {
+    await insertRow("task_occurrences", {
+      task_id: taskId, orig_date: dateStr, status: "skipped"
+    });
+  }
+  await refreshOcc();
+  flash("won't do — instance only, future repeats unchanged");
+}
+
+async function moveTask(taskId, fromDate, toDate) {
+  const existing = occCache.find(o =>
+    o.task_id === taskId && o.orig_date === fromDate);
+  if (existing) {
+    await updateRow("task_occurrences", existing.id, {
+      moved_to: toDate, status: null,
+      updated_at: new Date().toISOString()
+    });
+  } else {
+    await insertRow("task_occurrences", {
+      task_id: taskId, orig_date: fromDate, moved_to: toDate
+    });
+  }
+  await refreshOcc();
+  flash("moved to " + fmtDateLong(toDate));
+}
+
+async function undoOverride(taskId, dateStr) {
+  const existing = occCache.find(o =>
+    o.task_id === taskId && o.orig_date === dateStr);
+  if (existing) await deleteRow("task_occurrences", existing.id);
+  await refreshOcc();
+  flash("undone — back on schedule");
+}
+
+function closeMenus() {
+  document.querySelectorAll(".item-menu").forEach(m => m.remove());
+}
+
+function openTaskMenu(e, item, rerender) {
+  e.preventDefault();
+  closeMenus();
+  const t = item.task;
+  const orig = item.occ ? item.occ.orig_date : item.date;
+  const menu = document.createElement("div");
+  menu.className = "item-menu";
+  menu.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<button data-act="done">✓ mark done</button>' +
+    '<button data-act="skip">✗ won\'t do (instance only)</button>' +
+    '<button data-act="tomorrow">→ move to tomorrow</button>' +
+    '<button data-act="moveto">📅 move to date…</button>' +
+    '<button data-act="edit">✎ edit series</button>' +
+    '<button data-act="undo" class="danger">↺ undo override</button>';
+  document.body.appendChild(menu);
+
+  const rect = { x: e.clientX, y: e.clientY };
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  menu.style.left = Math.min(rect.x, window.innerWidth - mw - 12) + "px";
+  menu.style.top = Math.min(rect.y, window.innerHeight - mh - 12) + "px";
+
+  menu.querySelector(".menu-x").onclick = closeMenus;
+  menu.addEventListener("click", async ev => {
+    const act = ev.target.getAttribute("data-act");
+    if (!act) return;
+    closeMenus();
+    if (act === "done") { await markDone(t.id, orig); rerender(); }
+    if (act === "skip") { await markSkipped(t.id, orig); rerender(); }
+    if (act === "tomorrow") {
+      await moveTask(t.id, orig, addDaysStr(orig, 1)); rerender();
+    }
+    if (act === "moveto") {
+      openMiniDate(e, async dateStr => {
+        if (dateStr) { await moveTask(t.id, orig, dateStr); rerender(); }
+      });
+    }
+    if (act === "edit") { openEditor(t); }
+    if (act === "undo") { await undoOverride(t.id, orig); rerender(); }
+  });
+
+  setTimeout(() => document.addEventListener("keydown", function onEsc(ev) {
+    if (ev.key === "Escape") { closeMenus(); openMiniCancel(); }
+    document.removeEventListener("keydown", onEsc);
+  }), 0);
+  setTimeout(() => document.addEventListener("click", function onDoc(ev) {
+    if (!menu.contains(ev.target)) { closeMenus(); openMiniCancel(); }
+    document.removeEventListener("click", onDoc);
+  }), 0);
+}
+
+let miniDateEl = null;
+function openMiniCancel() { if (miniDateEl) { miniDateEl.remove(); miniDateEl = null; } }
+function openMiniDate(anchorEvent, cb) {
+  closeMenus(); openMiniCancel();
+  const el = document.createElement("div");
+  el.className = "item-menu";
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<label style="color:var(--dim);font-size:0.7rem;margin-bottom:6px;display:block">MOVE TO</label>' +
+    '<input type="date" id="mini-date-input">';
+  document.body.appendChild(el);
+  miniDateEl = el;
+  const rect = { x: anchorEvent.clientX, y: anchorEvent.clientY };
+  el.style.left = Math.min(rect.x, window.innerWidth - 240) + "px";
+  el.style.top = Math.min(rect.y, window.innerHeight - 110) + "px";
+  const inp = el.querySelector("#mini-date-input");
+  inp.value = todayStr();
+  inp.focus();
+  el.querySelector(".menu-x").onclick = () => { openMiniCancel(); };
+  inp.addEventListener("change", () => {
+    const v = inp.value; openMiniCancel();
+    if (v) cb(v);
+  });
+}
+
+let editingTask = null;
+let selectedDows = [];
+
+function openEditor(task) {
+  editingTask = task || null;
+  const p = document.getElementById("editor-panel");
+  const t = task || {};
+  document.getElementById("ed-heading").textContent =
+    task ? "Edit Task Series" : "New Task";
+  document.getElementById("ed-title").value = t.title || "";
+  document.getElementById("ed-notes").value = t.notes || "";
+  document.getElementById("ed-list").value = t.list_id || edDefaultListId();
+  document.getElementById("ed-date").value = t.start_date || todayStr();
+  document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
+  document.getElementById("ed-repeat").value = t.repeat_type || "none";
+  document.getElementById("ed-mday").value =
+    t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
+  document.getElementById("ed-mday-row").style.display =
+    (t.repeat_type === "monthly") ? "block" : "none";
+  document.getElementById("ed-every").value = t.repeat_every || 6;
+  document.getElementById("ed-nth").value = String(t.repeat_nth || 1);
+  document.getElementById("ed-nth-row").style.display =
+    (t.repeat_type === "nthmonth") ? "block" : "none";
+  selectedDows = Array.isArray(t.repeat_days) ? t.repeat_days.slice() : [];
+  renderDows();
+  p.classList.add("open");
+  document.getElementById("ed-title").focus();
+}
+
+function edDefaultListId() {
+  if (window.EDITOR_DEFAULT_LIST) {
+    const pref = listsCache.find(l => l.id === window.EDITOR_DEFAULT_LIST);
+    if (pref) return pref.id;
+  }
+  return listsCache.length ? listsCache[0].id : "";
+}
+
+function closeEditor() {
+  document.getElementById("editor-panel").classList.remove("open");
+}
+
+function renderDows() {
+  const row = document.getElementById("ed-dow-row");
+  const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  row.innerHTML = names.map((n, i) =>
+    '<button type="button" class="dow-btn' +
+    (selectedDows.includes(i) ? " sel" : "") + '" data-dow="' + i + '">' +
+    n + "</button>").join("");
+  row.querySelectorAll(".dow-btn").forEach(b => {
+    b.onclick = () => {
+      const i = Number(b.getAttribute("data-dow"));
+      if (selectedDows.includes(i))
+        selectedDows = selectedDows.filter(x => x !== i);
+      else selectedDows.push(i);
+      renderDows();
+    };
+  });
+}
+
+async function saveEditor() {
+  const title = document.getElementById("ed-title").value.trim();
+  if (!title) { flash("give the task a name first"); return; }
+  const repeat = document.getElementById("ed-repeat").value;
+  const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
+  const payload = {
+    title: title,
+    notes: document.getElementById("ed-notes").value.trim() || null,
+    list_id: document.getElementById("ed-list").value,
+    start_date: document.getElementById("ed-date").value || todayStr(),
+    due_time: document.getElementById("ed-time").value || null,
+    repeat_type: repeat,
+    repeat_days: needsDow ? selectedDows.slice().sort() : null,
+    repeat_mday:
+      repeat === "monthly"
+        ? Number(document.getElementById("ed-mday").value) || 1
+        : null,
+    repeat_every: repeat === "nthmonth"
+      ? Number(document.getElementById("ed-every").value) || 1
+      : null,
+    repeat_nth: repeat === "nthmonth"
+      ? Number(document.getElementById("ed-nth").value) || 1
+      : null
+  };
+  if (needsDow && !payload.repeat_days.length) {
+    flash("pick at least one day of the week"); return;
+  }
+  try {
+    if (editingTask) {
+      await updateRow("tasks", editingTask.id, payload);
+      flash("task updated");
+    } else {
+      await insertRow("tasks", payload);
+      flash("task added");
+    }
+  } catch (err) {
+    flash("save failed: " + err.message);
+    return;
+  }
+  closeEditor();
+  await loadAll();
+  window.__rerender && window.__rerender();
+}
+
+async function deleteSeries() {
+  if (!editingTask) return;
+  if (!confirm("Delete the whole series \"" + editingTask.title +
+      "\"?\nThis removes every occurrence, past overrides included."))
+    return;
+  try {
+    await deleteRow("tasks", editingTask.id);
+  } catch (err) {
+    flash("delete failed: " + err.message);
+    return;
+  }
+  closeEditor();
+  await loadAll();
+  window.__rerender && window.__rerender();
+  flash("series deleted");
+}
+
+function initEditorUI() {
+  document.getElementById("ed-save").onclick = saveEditor;
+  document.getElementById("ed-close").onclick = closeEditor;
+  const del = document.getElementById("ed-delete");
+  if (del) del.onclick = deleteSeries;
+  document.getElementById("ed-repeat").addEventListener("change", function () {
+    document.getElementById("ed-dow-row").style.display =
+      (this.value === "weekly" || this.value === "biweekly" ||
+       this.value === "nthmonth") ? "flex" : "none";
+    document.getElementById("ed-mday-row").style.display =
+      (this.value === "monthly") ? "block" : "none";
+    document.getElementById("ed-nth-row").style.display =
+      (this.value === "nthmonth") ? "block" : "none";
+  });
+}
+
+function renderDay({ filterFn, rerender, containerId = "task-area" }) {
+  const area = document.getElementById(containerId);
+  if (!area) return;
+  const viewDate = window.VIEW_DATE || todayStr();
+  const today = todayStr();
+
+  let dayItems = buildDayModel(tasksCache, listsCache, occCache, viewDate, today);
+  dayItems = dayItems.filter(it => filterFn(it.list));
+  dayItems.sort((a, b) => {
+    if (!a.time && b.time) return -1;
+    if (a.time && !b.time) return 1;
+    if (a.time !== b.time) return a.time < b.time ? -1 : 1;
+    return a.task.title.localeCompare(b.task.title);
+  });
+
+  let over = collectOverdue(tasksCache, occCache, today);
+  over = over.filter(it => filterFn(it.list));
+  over.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+
+  const buckets = ["Anytime", "Morning", "Afternoon", "Evening", "Night"];
+  const grouped = {};
+  for (const b of buckets) grouped[b] = [];
+  for (const it of dayItems) grouped[timeBucket(it.time)].push(it);
+
+  let html = "";
+  const overdueCount = over.length;
+
+  if (overdueCount) {
+    html += '<div class="sec-head overdue-label">Overdue · ' + overdueCount + "</div>";
+    for (const it of over) html += taskRowHTML(it, true, rerender);
+  }
+
+  for (const b of buckets) {
+    if (!grouped[b].length) continue;
+    html += '<div class="sec-head">' + b + ' <span class="sec-count">· ' +
+      grouped[b].length + "</span></div>";
+    for (const it of grouped[b]) html += taskRowHTML(it, false, rerender);
+  }
+
+  if (!overdueCount && !dayItems.length) {
+    html = '<div class="empty-note">Nothing scheduled for this day. ' +
+      'Add a task with the button above.</div>';
+  }
+  area.innerHTML = html;
+
+  wireRows(area, rerender, viewDate);
+}
+
+function taskRowHTML(it, isOverdue, rerender) {
+  const t = it.task;
+  const li = it.list || { name: "?", color: "c9a0ff" };
+  const movedTag = it.moved
+    ? ' <span style="color:var(--accent);font-size:0.7rem">(moved)</span>' : "";
+  const odAttr = isOverdue ? " overdue" : "";
+  const when = isOverdue ? fmtDateLong(it.date).split(",")[0] + " " +
+    it.date.slice(5) : (fmtTime(it.time) || "anytime");
+  return '<div class="task-row' + odAttr + '" data-task="' + t.id +
+    '" data-date="' + (it.occ ? it.occ.orig_date : it.date) + '">' +
+    '<span class="cb" title="click = done · shift-click = undo"></span>' +
+    '<span class="t-time' + (it.time ? "" : " none") + '">' + when + "</span>" +
+    '<span class="t-title" title="click to edit the series">' +
+    esc(t.title) + movedTag + "</span>" +
+    '<span class="t-dot" style="background:#' + esc(li.color) + '"></span>' +
+    '<span class="t-list">' + esc(li.name) + "</span>" +
+    "</div>";
+}
+
+function wireRows(area, rerender, viewDate) {
+  area.querySelectorAll(".task-row").forEach(row => {
+    const taskId = row.getAttribute("data-task");
+    const dateStr = row.getAttribute("data-date");
+
+    const t = tasksCache.find(x => x.id === taskId);
+    if (!t) return;
+
+    row.addEventListener("click", async ev => {
+      if (ev.target.classList.contains("cb")) {
+        if (ev.shiftKey) { await undoOverride(taskId, dateStr); rerender(); }
+        else { await markDone(taskId, dateStr); rerender(); }
+      } else if (ev.target.classList.contains("t-title")) {
+        openEditor(t);
+      }
+    });
+
+    row.oncontextmenu = ev =>
+      openTaskMenu(ev,
+        { task: t,
+          occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
+          date: dateStr, time: t.due_time },
+        rerender);
+  });
+}
+
+async function initTaskPage({ pageTitle, filterFn, rerender }) {
+
+  initEditorUI();
+  document.addEventListener("keydown", ev => {
+    if (ev.key === "Escape") closeEditor();
+  });
+
+  const session = await requireAuth();
+  if (!session) return;
+  window.__rerender = rerender;
+
+  document.getElementById("sync-note").textContent = "connecting…";
+  try {
+    await loadAll();
+  } catch (err) {
+    document.getElementById("sync-note").textContent = "offline — changes NOT saved";
+    document.getElementById("sync-note").classList.add("off");
+    console.error("initial load failed:", err.message);
+    rerender();
+    return;
+  }
+  document.getElementById("sync-note").textContent = "✓ synced";
+
+  rerender();
+
+  subscribeRealtime(async () => {
+    await loadAll();
+    rerender();
+  });
+
+  window.addEventListener("focus", async () => {
+    await loadAll();
+    rerender();
+  });
+}

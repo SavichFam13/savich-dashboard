@@ -92,6 +92,41 @@
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
 
+  /* ---- Today widget ---- */
+  .today-widget {
+    grid-column: 1 / -1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-decoration: none;
+    color: var(--text);
+    display: block;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .today-widget:hover { transform: translateY(-3px); border-color: var(--accent2); }
+  .tw-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .tw-title { font-size: 1.05rem; color: var(--accent2); font-weight: 700; }
+  .tw-count { font-size: 0.8rem; color: var(--dim); }
+  .tw-overdue { color: var(--bad); font-size: 0.8rem; font-weight: 700; }
+  .tw-progress {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 999px; height: 8px; overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .tw-bar { background: var(--accent); height: 100%; width: 0; transition: width 0.3s ease; }
+  .tw-bar.full { background: var(--accent2); }
+  .tw-next { font-size: 0.82rem; color: var(--dim); line-height: 1.8; }
+  .tw-next .tw-time { color: var(--accent2); font-weight: 700; margin-right: 8px; }
+  .tw-next .tw-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 8px; vertical-align: middle;
+  }
+  .tw-empty { font-size: 0.82rem; color: var(--dim); }
+
   #gate {
     position: fixed; inset: 0; z-index: 200;
     background: var(--bg);
@@ -169,6 +204,19 @@
 
 <h1>Savich Family Dashboard</h1>
 
+<h2 class="section">Today &amp; Tasks</h2>
+<nav class="nav-grid">
+  <a href="lists/today.html" class="today-widget" id="today-widget">
+    <div class="tw-head">
+      <span class="tw-title">Today</span>
+      <span class="tw-count" id="tw-count">loading…</span>
+      <span class="tw-overdue" id="tw-overdue"></span>
+    </div>
+    <div class="tw-progress"><div class="tw-bar" id="tw-bar"></div></div>
+    <div class="tw-next" id="tw-next">Checking the cloud…</div>
+  </a>
+</nav>
+
 <h2 class="section">Guild Wars 2</h2>
 <nav class="nav-grid">
   <a href="gw2/trackers.html" class="nav-card">
@@ -197,12 +245,6 @@
 <nav class="nav-grid">
   <a href="home/videos.html" class="nav-card">
     <h3>Movie & TV Shows</h3>
-  </a>
-  <a href="home/ticktick.html" class="nav-card">
-    <h3>UNDER CONSTRUCTION!</h3>
-  </a>
-  <a href="home/ticktick2.html" class="nav-card">
-    <h3>UNDER CONSTRUCTION!</h3>
   </a>
 </nav>
 <h2 class="section">Personal Shit</h2>
@@ -233,6 +275,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
+<script src="lists/tasks.js"></script>
 <script>
   const gate = document.getElementById("gate");
   const gateDot = document.getElementById("gate-dot");
@@ -289,6 +332,7 @@
       document.getElementById("who").textContent =
         "Signed in as " + email;
       hideGate();
+      initTodayWidget();
       return;
     }
 
@@ -318,6 +362,74 @@
       gateBtn.textContent = "SIGN IN";
     }
   });
+
+  /* ---- compact Today widget ---- */
+  function initTodayWidget() {
+    (async () => {
+      try {
+        await loadAll();
+      } catch (e) {
+        document.getElementById("tw-next").textContent =
+          "Could not reach the task cloud — check your connection.";
+        return;
+      }
+      renderTodayWidget();
+      subscribeRealtime(async () => {
+        await loadAll();
+        renderTodayWidget();
+      });
+    })();
+  }
+
+  function renderTodayWidget() {
+    const today = todayStr();
+    const count = document.getElementById("tw-count");
+    const overEl = document.getElementById("tw-overdue");
+    const bar = document.getElementById("tw-bar");
+    const next = document.getElementById("tw-next");
+
+    /* done + scheduled, counted from rules + overrides */
+    const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
+    let scheduled = 0, done = 0;
+    const seen = new Set();
+    for (const o of occCache) {
+      if (o.orig_date === today && o.status === "done") {
+        done++;
+        if (!seen.has(o.task_id)) { seen.add(o.task_id); scheduled++; }
+      }
+    }
+    for (const it of todays) {
+      if (!seen.has(it.task.id)) { seen.add(it.task.id); scheduled++; }
+    }
+
+    const over = collectOverdue(tasksCache, occCache, today);
+
+    count.textContent = scheduled
+      ? scheduled + " task" + (scheduled === 1 ? "" : "s") + " · " +
+        done + " done · " + (scheduled - done) + " left"
+      : "nothing scheduled today";
+    overEl.textContent = over.length ? over.length + " overdue!" : "";
+    const pct = scheduled ? Math.round(done / scheduled * 100) : 0;
+    bar.style.width = pct + "%";
+    bar.classList.toggle("full", scheduled > 0 && done >= scheduled);
+
+    /* next 4 upcoming with times */
+    const upcoming = todays.filter(it => it.time).sort((a, b) =>
+      a.time < b.time ? -1 : a.time > b.time ? 1 : 0).slice(0, 4);
+    if (!todays.length) {
+      next.innerHTML = '<span class="tw-empty">A clean slate — add tasks on the Today page.</span>';
+    } else if (!upcoming.length) {
+      next.innerHTML = '<span class="tw-empty">' + todays.length +
+        ' anytime task' + (todays.length === 1 ? "" : "s") + ' — see the Today page.</span>';
+    } else {
+      next.innerHTML = upcoming.map(it => {
+        const li = it.list || { name: "?", color: "c9a0ff" };
+        return '<div><span class="tw-time">' + fmtTime(it.time) + "</span>" +
+          '<span class="tw-dot" style="background:#' + esc(li.color) + '"></span>' +
+          esc(it.task.title) + "</div>";
+      }).join("");
+    }
+  }
 </script>
 
 </body>
