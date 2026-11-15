@@ -134,11 +134,9 @@ function createUserSync(opts) {
     if (typeof v === "object") return Object.keys(v).length === 0;
     return false;
   }
-  function mergeSectionValue(f, lv, rv, lt, rt) {
-    // Shared {epoch, done} rows: union tid maps instead of picking a side.
-    if (isEpochDone(lv) || isEpochDone(rv)) return mergeEpochDone(lv, rv);
-    return rt > lt ? rv : lv;
-  }
+function mergeSectionValue(f, lv, rv, lt, rt) {
+  return rt > lt ? rv : lv;
+}
   function merge(local, remote) {
     const out = {};
     const fields = sections ||
@@ -261,7 +259,7 @@ function createUserSync(opts) {
 }
 async function listRows(table, { orderBy = null, ascending = true, eq = null } = {}) {
   let q = sb().from(table).select("*");
-  if (eq) for (const col in eq) q = q.eq(col, col);
+  if (eq) for (const col in eq) q = q.eq(col, eq[col]);
   if (orderBy) q = q.order(orderBy, { ascending });
   const { data, error } = await q;
   if (error) { console.error("listRows:", error.message); return []; }

@@ -365,6 +365,7 @@ let USER_ID = null;
 
 let daily = { epoch: -1, done: {} };
 let carry = null;
+let updatedAt = {};
 
 function normDaily(s) {
   if (!s || typeof s !== "object" || typeof s.epoch !== "number" ||
@@ -380,12 +381,22 @@ function normCarry(s) {
 const sync = createUserSync({
   key: "gw2-tracker-daily",
   sections: ["daily", "carry"],
-  loadLocal: () => Store.get("gw2-tracker-daily-cache:" + USER_ID),
-  saveLocal: s => Store.set("gw2-tracker-daily-cache:" + USER_ID, s),
-  getState: () => ({ daily: daily, carry: carry || { epoch: -1, done: {} } }),
+  loadLocal: () => {
+    const cached = Store.get("gw2-tracker-daily:" + USER_ID);
+    if (cached) return cached;
+    // legacy fallback: pre-sync data on this device
+    return { daily: Store.get(LOCAL_DAILY), carry: Store.get(LOCAL_CARRY) };
+  },
+  saveLocal: s => Store.set("gw2-tracker-daily:" + USER_ID, s),
+  getState: () => ({
+    daily: daily,
+    carry: carry || { epoch: -1, done: {} },
+    updatedAt: updatedAt
+  }),
   setState: s => {
     daily = normDaily(s && s.daily);
     carry = normCarry(s && s.carry);
+    if (s && s.updatedAt) updatedAt = s.updatedAt;
   },
   onRender: () => render(),
   setOnline: (ok, msg) => setSync(ok, msg)
@@ -407,13 +418,12 @@ function getDailyState(nowMs) {
 
 function saveDailyState(s) {
   daily = s;
-  sync.save();
-  Store.set(LOCAL_DAILY, s);
+  updatedAt.daily = Date.now();
+  sync.save(true);
 }
-
 function saveCarryState() {
-  sync.save();
-  if (carry) Store.set(LOCAL_CARRY, carry);
+  updatedAt.carry = Date.now();
+  sync.save(true);
 }
 
 function isLogged(tid, nowMs) {
@@ -831,10 +841,11 @@ function render() {
   const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
-const cached = Store.get("gw2-tracker-daily-cache:" + USER_ID);
+const cached = Store.get("gw2-tracker-daily:" + USER_ID);
 if (cached && cached.daily && cached.daily.epoch === dailyEpoch(Date.now())) {
   daily = normDaily(cached.daily);
   carry = normCarry(cached.carry);
+  if (cached.updatedAt) updatedAt = cached.updatedAt;
   render();
 }
   await sync.init();
