@@ -120,8 +120,21 @@
   .info-line b { color: var(--text); }
   .info-line .lab { color: var(--dim); }
   .info-line.missing { color: var(--now); font-weight: 700; }
-  .info-line.removable:hover, .info-line.removable:hover b { color: #ffb3b3; }
   .info-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
+
+.info-del {
+  background: none; border: none; color: var(--dim); cursor: pointer;
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 2px 6px; flex-shrink: 0;
+}
+.info-del:hover { color: #ff8a8a; }
+.info-wp {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--accent); cursor: pointer; font-family: inherit;
+  font-size: 0.82rem; padding: 1px 8px; margin-left: 8px;
+  text-decoration: underline;
+}
+.info-wp:hover { border-color: var(--accent); }
 
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
@@ -716,18 +729,45 @@ function openInfo(task, evt, isWeekly) {
     if (!isWeekly && isMulti(task.id)) {
       line('<span class="lab">Status:</span> <b style="color:var(--good)">' +
            'done \u00D7' + logs.length + ' today</b>');
+
       logs.forEach(l => {
+        const wp = (task.id === "fractalincursion") ? incursionWp(l) : "";
         let txt = fmtClock(l);
-        if (task.id === "fractalincursion")
-          txt += " \u00B7 " + incursionZone(l) + " " + incursionWp(l);
+        if (task.id === "fractalincursion") txt += " \u00B7 " + incursionZone(l);
+
         const row = document.createElement("div");
-        row.className = "info-line removable";
-        row.style.cursor = "pointer";
-        row.innerHTML = '<span style="color:var(--now)">\u2716</span> <b>' + txt + '</b>';
-        row.title = "click to remove this log";
-        row.onclick = () => { removeLogAt(task.name, task.id, l, Date.now()); closeInfo(); };
+        row.className = "info-line";
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "info-del";
+        del.textContent = "\u2716";
+        del.title = "remove this log";
+        del.onclick = () => { removeLogAt(task.name, task.id, l, Date.now()); closeInfo(); };
+        row.appendChild(del);
+
+        const label = document.createElement("b");
+        label.textContent = txt;
+        row.appendChild(label);
+
+        if (wp) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "info-wp";
+          btn.textContent = wp;
+          btn.title = "click to copy, then paste in GW2 chat";
+          btn.onclick = e => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(wp).then(
+              () => flash("\u2713 copied " + wp + " \u2014 paste it in-game"),
+              () => flash("copy blocked \u2014 select the text manually")
+            );
+          };
+          row.appendChild(btn);
+        }
         lines.appendChild(row);
       });
+
     } else {
       const ts = logs[0];
       let stampTxt;

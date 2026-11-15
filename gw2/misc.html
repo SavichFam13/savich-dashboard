@@ -280,7 +280,7 @@ const TASK_NAMES = {
   path: "Path to Ascension", deaddoggies: "Dead Doggies",
   maws: "Maws of Torment", skywatch: "Skywatch",
   octopussy: "Octopussy", titanic: "Dick'tacles",
-  turtlepower: "Turtle Power",
+  turtlepower: "Turtle Power", joras: "Jora's Keep"
   // adhoc / seasonal
     raids: "Raids", refa: "REFA", wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
   fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
@@ -437,7 +437,7 @@ function topCategory(cc) {
   const e = Object.entries(cc).sort((a, b) => b[1] - a[1]);
   return e.length ? e[0][0] : "\u2014";
 }
-function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/'/g, "&#39;"); }
 function drawDonut(catCounts, total) {
   const cv = document.getElementById("donut");
   const ctx = cv.getContext("2d");

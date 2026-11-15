@@ -390,7 +390,7 @@ const sync = createUserSync({
   saveLocal: s => Store.set("gw2-tracker-daily:" + USER_ID, s),
   getState: () => ({
     daily: daily,
-    carry: carry || { epoch: -1, done: {} },
+    carry: carry,
     updatedAt: updatedAt
   }),
   setState: s => {
