@@ -181,7 +181,7 @@
   </nav>
 </div>
 
-<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log to dailies &middot; shift-click = remove last (multi events) &middot; right-click = schedule</span></div>
+<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = +1 log &middot; shift-click = unlog / remove last &middot; right-click = schedule</span></div>
 <div class="section-title">World Bosses</div>
 <div class="roster" id="roster-wb"></div>
 <div class="section-title">Hard World Bosses</div>
@@ -480,12 +480,17 @@ function unlogAtIndex(ev, idx, nowMs) {
   render();
 }
 
-function toggleLog(ev, nowMs) {
+function toggleLog(ev, nowMs, remove) {
   const s = getDailyState(nowMs);
-  if (s.done[ev.tid] !== undefined) {
+  if (remove) {
+    if (s.done[ev.tid] === undefined) { flash("nothing to unlog: " + ev.short); return; }
     delete s.done[ev.tid];
     flash("\u2716 unlogged: " + ev.short);
   } else {
+    if (s.done[ev.tid] !== undefined) {
+      flash("already logged: " + ev.short + " \u2014 shift-click to unlog");
+      return;
+    }
     s.done[ev.tid] = prevSlotMs(ev, nowMs);
     flash("\u2714 logged: " + ev.short);
   }
@@ -499,19 +504,24 @@ function prevSlotMs(ev, nowMs) {
   return nowMs - minutesSince(ev, nowMs) * 60000;
 }
 
-function logWithRollover(ev, nowMs) {
+function logWithRollover(ev, nowMs, remove) {
   const slotMs   = prevSlotMs(ev, nowMs);
   const creditMs = slotMs + ROLLOVER_MINS[ev.tid] * 60000;
   if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
-    toggleLog(ev, nowMs);
+    toggleLog(ev, nowMs, remove);
     return;
   }
   const newEp = dailyEpoch(creditMs);
   if (!carry || carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
-  if (carry.done[ev.tid] !== undefined) {
+  if (remove) {
+    if (carry.done[ev.tid] === undefined) { flash("nothing queued: " + ev.short); return; }
     delete carry.done[ev.tid];
     flash("\u2716 unqueued: " + ev.short);
   } else {
+    if (carry.done[ev.tid] !== undefined) {
+      flash("already queued for the NEW day \u2014 shift-click to unqueue");
+      return;
+    }
     carry.done[ev.tid] = slotMs;
     flash("\u2714 " + ev.short + " finishes after reset \u2014 logged for the NEW day");
   }
@@ -834,8 +844,8 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
     chip.onclick = e => {
       e.preventDefault();
       if (ev.multi) logMulti(ev, Date.now(), e.shiftKey);
-      else if (ROLLOVER_MINS[ev.tid]) logWithRollover(ev, Date.now());
-      else toggleLog(ev, Date.now());
+      else if (ROLLOVER_MINS[ev.tid]) logWithRollover(ev, Date.now(), e.shiftKey);
+      else toggleLog(ev, Date.now(), e.shiftKey);
       render();
     };
     chip.oncontextmenu = e => {
