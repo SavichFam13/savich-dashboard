@@ -171,7 +171,7 @@
   </nav>
 </div>
 
-<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = toggle done &middot; right-click = details</span></div>
+<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log &middot; shift-click = unlog / remove last &middot; right-click = schedule</span></div>
 
 <div class="section-title">Dailies</div>
 <div class="section-note" id="daily-meta"></div>
@@ -266,20 +266,25 @@ function incursionSlotMs(nowMs) {
   return (nowMs - slot >= 55 * 60000) ? slot + 3600000 : slot;
 }
 
-function logDailyEv(name, tid, ev, nowMs) {
+function logDailyEv(name, tid, ev, nowMs, remove) {
   const slotMs = evPrevMs(ev, nowMs);
-const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
+  const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
   if (dailyEpoch(creditMs) === dailyEpoch(nowMs)) {
-    toggleLog(name, tid, nowMs, false, slotMs);
+    toggleLog(name, tid, nowMs, false, slotMs, remove);
     return;
   }
   let carry = loadState(KEY_CARRY) || {};
   const newEp = dailyEpoch(creditMs);
   if (carry.epoch !== newEp) carry = { epoch: newEp, done: {} };
-  if (carry.done[tid] !== undefined) {
+  if (remove) {
+    if (carry.done[tid] === undefined) { flash("\u2716 nothing queued: " + name); return; }
     delete carry.done[tid];
     flash("\u2716 unqueued: " + name);
   } else {
+    if (carry.done[tid] !== undefined) {
+      flash("\u2714 already queued for the NEW day \u2014 shift-click to unqueue");
+      return;
+    }
     carry.done[tid] = slotMs;
     flash("\u2714 " + name + " finishes after reset \u2014 logged for the NEW day");
   }
@@ -294,7 +299,7 @@ const EXTRAS = {
   wb_taidha:     { name: "Admiral Taidha Covington",   zone: "Bloodtide Coast", color: "#959393" },
   wb_shatterer:  { name: "The Shatterer",              zone: "Blazeridge Steppes", color: "#959393" },
   wb_golem:      { name: "Inquest Golem Mark II",      zone: "Mount Maelstrom", color: "#959393" },
-  wb_mega:       { name: "Megadestroyer",              zone: "Mount Maelstron", color: "#959393" },
+  wb_mega:       { name: "Megadestroyer",              zone: "Mount Maelstrom", color: "#959393" },
   wb_jormag:     { name: "Claw of Jormag",             zone: "Frostgorge Sound", color: "#959393" },
   tt:            { name: "Triple Trouble",             zone: "Bloodtide Coast (Firthside Vigil)", reward: "2 g and a chance for ascended chest", color: "#959393" },
   karka:         { name: "Karka Queen",                zone: "Southsun Cove", color: "#959393" },
@@ -654,14 +659,19 @@ function removeLogAt(name, tid, tsMs, nowMs) {
   render();
   saveState(KEY_DAILY, s);
 }
-function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
+function toggleLog(name, tid, nowMs, isWeekly, stampMs, remove) {
   const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
   const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
   const s = getFreshState(key, ep);
-  if (s.done[tid] !== undefined) {
+  if (remove) {
+    if (s.done[tid] === undefined) { flash("\u2716 nothing logged: " + name); return; }
     delete s.done[tid];
     flash("\u2716 unlogged: " + name);
   } else {
+    if (s.done[tid] !== undefined) {
+      flash("\u2714 already logged: " + name + " \u2014 shift-click to unlog");
+      return;
+    }
     s.done[tid] = (stampMs !== undefined ? stampMs : Date.now());
     flash("\u2714 logged: " + name + " @ " + fmtClock(s.done[tid]));
   }
@@ -826,7 +836,7 @@ function tooltipFor(task, isWeekly, nowMs) {
   } else if (isWeekly && task.objective) {
     tip += "\nObjective: " + task.objective;
   }
-  tip += "\nLeft-click: toggle done. Right-click: details.";
+  tip += "\nLeft-click: log. Shift-click: unlog/remove last. Right-click: details.";
   return tip;
 }
 function cdSpanHtml(t, now) {
@@ -873,16 +883,18 @@ function renderDailyChips(now) {
     chip.innerHTML = inner;
     chip.title = tooltipFor(t, false, now);
 
-chip.onclick = e => {
-  e.preventDefault();
-  if (ev && ROLLOVER_MINS[t.id]) {
-    logDailyEv(t.name, t.id, ev, Date.now());
-  } else {
-    const stamp = ev ? evPrevMs(ev, Date.now()) : undefined;
-    toggleLog(t.name, t.id, Date.now(), false, stamp);
-  }
-  render();
-};
+    chip.onclick = e => {
+      e.preventDefault();
+      if (ev && ROLLOVER_MINS[t.id]) {
+        logDailyEv(t.name, t.id, ev, Date.now(), e.shiftKey);
+      } else if (e.shiftKey) {
+        toggleLog(t.name, t.id, Date.now(), false, undefined, true);
+      } else {
+        const stamp = ev ? evPrevMs(ev, Date.now()) : undefined;
+        toggleLog(t.name, t.id, Date.now(), false, stamp, false);
+      }
+      render();
+    };
 chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, false); };
 roster.appendChild(chip);
 });
@@ -931,8 +943,8 @@ function renderGhosts(now) {
     let tip = x.name + "\nWhere: " + (x.zone || "?");
     if (x.reward) tip += "\nReward: " + x.reward;
     tip += multi
-      ? "\nLeft-click: +1. Shift-click: remove last. Right-click: details."
-      : "\nLeft-click: toggle done. Right-click: details.";
+      ? "\nLeft-click: log. Shift-click: remove last. Right-click: details."
+      : "\nLeft-click: log. Shift-click: remove last. Right-click: details.";
     chip.title = tip;
 
     const ghostTask = { id: g.tid, name: x.name, zone: x.zone || "",
@@ -943,8 +955,10 @@ function renderGhosts(now) {
       if (multi) {
         if (e.shiftKey) removeLastLog(x.name, g.tid, Date.now());
         else toggleLogMulti(x.name, g.tid, Date.now());
+      } else if (e.shiftKey) {
+        removeLastLog(x.name, g.tid, Date.now());
       } else {
-        toggleLog(x.name, g.tid, Date.now(), false);
+        toggleLog(x.name, g.tid, Date.now(), false, undefined, false);
       }
     };
     chip.oncontextmenu = e => { e.preventDefault(); openInfo(ghostTask, e, false); };
@@ -980,7 +994,7 @@ chip.title = tooltipFor(t, true, now);
 
     chip.onclick = e => {
       e.preventDefault();
-      toggleLog(t.name, t.id, Date.now(), true);
+      toggleLog(t.name, t.id, Date.now(), true, undefined, e.shiftKey);
       render();
     };
     chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, true); };
