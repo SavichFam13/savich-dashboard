@@ -261,7 +261,6 @@ const TASK_NAMES = {
   bear: "Cum Stained Bear", twatwaffle: "Twatwaffle the Spineless",
   peasants: "Rob my Peasants", princess: "Princess",
   purple: "Daily Purple Shiny", frecs: "Daily Frecs",
-  raids: "Raids", refa: "REFA (Retard Fractals)",
   fmlife: "Fuck My Life for Eternity!", family: "Family Time",
   furby: "Bondage Furby", vault: "Daily Wizards Vault",
   // world bosses
@@ -283,11 +282,11 @@ const TASK_NAMES = {
   octopussy: "Octopussy", titanic: "Dick'tacles",
   turtlepower: "Turtle Power",
   // adhoc / seasonal
-  wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
+    raids: "Raids", refa: "REFA", wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
   fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
   madking: "Mad King", wintersday: "Wintersday", lny: "Lunar New Year",
   sab: "Super Adventure Box", dragonbash: "Dragon Bash",
-  fourwinds: "Four Winds"
+  fourwinds: "Four Winds", fractalincursion: "Fractal Incursion"
 };
 const CATEGORIES = {
   "World Bosses": ["wb_mega","wb_fire","wb_shatterer","wb_wurm","wb_ulgoth",
@@ -302,7 +301,7 @@ const CATEGORIES = {
   "Vault & Misc": ["wvw","talent","princess","purple","vault"],
   "Seasonal": ["madking","wintersday","lny","sab","dragonbash","fourwinds"],
   "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
-  "Fractals & Raids": ["frecs", "raids", "refa"]
+  "Fractals & Raids": ["frecs", "raids", "refa", "fractalincursion"]
 };
 const CAT_COLORS = {
   "World Bosses": "#ff8a8a",
@@ -377,12 +376,13 @@ function render() {
   days.forEach(d => {
     const done = log[d] || {};
     const ids = Object.keys(done);
-    totalPerDay += ids.length;
     ids.forEach(t => {
-      taskCounts[t] = (taskCounts[t] || 0) + 1;
+      const n = Array.isArray(done[t]) ? done[t].length : 1;
+      totalPerDay += n;
+      taskCounts[t] = (taskCounts[t] || 0) + n;
       const c = TASK_CAT[t] || "Vault & Misc";
-      catCounts[c] = (catCounts[c] || 0) + 1;
-      totalCompletions++;
+      catCounts[c] = (catCounts[c] || 0) + n;
+      totalCompletions += n;
     });
   });
   const avg = days.length ? (totalPerDay / days.length).toFixed(1) : "0";
@@ -414,13 +414,18 @@ function render() {
   const dl = document.getElementById("day-list");
   dl.innerHTML = "";
   days.slice(-7).reverse().forEach(d => {
-    const ids = Object.keys(log[d] || {});
+    const done = log[d] || {};
+    const ids = Object.keys(done);
+    let n = 0;
+    ids.forEach(t => { n += Array.isArray(done[t]) ? done[t].length : 1; });
     const row = document.createElement("div");
     row.className = "bar-row";
     row.innerHTML =
       "<div class='bar-label'>" + d + "</div>" +
       "<div style='flex:1; color:var(--dim); font-size:0.78rem;'>" +
-      (ids.length ? ids.length + " done: " + ids.map(nameOf).join(", ") : "nothing logged") +
+      (n ? n + " done: " +
+        ids.map(t => nameOf(t) + (Array.isArray(done[t]) ? " \u00D7" + done[t].length : "")).join(", ")
+        : "nothing logged") +
       "</div>";
     dl.appendChild(row);
   });

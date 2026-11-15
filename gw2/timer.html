@@ -116,6 +116,16 @@
   .sched-when span { color: var(--dim); font-size: 0.78rem; margin-left: 6px; }
   .sched-cd { color: var(--accent2); font-weight: 700; white-space: nowrap; }
   .sched-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
+  .sched-logged-title {
+    font-size: 0.72rem; color: var(--good); letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 700; margin: 12px 0 2px;
+  }
+  .log-del {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-family: inherit; font-size: 0.85rem; font-weight: 700;
+    padding: 2px 6px; flex-shrink: 0;
+  }
+  .log-del:hover { color: #ff8a8a; }
 
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
@@ -164,7 +174,7 @@
   </nav>
 </div>
 
-<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log to dailies &middot; right-click = schedule</span></div>
+<div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log to dailies &middot; shift-click = remove last (multi events) &middot; right-click = schedule</span></div>
 <div class="section-title">World Bosses</div>
 <div class="roster" id="roster-wb"></div>
 <div class="section-title">Hard World Bosses</div>
@@ -306,17 +316,17 @@ const MISC = [
   { name: "A Titanic Voyage", short: "Dick'tacles", color: "#94a3ff",
     interval: 120, offset: 80, tid: "titanic", zone: "Bava Nisos" },
   { name: "Fractal Incursion", short: "Fractal Incursion", color: "#7c01ff",
-    interval: 60, offset: 0, anchor: 0, tid: "fractalincursion",
+    interval: 60, offset: 0, anchor: 0, tid: "fractalincursion", multi: true,
     zones: ["Diessa Plateau", "Brisban Wildlands", "Snowden Drifts", "Kessex Hills"],
     wps: ["[&BN0AAAA=]", "[&BHUAAAA=]", "[&BLQAAAA=]", "[&BBIAAAA=]"] },
 ];
 
 const ADHOC = [
-  { short: "Raids", name: "Raids", tid: "raids", color: "#7c01ff",
+  { short: "Raids", name: "Raids", tid: "raids", color: "#7c01ff", multi: true,
     zone: "Whatever wing we're doing", reward: "Raids are raids" },
-  { short: "REFA", name: "Retard Fractals (Quickplay)", tid: "refa", color: "#7c01ff",
-    zone: "Fractal Lobby", reward: "Dumbed down frecs" },
-  { short: "WvW", name: "WvW Roaming", tid: "wvw", color: "#959393",
+  { short: "REFA", name: "REFA", tid: "refa", color: "#7c01ff",
+  zone: "quickplay fractals in lfg", reward: "...", multi: true },
+  { short: "WvW", name: "WvW Roaming", tid: "wvw", color: "#959393", multi: true,
     zone: "Edge of the Mists", reward: "Wherever the fun is" },
   { short: "War Supply Keys", name: "War Supply Cache Keys", tid: "warkeys", color: "#959393",
     zone: "Drizzlewood Coast", reward: "Can buy 5 per day" },
@@ -326,17 +336,17 @@ const ADHOC = [
     zone: "Fractal Lobby", reward: "Limit of 30 keys per day" },
   { short: "Bandit Skeleton Keys", name: "Bandit Skeleton Key", tid: "banditkeys", color: "#959393",
     zone: "The Silverwastes", reward: "25 bandit crests for every 5 keys" },
-  { short: "Mad King", name: "Mad King's Labyrinth", tid: "madking", color: "#8700c0",
+  { short: "Mad King", name: "Mad King's Labyrinth", tid: "madking", color: "#8700c0", multi: true,
     zone: "Lion's Arch", reward: "Sell bags or hunt ember/phospho/poly infusions" },
-  { short: "Wintersday", name: "Wintersday", tid: "wintersday", color: "#ffffff",
+  { short: "Wintersday", name: "Wintersday", tid: "wintersday", color: "#ffffff", multi: true,
     zone: "Divinity's Reach", reward: "Winter's Heart / Snow Diamond / Toy-Shell infusions" },
-  { short: "Lunar New Year", name: "Lunar New Year", tid: "lny", color: "#ebdd11",
+  { short: "Lunar New Year", name: "Lunar New Year", tid: "lny", color: "#ebdd11", multi: true,
     zone: "Divinity's Reach", reward: "Sell envelopes for gold after cheeves" },
-  { short: "Super Adventure Box", name: "Super Adventure Box", tid: "sab", color: "#08f124",
+  { short: "Super Adventure Box", name: "Super Adventure Box", tid: "sab", color: "#08f124", multi: true,
     zone: "Rata Sum", reward: "Farm baubles to convert for sale" },
-  { short: "Dragon Bash", name: "Dragon Bash", tid: "dragonbash", color: "#eb1118",
+  { short: "Dragon Bash", name: "Dragon Bash", tid: "dragonbash", color: "#eb1118", multi: true,
     zone: "Hoelbrak", reward: "Sell dragon coffers after cheeves" },
-  { short: "Four Winds", name: "Festival of the Four Winds", tid: "fourwinds", color: "#d1c4f6",
+  { short: "Four Winds", name: "Festival of the Four Winds", tid: "fourwinds", color: "#d1c4f6", multi: true,
     zone: "Crown Pavilion / Labyrinthine Cliffss", reward: "Gamble your heart away" },
   { short: "Turtle Power", name: "Turtle Power", tid: "turtlepower", color: "#66e0ff",
     zone: "Gyala Delve (Sewers)", reward: "Runs whenever someone starts it" }
@@ -408,6 +418,49 @@ function saveCarryState() {
 
 function isLogged(tid, nowMs) {
   return getDailyState(nowMs).done[tid] !== undefined;
+}
+
+// ---- multi-completion helpers ----
+// Multi events store done[tid] = [ms, ms, ...] instead of a single timestamp.
+// Legacy single-number values are treated as a 1-entry array.
+
+function getLogs(tid, nowMs) {
+  const v = getDailyState(nowMs).done[tid];
+  if (v === undefined) return [];
+  if (Array.isArray(v)) return v;
+  return [v];
+}
+
+function logMulti(ev, nowMs, removeLast) {
+  const s = getDailyState(nowMs);
+  const logs = getLogs(ev.tid, nowMs);
+  if (removeLast) {
+    if (!logs.length) { flash("nothing to unlog: " + ev.short); return; }
+    logs.pop();
+    if (logs.length) s.done[ev.tid] = logs;
+    else delete s.done[ev.tid];
+    flash("\u2716 removed last log: " + ev.short +
+          (logs.length ? " \u2014 \u00D7" + logs.length + " today" : ""));
+  } else {
+    const slot = (ev.interval || ev.daily) ? prevSlotMs(ev, nowMs) : nowMs;
+    logs.push(slot);
+    s.done[ev.tid] = logs;
+    flash("\u2714 logged: " + ev.short + " \u2014 \u00D7" + logs.length + " today");
+  }
+  saveDailyState(s);
+}
+
+function unlogAtIndex(ev, idx, nowMs) {
+  const s = getDailyState(nowMs);
+  const logs = getLogs(ev.tid, nowMs);
+  if (idx < 0 || idx >= logs.length) return;
+  logs.splice(idx, 1);
+  if (logs.length) s.done[ev.tid] = logs;
+  else delete s.done[ev.tid];
+  saveDailyState(s);
+  flash("\u2716 removed log: " + ev.short +
+        (logs.length ? " \u2014 \u00D7" + logs.length + " today" : ""));
+  render();
 }
 
 function toggleLog(ev, nowMs) {
@@ -608,6 +661,47 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeSchedule();
 });
 
+// Renders the "Logged today (xN)" block for multi events, one line per
+// completion, each with its own remove button.
+function appendLoggedBlock(ev, now, list) {
+  if (!ev.multi) return;
+  const logs = getLogs(ev.tid, now);
+  if (!logs.length) return;
+
+  const head = document.createElement("div");
+  head.className = "sched-logged-title";
+  head.textContent = "Logged today (\u00D7" + logs.length + ")";
+  list.appendChild(head);
+
+  logs.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "sched-row";
+
+    let where = "";
+    if (ev.interval || ev.daily) {
+      const z = zoneFor(ev, t);
+      const wp = wpFor(ev, t);
+      if (z) where = z + (wp ? " " + wp : "");
+    }
+
+    const left = document.createElement("span");
+    left.className = "sched-when";
+    left.innerHTML = "<b>" + fmtClock(t) + "</b>" +
+      (where ? "<span>" + where + "</span>" : "");
+    row.appendChild(left);
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "log-del";
+    del.textContent = "\u2716";
+    del.title = "remove this log";
+    del.onclick = () => { unlogAtIndex(ev, i, Date.now()); };
+    row.appendChild(del);
+
+    list.appendChild(row);
+  });
+}
+
 function renderSchedule(now) {
   if (!selectedEv) return;
   const ev = selectedEv;
@@ -616,14 +710,19 @@ function renderSchedule(now) {
 
   const list = document.getElementById("sched-list");
   list.innerHTML = "";
-    if (!ev.interval && !ev.daily) {
+
+  if (!ev.interval && !ev.daily) {
     const row = document.createElement("div");
     row.className = "sched-row";
     row.innerHTML =
       '<span class="sched-when"><b>Reward:</b> <span>' + (ev.reward || "\u2014") + "</span></span>";
     list.appendChild(row);
+    appendLoggedBlock(ev, now, list);
     return;
   }
+
+  appendLoggedBlock(ev, now, list);
+
   const times = nextOccurrences(ev, now, 6);
   times.forEach((t, i) => {
     const row = document.createElement("div");
@@ -647,7 +746,6 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
     : list.slice().sort((a, b) => minutesUntil(a, now) - minutesUntil(b, now));
 
   sorted.forEach(ev => {
-    const logged = isLogged(ev.tid, now);
     const chip = document.createElement("button");
     chip.type = "button";
 
@@ -657,12 +755,22 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
       ev.short;
 
     if (isAdhoc) {
+      const n = ev.multi ? getLogs(ev.tid, now).length : (isLogged(ev.tid, now) ? 1 : 0);
+      const logged = n > 0;
       cls += (logged ? " logged" : "");
-      inner += (logged ? ' <span class="tick">\u2713</span>'
-                       : ' <span class="chip-cd">log it</span>');
-      chip.title = ev.name + (ev.zone ? " \u2014 " + ev.zone : "") +
-                   " \u2014 left-click to log at current time";
+      inner += (logged
+        ? ' <span class="tick">\u2713' + (ev.multi ? " \u00D7" + n : "") + '</span>'
+        : ' <span class="chip-cd">log it</span>');
+      if (ev.multi) {
+        chip.title = ev.name + (ev.zone ? " \u2014 " + ev.zone : "") +
+          "\nLeft-click: +1 log. Shift-click: remove last log. Right-click: details.";
+      } else {
+        chip.title = ev.name + (ev.zone ? " \u2014 " + ev.zone : "") +
+                     " \u2014 left-click to log at current time";
+      }
     } else {
+      const logsN = ev.multi ? getLogs(ev.tid, now).length : 0;
+      const logged = ev.multi ? logsN > 0 : isLogged(ev.tid, now);
       const mu = minutesUntil(ev, now);
       const since = minutesSince(ev, now);
       const isActive = since < 15;
@@ -675,17 +783,23 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
              (selectedEv === ev ? " selected" : "");
 
       inner += ' <span class="chip-cd"' + (isActive ? ' style="display:none"' : '') + '>' + cdText + '</span>' +
-              (logged ? ' <span class="tick">\u2713</span>' : "");
-      chip.title = ev.name +
-        (logged ? " \u2014 logged today (click again to un-log)" : "") +
-        "\nLeft-click: log to dailies. Right-click: schedule.";
+              (logged ? ' <span class="tick">\u2713' + (ev.multi ? " \u00D7" + logsN : "") + '</span>' : "");
+      if (ev.multi) {
+        chip.title = ev.name + " \u2014 \u00D7" + logsN + " logged today" +
+          "\nLeft-click: +1 log. Shift-click: remove last log. Right-click: schedule & log list.";
+      } else {
+        chip.title = ev.name +
+          (logged ? " \u2014 logged today (click again to un-log)" : "") +
+          "\nLeft-click: log to dailies. Right-click: schedule.";
+      }
     }
 
     chip.className = cls;
     chip.innerHTML = inner;
     chip.onclick = e => {
       e.preventDefault();
-      if (ROLLOVER_MINS[ev.tid]) logWithRollover(ev, Date.now());
+      if (ev.multi) logMulti(ev, Date.now(), e.shiftKey);
+      else if (ROLLOVER_MINS[ev.tid]) logWithRollover(ev, Date.now());
       else toggleLog(ev, Date.now());
       render();
     };

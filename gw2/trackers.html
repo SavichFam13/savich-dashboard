@@ -120,6 +120,7 @@
   .info-line b { color: var(--text); }
   .info-line .lab { color: var(--dim); }
   .info-line.missing { color: var(--now); font-weight: 700; }
+  .info-line.removable:hover, .info-line.removable:hover b { color: #ffb3b3; }
   .info-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
 
   .flash-msg {
@@ -226,6 +227,31 @@ const KEY_DAILY  = "gw2-tracker-daily";
 const KEY_WEEKLY = "gw2-tracker-weekly";
 const KEY_CARRY = "gw2-tracker-daily-carry";
 const ROLLOVER_MINS = { "furby": 40 };
+const MULTI_TIDS = ["raids","wvw","madking","wintersday","lny","sab",
+                    "dragonbash","fourwinds","fractalincursion","refa"];
+const INCURSION_ZONES = ["Diessa Plateau","Brisban Wildlands",
+                         "Snowden Drifts","Kessex Hills"];
+const INCURSION_WPS = ["[&BN0AAAA=]","[&BHUAAAA=]",
+                       "[&BLQAAAA=]","[&BBIAAAA=]"];
+
+function isMulti(tid) { return MULTI_TIDS.includes(tid); }
+
+function logsFor(tid, nowMs) {
+  const v = getFreshState(KEY_DAILY, dailyEpoch(nowMs)).done[tid];
+  if (v === undefined) return [];
+  if (Array.isArray(v)) return v.slice().sort((a, b) => a - b);
+  return [v];
+}
+
+function incursionZone(ms) { return INCURSION_ZONES[mod(new Date(ms).getUTCHours(), 4)]; }
+function incursionWp(ms)   { return INCURSION_WPS[mod(new Date(ms).getUTCHours(), 4)]; }
+
+// Snap an incursion log to its scheduled hour slot (matches timer.html,
+// which stores slot times — the hour identifies the zone).
+function incursionSlotMs(nowMs) {
+  const slot = Math.floor(nowMs / 3600000) * 3600000;
+  return (nowMs - slot >= 55 * 60000) ? slot + 3600000 : slot;
+}
 
 function logDailyEv(name, tid, ev, nowMs) {
   const slotMs = evPrevMs(ev, nowMs);
@@ -580,7 +606,41 @@ function loggedStamp(tid, nowMs, isWeekly) {
   const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
   return getFreshState(key, ep).done[tid];
 }
+function toggleLogMulti(name, tid, nowMs) {
+  const s = getFreshState(KEY_DAILY, dailyEpoch(nowMs));
+  const v = s.done[tid];
+  const arr = Array.isArray(v) ? v : (v !== undefined ? [v] : []);
+  arr.push(tid === "fractalincursion" ? incursionSlotMs(nowMs) : nowMs);
+  s.done[tid] = arr;
+  flash("\u2714 logged: " + name + " \u2014 \u00D7" + arr.length + " today");
+  render();
+  saveState(KEY_DAILY, s);
+}
 
+function removeLastLog(name, tid, nowMs) {
+  const s = getFreshState(KEY_DAILY, dailyEpoch(nowMs));
+  const arr = logsFor(tid, nowMs);
+  if (!arr.length) return;
+  arr.pop();
+  if (arr.length === 0) delete s.done[tid]; else s.done[tid] = arr;
+  flash("\u2716 removed last log: " + name +
+        (arr.length ? " \u2014 now \u00D7" + arr.length : ""));
+  render();
+  saveState(KEY_DAILY, s);
+}
+
+function removeLogAt(name, tid, tsMs, nowMs) {
+  const s = getFreshState(KEY_DAILY, dailyEpoch(nowMs));
+  const arr = logsFor(tid, nowMs);
+  const i = arr.indexOf(tsMs);
+  if (i === -1) return;
+  arr.splice(i, 1);
+  if (arr.length === 0) delete s.done[tid]; else s.done[tid] = arr;
+  flash("\u2716 removed log: " + name +
+        (arr.length ? " \u2014 now \u00D7" + arr.length : ""));
+  render();
+  saveState(KEY_DAILY, s);
+}
 function toggleLog(name, tid, nowMs, isWeekly, stampMs) {
   const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
   const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
@@ -648,23 +708,43 @@ function openInfo(task, evt, isWeekly) {
       : "every " + (ev.interval / 60) + " hours";
     line('<span class="lab">Schedule:</span> ' + pat + (ev.map ? " \u00B7 rotates: " + NAKED_MAPS.join(" \u2192 ") : ""));
   }
-  const ts = loggedStamp(task.id, now, isWeekly);
-  const ok = typeof ts === "number" && !isNaN(ts);
-  if (ok) {
-    let stampTxt;
-    if (isWeekly) {
-      const d = new Date(ts);
-      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      stampTxt = "done " + days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() +
-                 " @ " + fmtClock(ts);
+  const tsRaw = loggedStamp(task.id, now, isWeekly);
+  const logs  = Array.isArray(tsRaw) ? tsRaw.slice().sort((a, b) => a - b)
+               : (typeof tsRaw === "number" && !isNaN(tsRaw) ? [tsRaw] : []);
+
+  if (logs.length) {
+    if (!isWeekly && isMulti(task.id)) {
+      line('<span class="lab">Status:</span> <b style="color:var(--good)">' +
+           'done \u00D7' + logs.length + ' today</b>');
+      logs.forEach(l => {
+        let txt = fmtClock(l);
+        if (task.id === "fractalincursion")
+          txt += " \u00B7 " + incursionZone(l) + " " + incursionWp(l);
+        const row = document.createElement("div");
+        row.className = "info-line removable";
+        row.style.cursor = "pointer";
+        row.innerHTML = '<span style="color:var(--now)">\u2716</span> <b>' + txt + '</b>';
+        row.title = "click to remove this log";
+        row.onclick = () => { removeLogAt(task.name, task.id, l, Date.now()); closeInfo(); };
+        lines.appendChild(row);
+      });
     } else {
-      stampTxt = "done @ " + fmtClock(ts);
+      const ts = logs[0];
+      let stampTxt;
+      if (isWeekly) {
+        const d = new Date(ts);
+        const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        stampTxt = "done " + days[d.getDay()] + " " + months[d.getMonth()] + " " + d.getDate() +
+                   " @ " + fmtClock(ts);
+      } else {
+        stampTxt = "done @ " + fmtClock(ts);
+      }
+      if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
+      if (!isWeekly && dailyEpoch(ts) < dailyEpoch(now)) stampTxt += "  (yesterday)";
+      line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
     }
-    if (!isWeekly && task.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
-    if (!isWeekly && dailyEpoch(ts) < dailyEpoch(now)) stampTxt += "  (yesterday)";
-    line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
-    } else if (ev) {
+  } else if (ev) {
     const nx = evNextMs(ev, now);
     let nextTxt = "next @ " + fmtClock(nx);
     if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
@@ -776,9 +856,14 @@ function renderGhosts(now) {
 
   const dailyIds = {};
   DAILIES.forEach(t => { dailyIds[t.id] = true; });
-const ghosts = Object.keys(s.done)
+
+  const ghosts = Object.keys(s.done)
     .filter(tid => !dailyIds[tid])
-    .map(tid => ({ tid: tid, ts: s.done[tid] }))
+    .map(tid => {
+      const v = s.done[tid];
+      const arr = Array.isArray(v) ? v.slice().sort((a, b) => a - b) : [v];
+      return { tid: tid, ts: arr[arr.length - 1], logs: arr };
+    })
     .sort((a, b) => a.ts - b.ts);
 
   if (ghosts.length === 0) return;
@@ -789,30 +874,38 @@ const ghosts = Object.keys(s.done)
 
   ghosts.forEach(g => {
     const x = EXTRAS[g.tid] || { name: g.tid, zone: "logged from Event Timers" };
+    const multi = isMulti(g.tid);
+
+    let stamp = fmtClock(g.ts);
+    if (g.tid === "fractalincursion") stamp += " \u00B7 " + incursionZone(g.ts);
+
+    let tick = ' <span class="tick">\u2713</span>';
+    if (multi && g.logs.length > 1) tick = ' <span class="tick">\u2713 \u00D7' + g.logs.length + '</span>';
 
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip ghost logged";
-  let inner = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' + x.name +
-                ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + fmtClock(g.ts) + '</span>';
-    chip.innerHTML = inner;
+    chip.innerHTML = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' +
+                     x.name + tick + '<span class="stamp-info">@ ' + stamp + '</span>';
 
     let tip = x.name + "\nWhere: " + (x.zone || "?");
     if (x.reward) tip += "\nReward: " + x.reward;
-    tip += "\nLeft-click: toggle done. Right-click: details.";
+    tip += multi
+      ? "\nLeft-click: +1. Shift-click: remove last. Right-click: details."
+      : "\nLeft-click: toggle done. Right-click: details.";
     chip.title = tip;
-    const ghostTask = {
-      id: g.tid,
-      name: x.name,
-      zone: x.zone || "",
-      reward: x.reward || "",
-      isGhost: true
-    };
+
+    const ghostTask = { id: g.tid, name: x.name, zone: x.zone || "",
+                        reward: x.reward || "", isGhost: true };
 
     chip.onclick = e => {
       e.preventDefault();
-      toggleLog(x.name, g.tid, Date.now(), false);
-      render();
+      if (multi) {
+        if (e.shiftKey) removeLastLog(x.name, g.tid, Date.now());
+        else toggleLogMulti(x.name, g.tid, Date.now());
+      } else {
+        toggleLog(x.name, g.tid, Date.now(), false);
+      }
     };
     chip.oncontextmenu = e => { e.preventDefault(); openInfo(ghostTask, e, false); };
     roster.appendChild(chip);
