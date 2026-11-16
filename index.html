@@ -127,9 +127,10 @@
   .tw-next { font-size: 0.82rem; color: var(--dim); line-height: 1.8; }
   .tw-next .tw-time { color: var(--accent2); font-weight: 700; margin-right: 8px; }
   .tw-next .tw-dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    margin-right: 8px; vertical-align: middle;
+    display: inline-block; margin-right: 8px; vertical-align: middle;
+    font-size: 0.95rem; white-space: nowrap;
   }
+  .tw-next .tw-dot:empty { display: none; }
   .tw-empty { font-size: 0.82rem; color: var(--dim); }
   .tw-open-hint { font-size: 0.72rem; color: var(--dim); margin-top: 6px; }
   .today-overlay {
@@ -542,7 +543,7 @@
       next.innerHTML = upcoming.map(it => {
         const li = it.list || { name: "?", color: "c9a0ff" };
         return '<div><span class="tw-time">' + fmtTime(it.time) + "</span>" +
-          '<span class="tw-dot" style="background:#' + esc(li.color) + '"></span>' +
+            '<span class="tw-dot">' + esc(li.icon || "") + "</span>" +
           esc(it.task.title) + "</div>";
       }).join("");
     }

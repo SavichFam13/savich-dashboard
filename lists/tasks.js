@@ -724,7 +724,7 @@ function taskRowHTML(it, isOverdue, rerender) {
     '<span class="t-time' + (it.time ? "" : " none") + '">' + when + "</span>" +
     '<span class="t-title" title="click to edit the series">' +
     esc(t.title) + movedTag + "</span>" +
-    '<span class="t-dot" style="background:#' + esc(li.color) + '"></span>' +
+    '<span class="t-icon">' + esc(li.icon || "") + "</span>" +
     '<span class="t-list">' + esc(li.name) + "</span>" +
     "</div>";
 }

@@ -102,8 +102,8 @@ function renderListView() {
         t => !t.archived && !t.is_note && t.list_id === l.id).length;
       return '<button class="rail-chip' + (l.id === LP_SEL ? " sel" : "") +
         '" data-list="' + l.id + '">' +
-        '<span class="t-dot" style="background:#' + esc(l.color) + '"></span>' +
-        esc(l.name) + ' <span class="rail-count">' + count + "</span></button>";
+    '<span class="t-icon">' + esc(l.icon || "") + "</span>" +
+    esc(l.name) + ' <span class="rail-count">' + count + "</span></button>";
     }).join("");
     rail.querySelectorAll(".rail-chip").forEach(b => {
       b.onclick = () => { LP_SEL = b.getAttribute("data-list"); renderListView(); };
@@ -121,12 +121,20 @@ function renderListView() {
       'hit “+ add task” to create the first one.</div>';
     return;
   }
-  const sorter = (a, b) =>
-    (a.due_time || "99") < (b.due_time || "99") ? -1 :
-    (a.due_time || "99") > (b.due_time || "99") ? 1 :
-    a.title.localeCompare(b.title);
-  const notes = tsks.filter(t => t.is_note).sort(sorter);
-  const real = tsks.filter(t => !t.is_note).sort(sorter);
+  const alphaSort = (a, b) => a.title.localeCompare(b.title);
+  const sortKey = t => {
+    if (!t.start_date) return "9999-12-31";
+    if (t.repeat_type === "none") return t.start_date;
+    return nextFireDate(t, today) || "9999-12-31";
+  };
+  const notes = tsks.filter(t => t.is_note).sort(alphaSort);
+  const real = tsks.filter(t => !t.is_note).sort((a, b) => {
+    const ka = sortKey(a), kb = sortKey(b);
+    if (ka !== kb) return ka < kb ? -1 : 1;
+    const ta = a.due_time || "99", tb = b.due_time || "99";
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return a.title.localeCompare(b.title);
+  });
   const groups = {};
   const order = [];
   const loose = [];
