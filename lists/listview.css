@@ -28,7 +28,5 @@ body { max-width: 1060px; }
   border: 1px solid var(--border); border-radius: 999px;
   padding: 1px 8px;
 }
-.task-row .t-meta { color: var(--dim); font-size: 0.72rem; flex: 1; }
-.task-row .t-next { color: var(--dim); font-size: 0.72rem; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .task-row.done .t-meta, .task-row.done .t-next { opacity: 0.6; }
 #page-title { font-size: 1.2rem; color: var(--accent); margin: 18px 0 12px 0; }
