@@ -44,13 +44,10 @@
     pointer-events: none;
     z-index: 0;
   }
-
   .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   .sky span { position: absolute; opacity: .5; animation: drift 9s ease-in-out infinite alternate; }
   @keyframes drift { from { transform: translateY(0) rotate(-8deg);} to { transform: translateY(-22px) rotate(10deg);} }
-
   .wrap { position: relative; z-index: 1; }
-
   .top {
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
@@ -84,7 +81,6 @@
     cursor: pointer;
   }
   .backup-btn:hover { filter: brightness(1.15); }
-
   header { text-align: center; margin-bottom: 36px; position: relative; }
   .rainbow-bar {
     height: 10px; border-radius: 999px;
@@ -96,7 +92,6 @@
     box-shadow: 0 0 18px rgba(255,79,163,.35);
   }
   @keyframes shimmer { from { background-position: 0% 0;} to { background-position: 200% 0;} }
-
   h1 {
     font-size: 2.2rem;
     letter-spacing: 1px;
@@ -116,7 +111,6 @@
     transform: rotate(0.8deg);
     background: rgba(255,79,163,.07);
   }
-
   h2.section {
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -135,7 +129,6 @@
     font-size: 0.95rem;
     box-shadow: 0 0 10px rgba(139,47,201,.5);
   }
-
   .stats {
     display: flex; gap: 14px; justify-content: center;
     margin-bottom: 8px; flex-wrap: wrap;
@@ -149,7 +142,6 @@
     color: var(--dim);
   }
   .stat b { color: var(--lf-gold); font-size: 0.95rem; }
-
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -158,7 +150,6 @@
     margin-bottom: 10px;
   }
   .card:hover { border-color: var(--lf-pink); transition: border-color .2s; }
-
   ul.bucket { list-style: none; margin-top: 6px; }
   li.item {
     display: flex; align-items: flex-start; gap: 12px;
@@ -169,7 +160,6 @@
   li.item:first-child { border-top: 1px solid var(--border); }
   li.item:last-child { border-bottom: none; }
   li.item:hover { transform: translateX(4px); }
-
   .check {
     flex: 0 0 auto; width: 30px; height: 30px; margin-top: 3px;
     border: 2px solid var(--lf-purple); border-radius: 50%;
@@ -184,7 +174,6 @@
     box-shadow: 0 0 12px rgba(255,217,61,.55);
   }
   .item.done .txt { color: var(--dim); text-decoration: line-through wavy var(--lf-pink); }
-
   .txt { flex: 1; line-height: 1.5; }
   .txt .story {
     display: block; margin-top: 6px;
@@ -201,7 +190,6 @@
     transition: all .15s; color: var(--dim);
   }
   .del:hover { opacity: 1; transform: rotate(15deg) scale(1.15); color: var(--lf-pink); }
-
   .addrow { display: flex; gap: 10px; }
   input[type="text"] {
     flex: 1;
@@ -227,7 +215,6 @@
   }
   button.go:hover { box-shadow: 0 0 20px rgba(255,79,163,.55); }
   button.go:active { transform: scale(.96); }
-
   .story-toggle-wrap { text-align: center; margin-top: 10px; margin-bottom: 4px; }
   .story-toggle {
     background: none; border: none; cursor: pointer;
@@ -238,12 +225,10 @@
     display: none; margin-top: 6px;
     width: 100%;
   }
-
   .empty-msg {
     text-align: center; padding: 16px;
     color: var(--dim); font-size: 0.85rem;
   }
-
   .footer-note {
     font-size: 0.73rem;
     color: var(--dim);
@@ -252,7 +237,6 @@
     margin-top: 40px;
     text-align: center;
   }
-
   .toast {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--lf-teal);
@@ -262,7 +246,6 @@
     display: none;
   }
   .toast.show { display: block; }
-
   .sparkle {
     position: fixed; pointer-events: none; font-size: 1.3rem;
     animation: pop 800ms ease-out forwards; z-index: 50;
@@ -271,7 +254,6 @@
     0% { transform: scale(.4) translateY(0); opacity: 1; }
     100% { transform: scale(1.6) translateY(-50px); opacity: 0; }
   }
-
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -308,11 +290,8 @@
 </style>
 </head>
 <body>
-
 <div class="sky" id="sky"></div>
-
 <div class="wrap">
-
   <div class="top">
     <span class="sync-note" id="sync-note">checking account…</span>
     <div class="top-right">
@@ -322,14 +301,12 @@
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
   </div>
-
   <header>
     <div class="rainbow-bar"></div>
     <h1>🌈 Bucket List 🦄</h1>
     <p class="tagline">All the things you didn't know you needed to do until you did them! ✨</p>
     <div class="stats" id="stats"></div>
   </header>
-
   <h2 class="section"><span class="n">🎯</span> The Official Agenda</h2>
   <div class="card">
     <div class="addrow">
@@ -342,7 +319,6 @@
     <input type="text" class="story-input" id="classicStory" placeholder="why does this one matter to you? 💭">
     <ul class="bucket" id="classicList"></ul>
   </div>
-
   <h2 class="section"><span class="n">🌀</span> Plot-Twist Achievements</h2>
   <div class="card">
     <div class="addrow">
@@ -355,10 +331,8 @@
     <input type="text" class="story-input" id="twistStory" placeholder="give us the details, we're nosy 🎤">
     <ul class="bucket" id="twistList"></ul>
   </div>
-
   <p class="footer-note">✦ every day is a chance to accidentally achieve something ✦</p>
 </div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -367,14 +341,12 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
 const KEY = "savich-bucket";
 const LEGACY_KEY = "savichBucket";
 let USER_ID = null;
-
 let data = {
   twist: [
     {
@@ -385,7 +357,6 @@ let data = {
   ],
   classic: []
 };
-
 function normalizeBucketState(value) {
   const source = value && typeof value === "object" ? value : {};
   return {
@@ -393,7 +364,6 @@ function normalizeBucketState(value) {
     classic: Array.isArray(source.classic) ? source.classic : []
   };
 }
-
 const Store = {
   get(key) {
     try { return JSON.parse(localStorage.getItem(key)); }
@@ -403,7 +373,6 @@ const Store = {
     localStorage.setItem(key, JSON.stringify(value));
   }
 };
-
 const sync = createUserSync({
   key: KEY,
   sections: ["twist", "classic"],
@@ -414,24 +383,19 @@ const sync = createUserSync({
   onRender: () => renderAll(),
   setOnline: (ok, message) => setSync(ok, message)
 });
-
 function save(immediate) {
   sync.save(!!immediate);
 }
-
 function setSync(ok, message) {
   const el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
 const icons = ["✨","⭐","💖","🌈","🦋","🌸","🌟","🍭","💫"];
-
 function escapeHtml(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
-
 function render(kind, listId) {
   const ul = document.getElementById(listId);
   const arr = data[kind];
@@ -450,7 +414,6 @@ function render(kind, listId) {
     ul.appendChild(li);
   });
 }
-
 function renderStats() {
   const all = [...data.twist, ...data.classic];
   const done = all.filter(i => i.done).length;
@@ -459,7 +422,6 @@ function renderStats() {
      <span class="stat">🎯 <b>${all.length - done}</b> remaining</span>
      <span class="stat">🌀 <b>${data.twist.length}</b> plot twists</span>`;
 }
-
 function addItem(kind) {
   const input = document.getElementById(kind + "Input");
   const storyEl = document.getElementById(kind + "Story");
@@ -477,7 +439,6 @@ function addItem(kind) {
   save();
   renderAll();
 }
-
 function toggleDone(ev, kind, i) {
   const nowDone = !data[kind][i].done;
   data[kind][i].done = nowDone;
@@ -485,7 +446,6 @@ function toggleDone(ev, kind, i) {
   renderAll();
   if (nowDone) burst(ev);
 }
-
 async function removeItem(kind, i) {
   const item = data[kind][i];
   const ok = await askConfirm(
@@ -499,7 +459,6 @@ async function removeItem(kind, i) {
   renderAll();
   showToast("Banished to the shadow realm. 👋");
 }
-
 function toggleStory(kind) {
   const el = document.getElementById(kind + "Story");
   const btn = document.getElementById(kind + "StoryBtn");
@@ -507,13 +466,11 @@ function toggleStory(kind) {
   el.style.display = showing ? "none" : "block";
   btn.textContent = showing ? "＋ tell the story" : "− hide the story";
 }
-
 ["twist", "classic"].forEach(kind => {
   document.getElementById(kind + "Input").addEventListener("keydown", e => {
     if (e.key === "Enter") addItem(kind);
   });
 });
-
 function burst(ev) {
   const x = ev && ev.clientX ? ev.clientX : window.innerWidth / 2;
   const y = ev && ev.clientY ? ev.clientY : 200;
@@ -528,7 +485,6 @@ function burst(ev) {
     setTimeout(() => s.remove(), 1100);
   }
 }
-
 function exportData() {
   const blob = new Blob([JSON.stringify(data, null, 2)],
     { type: "application/json" });
@@ -541,7 +497,6 @@ function exportData() {
   URL.revokeObjectURL(url);
   showToast("Backup downloaded. Keep it somewhere safe.");
 }
-
 function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -570,9 +525,7 @@ function importData(e) {
   reader.readAsText(file);
   e.target.value = "";
 }
-
 let modalResolve = null;
-
 function askChoice(title, message, choices) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -592,19 +545,16 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
     { label: "NO", value: false },
     { label: "YES", value: true, primary: true, destructive: !!destructive }
   ]);
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(null);
 });
@@ -614,7 +564,6 @@ document.addEventListener("keydown", e => {
     closeModal(null);
   }
 });
-
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -623,7 +572,6 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
-
 (function() {
   const sky = document.getElementById("sky");
   const doodles = ["⭐","💖","🌈","🦄","✨","🍭","🌟","🎀"];
@@ -637,33 +585,26 @@ function showToast(message) {
     sky.appendChild(s);
   }
 })();
-
 function renderAll() {
   render("twist", "twistList");
   render("classic", "classicList");
   renderStats();
 }
 renderAll();
-
 (async function initBucketSync() {
   try {
     const session = await requireAuth();
     if (!session) return;
-
     USER_ID = session.user && session.user.id;
     if (!USER_ID) throw new Error("Signed-in session has no user ID");
-
     const userCacheKey = KEY + ":" + USER_ID;
     const existingUserCache = Store.get(userCacheKey);
     const legacy = Store.get(LEGACY_KEY);
-
     if (!existingUserCache && legacy &&
         Array.isArray(legacy.twist) && Array.isArray(legacy.classic)) {
       Store.set(userCacheKey, normalizeBucketState(legacy));
     }
-
     if (legacy !== null) localStorage.removeItem(LEGACY_KEY);
-
     await sync.init();
     renderAll();
   } catch (error) {
