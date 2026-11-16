@@ -1,7 +1,7 @@
 body { max-width: 1060px; }
 .layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 26px;
   align-items: start;
 }
@@ -28,5 +28,20 @@ body { max-width: 1060px; }
   border: 1px solid var(--border); border-radius: 999px;
   padding: 1px 8px;
 }
+.rail-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.rail-chip .rail-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-chip .rail-count { flex: 0 0 auto; }
 .task-row.done .t-meta, .task-row.done .t-next { opacity: 0.6; }
 #page-title { font-size: 1.2rem; color: var(--accent); margin: 18px 0 12px 0; }

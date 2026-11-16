@@ -85,30 +85,46 @@ function openNotePopup(ev, t) {
     document.removeEventListener("keydown", onEsc);
   }), 0);
 }
+function collapsedStoreKey() {
+  return "lp-closed-sections-" + (LP_SEL || "none");
+}
+function getCollapsed() {
+  try { return new Set(JSON.parse(localStorage.getItem(collapsedStoreKey()) || "[]")); }
+  catch (e) { return new Set(); }
+}
+function saveCollapsed(set) {
+  try { localStorage.setItem(collapsedStoreKey(), JSON.stringify(Array.from(set))); }
+  catch (e) { /* private mode etc. — just don't remember it */ }
+}
 function renderListView() {
   const rail = document.getElementById("list-rail");
   const area = document.getElementById("task-area");
   const today = todayStr();
   const lists = pageLists();
   if (!LP_SEL || !lists.some(l => l.id === LP_SEL)) LP_SEL = lists.length ? lists[0].id : null;
+  let railHtml = "";
   if (!lists.length) {
-    rail.innerHTML = '<span class="empty-note">No lists visible for this page yet. ' +
+    railHtml = '<span class="empty-note">No lists visible for this page yet. ' +
       (LP_SCOPE === "personal"
         ? "Personal lists stay invisible until owner assignment SQL is run for your account."
         : "") + "</span>";
   } else {
-    rail.innerHTML = lists.map(l => {
+    railHtml = lists.map(l => {
       const count = tasksCache.filter(
         t => !t.archived && !t.is_note && t.list_id === l.id).length;
       return '<button class="rail-chip' + (l.id === LP_SEL ? " sel" : "") +
         '" data-list="' + l.id + '">' +
-    '<span class="t-icon">' + esc(l.icon || "") + "</span>" +
-    esc(l.name) + ' <span class="rail-count">' + count + "</span></button>";
+        '<span class="t-icon">' + esc(l.icon || "") + "</span>" +
+    '<span class="rail-name">' + esc(l.name) + '</span>' +
+    '<span class="rail-count">' + count + "</span></button>";
     }).join("");
-    rail.querySelectorAll(".rail-chip").forEach(b => {
-      b.onclick = () => { LP_SEL = b.getAttribute("data-list"); renderListView(); };
-    });
   }
+  railHtml += '<button class="rail-chip rail-new" id="rail-new-list">＋ new list</button>';
+  rail.innerHTML = railHtml;
+  rail.querySelectorAll(".rail-chip[data-list]").forEach(b => {
+    b.onclick = () => { LP_SEL = b.getAttribute("data-list"); renderListView(); };
+  });
+  document.getElementById("rail-new-list").onclick = openNewList;
   fillListSelectForPage();
   window.EDITOR_DEFAULT_LIST = LP_SEL || undefined;
   if (!LP_SEL) {
@@ -121,39 +137,26 @@ function renderListView() {
       'hit “+ add task” to create the first one.</div>';
     return;
   }
-  const alphaSort = (a, b) => a.title.localeCompare(b.title);
-  const sortKey = t => {
-    if (!t.start_date) return "9999-12-31";
-    if (t.repeat_type === "none") return t.start_date;
-    return nextFireDate(t, today) || "9999-12-31";
-  };
-  const notes = tsks.filter(t => t.is_note).sort(alphaSort);
-  const real = tsks.filter(t => !t.is_note).sort((a, b) => {
-    const ka = sortKey(a), kb = sortKey(b);
-    if (ka !== kb) return ka < kb ? -1 : 1;
-    const ta = a.due_time || "99", tb = b.due_time || "99";
-    if (ta !== tb) return ta < tb ? -1 : 1;
-    return a.title.localeCompare(b.title);
-  });
+  const sorter = (a, b) =>
+    (a.due_time || "99") < (b.due_time || "99") ? -1 :
+    (a.due_time || "99") > (b.due_time || "99") ? 1 :
+    a.title.localeCompare(b.title);
+  const notes = tsks.filter(t => t.is_note).sort(sorter);
+  const real = tsks.filter(t => !t.is_note).sort(sorter);
   const groups = {};
   const order = [];
-  const loose = [];
   for (const t of real) {
-    if (!t.section) { loose.push(t); continue; }
-    const s = t.section;
+    const s = t.section || "";
     if (!groups[s]) { groups[s] = []; order.push(s); }
     groups[s].push(t);
   }
   const rowFor = (t, note) => {
     const occToday = occCache.find(o => o.task_id === t.id && o.orig_date === today);
     const doneToday = occToday && occToday.status === "done";
-    const nx = nextFireDate(t, today);
     const nf = note ? "" : (t.start_date
       ? (t.repeat_type === "none"
         ? (t.start_date < today ? "past" : "next: " + t.start_date.slice(5))
-        : (t.repeat_type === "afterdone" && !nx)
-          ? "waits on completion"
-          : "next: " + (nx ? nx.slice(5) : "—"))
+        : "next: " + (nextFireDate(t, today) || "—").slice(5))
       : "unscheduled");
     return '<div class="task-row' + (note ? " note" : "") + (doneToday ? " done" : "") +
       '" data-task="' + t.id + '" data-date="' + today + '">' +
@@ -163,23 +166,40 @@ function renderListView() {
       '<span class="t-next">' + nf + "</span>" +
       "</div>";
   };
+  const collapsed = getCollapsed();
   let html = "";
-  if (notes.length) {
-    html += '<div class="sec-head">Notes <span class="sec-count">· ' +
-      notes.length + "</span></div>";
-    for (const t of notes) html += rowFor(t, true);
-  }
   for (const s of order) {
-    html += '<div class="sec-head">' + esc(s) + ' <span class="sec-count">· ' +
-      groups[s].length + "</span></div>";
+    if (!s) {                                   
+      for (const t of groups[s]) html += rowFor(t, false);
+      continue;
+    }
+    html += '<div class="sec-block' + (collapsed.has(s) ? " closed" : "") +
+      '" data-sec="' + esc(s) + '">' +
+      '<div class="sec-head" data-sec="' + esc(s) + '"><span class="sec-arrow">▾</span> ' +
+      esc(s) + ' <span class="sec-count">· ' + groups[s].length + "</span></div>";
     for (const t of groups[s]) html += rowFor(t, false);
+    html += "</div>";
   }
-  if (loose.length) {
-    html += '<div class="sec-head">No Section <span class="sec-count">· ' +
-      loose.length + "</span></div>";
-    for (const t of loose) html += rowFor(t, false);
+  if (notes.length) {
+    html += '<div class="sec-block' + (collapsed.has("__notes__") ? " closed" : "") +
+      '" data-sec="__notes__">' +
+      '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
+      '<span class="sec-count">· ' + notes.length + "</span></div>";
+    for (const t of notes) html += rowFor(t, true);
+    html += "</div>";
   }
   area.innerHTML = html;
+  area.querySelectorAll(".sec-head").forEach(h => {
+    h.onclick = () => {
+      const blk = h.closest(".sec-block");
+      const key = h.getAttribute("data-sec");
+      const nowClosed = !blk.classList.contains("closed");
+      blk.classList.toggle("closed", nowClosed);
+      const set = getCollapsed();
+      if (nowClosed) set.add(key); else set.delete(key);
+      saveCollapsed(set);
+    };
+  });
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
     const t = tasksCache.find(x => x.id === taskId);
@@ -200,6 +220,73 @@ function renderListView() {
           date: today, time: t.due_time
         }, renderListView);
   });
+}
+let newListOverlay = null;
+function closeNewList() {
+  if (newListOverlay) { newListOverlay.remove(); newListOverlay = null; }
+}
+function openNewList() {
+  closeMenus(); closeDetailPopup(); closeNewList();
+  const ov = document.createElement("div");
+  ov.className = "new-list-overlay";
+  ov.innerHTML =
+    '<div class="new-list-modal">' +
+    '<h3>' + (LP_SCOPE === "household" ? "New shared list" : "New personal list") + "</h3>" +
+    '<label>List name<input id="nl-name" maxlength="60" placeholder="e.g. Stuff To Fix"></label>' +
+    '<label>Emoji (optional)<input id="nl-icon" maxlength="8" placeholder="🔧"></label>' +
+    '<div class="nl-btns"><button class="nl-cancel">cancel</button>' +
+    '<button class="nl-create">create</button></div>' +
+    '<div class="nl-msg"></div>' +
+    "</div>";
+  document.body.appendChild(ov);
+  newListOverlay = ov;
+  const msg = ov.querySelector(".nl-msg");
+  const nameEl = ov.querySelector("#nl-name");
+  ov.onclick = ev => { if (ev.target === ov) closeNewList(); };
+  ov.querySelector(".nl-cancel").onclick = closeNewList;
+  ov.querySelector(".nl-create").onclick = () => doCreateList();
+  nameEl.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") doCreateList();
+  });
+  setTimeout(() => document.addEventListener("keydown", function onEsc(k) {
+    if (k.key === "Escape") closeNewList();
+    document.removeEventListener("keydown", onEsc);
+  }), 0);
+  nameEl.focus();
+  async function doCreateList() {
+    const name = nameEl.value.trim();
+    if (!name) { msg.textContent = "Give it a name first."; nameEl.focus(); return; }
+    const icon = ov.querySelector("#nl-icon").value.trim() || null;
+    msg.textContent = "creating…";
+    try {
+      const l = await createNewList(name, icon);
+      listsCache.push(l);
+      LP_SEL = l.id;
+      closeNewList();
+      renderListView();
+    } catch (err) {
+      msg.textContent = "Couldn't create: " + (err && err.message ? err.message : err);
+    }
+  }
+}
+async function createNewList(name, icon) {
+  const maxSort = listsCache.reduce((m, l) => Math.max(m, l.sort_order || 0), 0);
+  const row = {
+    id: crypto.randomUUID(),
+    name: name,
+    icon: icon,
+    color: "8a7cff",
+    page: LP_SCOPE,
+    scope: LP_SCOPE === "household" ? "shared" : "personal",
+    sort_order: maxSort + 1
+  };
+  if (row.scope === "personal") {
+    const res = await sb.auth.getUser();
+    if (res && res.data && res.data.user) row.owner_id = res.data.user.id;
+  }
+  const { data, error } = await sb.from("task_lists").insert(row).select().single();
+  if (error) throw error;
+  return data;
 }
 async function initListPage(pageScope) {
   LP_SCOPE = pageScope;
