@@ -129,8 +129,10 @@ function renderListView() {
   const real = tsks.filter(t => !t.is_note).sort(sorter);
   const groups = {};
   const order = [];
+  const loose = [];
   for (const t of real) {
-    const s = t.section || "";
+    if (!t.section) { loose.push(t); continue; }
+    const s = t.section;
     if (!groups[s]) { groups[s] = []; order.push(s); }
     groups[s].push(t);
   }
@@ -160,9 +162,14 @@ function renderListView() {
     for (const t of notes) html += rowFor(t, true);
   }
   for (const s of order) {
-    if (s) html += '<div class="sec-head">' + esc(s) + ' <span class="sec-count">· ' +
+    html += '<div class="sec-head">' + esc(s) + ' <span class="sec-count">· ' +
       groups[s].length + "</span></div>";
     for (const t of groups[s]) html += rowFor(t, false);
+  }
+  if (loose.length) {
+    html += '<div class="sec-head">No Section <span class="sec-count">· ' +
+      loose.length + "</span></div>";
+    for (const t of loose) html += rowFor(t, false);
   }
   area.innerHTML = html;
   area.querySelectorAll(".task-row").forEach(row => {
