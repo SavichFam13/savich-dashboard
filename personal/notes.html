@@ -105,6 +105,7 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.45);
     transform: rotate(var(--rot, -2deg));
     transition: box-shadow 0.15s ease;
+    cursor: pointer;
   }
   .note.dragging {
     box-shadow: 0 16px 34px rgba(0,0,0,0.6);
@@ -155,12 +156,66 @@
     line-height: 1.55; padding: 10px 12px 14px;
     min-height: 130px; outline: none; display: block;
     overflow: hidden;
+    cursor: pointer;
   }
   .note textarea::placeholder { color: var(--dim); opacity: 0.6; }
   .note-meta {
     font-size: 0.62rem; color: var(--dim); opacity: 0.65;
     padding: 0 12px 8px; text-align: right;
   }
+
+  /* ---- expanded note popup (mini "today at a glance") ---- */
+  .expand-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 120; padding: 20px;
+  }
+  .expand-overlay.open { display: flex; }
+  .expand-box {
+    --nbord: #c9a0ff;
+    background: var(--panel);
+    border: 1px solid var(--nbord);
+    border-radius: 6px;
+    width: 480px; max-width: 94vw;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    transform: rotate(-1deg);
+  }
+  .expand-box.c0 { --nbord: #c9a0ff; }
+  .expand-box.c1 { --nbord: #5fd3c4; }
+  .expand-box.c2 { --nbord: #e10ab2; }
+  .expand-box.c3 { --nbord: #ff8a8a; }
+  .expand-box.c4 { --nbord: #a89bbd; }
+  .expand-box.c5 { --nbord: #e8c27a; }
+  .expand-box.c6 { --nbord: #7ddba3; }
+  .expand-box.c7 { --nbord: #8ab4ff; }
+  .expand-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(242,238,247,0.08);
+  }
+  .expand-title {
+    font-size: 0.78rem; font-weight: 700;
+    color: var(--nbord); letter-spacing: 1px;
+  }
+  .expand-age {
+    font-size: 0.66rem; color: var(--dim);
+    margin-left: auto;
+  }
+  .expand-close {
+    background: none; border: 1px solid transparent;
+    color: var(--dim); border-radius: 4px; cursor: pointer;
+    font-size: 0.95rem; padding: 2px 8px; line-height: 1;
+    font-family: inherit;
+  }
+  .expand-close:hover { border-color: var(--bad); color: var(--bad); }
+  #expand-ta {
+    width: 100%; background: transparent; border: none; resize: none;
+    color: var(--text); font-family: inherit; font-size: 0.95rem;
+    line-height: 1.6; padding: 14px 16px;
+    min-height: 230px; outline: none; display: block;
+    overflow: hidden;
+  }
+  #expand-ta::placeholder { color: var(--dim); opacity: 0.6; }
 
   /* ---- modal + toast (same as inventory page) ---- */
   .modal-overlay {
@@ -194,7 +249,7 @@
     color: var(--good); border-radius: 8px; padding: 12px 22px;
     font-size: 0.81rem; opacity: 0; pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
-    z-index: 110; max-width: 90vw; text-align: center;
+    z-index: 130; max-width: 90vw; text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -213,7 +268,7 @@
     <a href="../index.html" class="nav-btn">Dashboard</a>
   </div>
 </div>
-<p class="sub">Your personal wall of stickies &mdash; private to your account, saved to the cloud as you type. Grab a note by its top strip to move it anywhere on the board.</p>
+<p class="sub">Your personal wall of stickies &mdash; private to your account, saved to the cloud as you type. Grab a note by its top strip to move it; click a note to pop it open big for easy reading and editing.</p>
 
 <div class="toolbar">
   <div class="toolbar-left">
@@ -226,6 +281,17 @@
 <div class="board" id="board">
   <div class="board-hint" id="board-hint">
     A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
+  </div>
+</div>
+
+<div class="expand-overlay" id="expand-overlay">
+  <div class="expand-box" id="expand-box">
+    <div class="expand-head">
+      <span class="expand-title">STICKY NOTE</span>
+      <span class="expand-age" id="expand-age"></span>
+      <button class="expand-close" id="expand-close" title="close">&#10005;</button>
+    </div>
+    <textarea id="expand-ta" placeholder="type here&hellip;" spellcheck="false"></textarea>
   </div>
 </div>
 
@@ -247,10 +313,14 @@
 let notes = [];          // the rows from the cloud
 let uid = null;
 let zTop = 10;
-let editingId = null;    // note whose textarea has focus (skip during live reload)
 let draggingId = null;    // note currently being dragged
+let popupOpenId = null;   // note currently open in the expanded popup
 const textTimers = {};    // per-note debounced text saves
 const PALETTE_COUNT = 8;  // 0 lavender, 1 teal, 2 pink, 3 salmon, 4 grey, 5 gold, 6 mint, 7 sky
+
+const expandOverlay = document.getElementById("expand-overlay");
+const expandBox = document.getElementById("expand-box");
+const expandTa = document.getElementById("expand-ta");
 
 function esc(str) {
   return String(str == null ? "" : str)
@@ -293,6 +363,9 @@ async function savePatch(note, patch) {
       .update(patch).eq("id", note.id);
     if (error) throw error;
     setSync(true);
+    if (popupOpenId === note.id)
+      document.getElementById("expand-age").textContent =
+        "saved " + fmtAge(note.updated_at);
   } catch (e) {
     console.error("sticky save failed:", e.message);
     setSync(false);
@@ -303,8 +376,18 @@ function queueTextSave(note, text) {
   note.text = text;
   clearTimeout(textTimers[note.id]);
   textTimers[note.id] = setTimeout(() => {
+    delete textTimers[note.id];
     savePatch(note, { text: note.text, updated_at: stampNow() });
   }, 700);
+}
+
+function flushTextSave(note) {
+  // close popup / leave a note = save immediately, don't wait for the debounce
+  if (textTimers[note.id]) {
+    clearTimeout(textTimers[note.id]);
+    delete textTimers[note.id];
+    savePatch(note, { text: note.text, updated_at: stampNow() });
+  }
 }
 
 /* ---------- create / delete ---------- */
@@ -327,8 +410,7 @@ async function createNote() {
     notes.push(data);
     renderNotes();
     setSync(true);
-    const el = document.querySelector('.note[data-id="' + data.id + '"] textarea');
-    if (el) { el.focus(); bringToFront(el.closest(".note")); }
+    openExpand(data);   // brand-new note pops straight open, ready to type
   } catch (e) {
     console.error(e);
     setSync(false);
@@ -339,6 +421,7 @@ async function createNote() {
 async function deleteNote(id) {
   const n = notes.find(r => r.id === id);
   if (!n) return;
+  if (popupOpenId === id) closeExpand();
   const preview = (n.text || "").split("\n")[0].slice(0, 60);
   const ok = await askConfirm(
     "Throw this sticky away?",
@@ -358,6 +441,54 @@ async function deleteNote(id) {
     showToast("Could not delete the note.");
   }
 }
+
+/* ---------- expanded note popup ---------- */
+
+function autosize(ta, min) {
+  ta.style.height = "auto";
+  ta.style.height = Math.max(min, ta.scrollHeight) + "px";
+}
+
+function openExpand(n) {
+  popupOpenId = n.id;
+  expandBox.className = "expand-box c" + (n.color || 0);
+  expandTa.value = n.text || "";
+  document.getElementById("expand-age").textContent = "saved " + fmtAge(n.updated_at);
+  expandOverlay.classList.add("open");
+  autosize(expandTa, 230);
+  expandTa.focus();
+}
+
+function closeExpand() {
+  if (popupOpenId === null) return;
+  const n = notes.find(r => r.id === popupOpenId);
+  popupOpenId = null;
+  expandOverlay.classList.remove("open");
+  if (n) {
+    flushTextSave(n);
+    updateTileText(n);
+  }
+}
+
+function updateTileText(n) {
+  const tile = document.querySelector('.note[data-id="' + n.id + '"] textarea');
+  if (tile) {
+    tile.value = n.text || "";
+    autosize(tile, 130);
+  }
+}
+
+expandTa.addEventListener("input", () => {
+  const n = notes.find(r => r.id === popupOpenId);
+  if (!n) return;
+  autosize(expandTa, 230);
+  queueTextSave(n, expandTa.value);
+  updateTileText(n);
+});
+document.getElementById("expand-close").onclick = closeExpand;
+expandOverlay.addEventListener("click", e => {
+  if (e.target === expandOverlay) closeExpand();
+});
 
 /* ---------- render ---------- */
 
@@ -400,18 +531,12 @@ function renderNotes() {
     del.innerHTML = "&#10005;";
     del.onclick = (e) => { e.stopPropagation(); deleteNote(n.id); };
 
+    // read-only preview on the wall — editing happens in the expanded popup
     const ta = document.createElement("textarea");
-    ta.placeholder = "type here\u2026";
+    ta.readOnly = true;
+    ta.placeholder = "click to type\u2026";
     ta.spellcheck = false;
     ta.value = n.text || "";
-    if (editingId === n.id) ta.focus();
-    ta.addEventListener("focus", () => { editingId = n.id; bringToFront(note); });
-    ta.addEventListener("blur", () => { if (editingId === n.id) editingId = null; });
-    ta.addEventListener("input", () => {
-      ta.style.height = "auto";
-      ta.style.height = Math.max(130, ta.scrollHeight) + "px";
-      queueTextSave(n, ta.value);
-    });
 
     const meta = document.createElement("div");
     meta.className = "note-meta";
@@ -422,10 +547,14 @@ function renderNotes() {
     note.appendChild(ta);
     note.appendChild(meta);
     attachDrag(note, grab, n);
-    board.appendChild(note);
 
-    ta.style.height = "auto";
-    ta.style.height = Math.max(130, ta.scrollHeight) + "px";
+    note.addEventListener("click", (e) => {
+      if (e.target.closest(".note-del")) return;
+      openExpand(n);
+    });
+
+    board.appendChild(note);
+    autosize(ta, 130);
 
     if (q && !(n.text || "").toLowerCase().includes(q)) note.classList.add("dimmed");
   }
@@ -488,7 +617,7 @@ function setupRealtime() {
 
 function scheduleRemoteReload() {
   // don't yank the wall out from under someone mid-edit / mid-drag
-  if (editingId !== null || draggingId !== null) {
+  if (popupOpenId !== null || draggingId !== null) {
     clearTimeout(rtTimer);
     rtTimer = setTimeout(scheduleRemoteReload, 800);
     return;
@@ -525,8 +654,9 @@ document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(false);
 });
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape" &&
-      document.getElementById("modal-overlay").classList.contains("open")) {
+  if (e.key !== "Escape") return;
+  if (expandOverlay.classList.contains("open")) { closeExpand(); return; }
+  if (document.getElementById("modal-overlay").classList.contains("open")) {
     closeModal(false);
   }
 });
