@@ -9,7 +9,9 @@ function dowsText(t) {
 }
 function repeatDescr(t) {
   if (t.is_note) return "note";
-  const tm = t.due_time ? " · " + fmtTime(t.due_time) : " · anytime";
+  let tm = t.due_time ? " · " + fmtTime(t.due_time) : " · anytime";
+  if (t.repeat_count) tm += " · " + t.repeat_count + "× total";
+  if (t.repeat_until) tm += " · ends " + t.repeat_until.slice(5);
   switch (t.repeat_type) {
     case "none":     return "One-time" + tm;
     case "daily":    return "Every day" + tm;
@@ -17,7 +19,9 @@ function repeatDescr(t) {
     case "weekly":   return "Weekly on " + dowsText(t) + tm;
     case "biweekly": return "Every " + (t.repeat_every || 2) +
                       " weeks on " + dowsText(t) + tm;
-    case "monthly":  return ((t.repeat_every || 1) > 1
+    case "monthly":  return ((t.repeat_every || 1) === 12
+                      ? "Yearly on day "
+                      : (t.repeat_every || 1) > 1
                       ? "Every " + t.repeat_every + " mo. on day "
                       : "Monthly on day ") +
                       (t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2])) + tm;

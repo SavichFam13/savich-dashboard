@@ -57,6 +57,12 @@
     <option value="afterdone">Every N days after completion</option>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
+  <div id="ed-ends-row" style="display:none">
+    <label for="ed-count">Ends — after … times (blank = forever)</label>
+    <input id="ed-count" type="number" min="1" max="999">
+    <label for="ed-until">… or on date (blank = no end date)</label>
+    <input id="ed-until" type="date">
+  </div>
   <div id="ed-mday-row" style="display:none">
     <label for="ed-mday">Day of month</label>
     <input id="ed-mday" type="number" min="1" max="31" readonly

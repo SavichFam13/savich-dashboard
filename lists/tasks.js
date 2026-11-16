@@ -78,6 +78,7 @@ function rollingDueDate(task) {
 function ruleFiresOn(task, dateStr) {
   const start = task.start_date;
   if (dateStr < start) return false;
+  if (task.repeat_until && dateStr > task.repeat_until) return false;
   const wd = parseDateStr(dateStr).getDay();
   switch (task.repeat_type) {
     case "none":
@@ -132,6 +133,20 @@ function movedHereOn(occRows, taskId, dateStr) {
   return occRows.find(o =>
     o.task_id === taskId && o.moved_to === dateStr && o.status !== "done");
 }
+function countRemaining(t, occRows, onDate) {
+  if (!t.repeat_count) return Infinity;
+  let fired = 0;
+  const doneDates = {};
+  for (const o of occRows) {
+    if (o.task_id === t.id && (o.status === "done" || o.status === "skipped"))
+      doneDates[o.orig_date] = true;
+  }
+  for (let d = t.start_date; d <= onDate; d = addDaysStr(d, 1)) {
+    if (doneDates[d]) fired++;
+    else if (ruleFiresOn(t, d) && d < onDate) fired++;
+  }
+  return t.repeat_count - fired;
+}
 function buildDayModel(tasks, lists, occRows, dateStr, today) {
   const listById = {};
   for (const l of lists) listById[l.id] = l;
@@ -155,7 +170,7 @@ function buildDayModel(tasks, lists, occRows, dateStr, today) {
                  time: t.due_time, date: mh.orig_date, moved: true });
       continue;
     }
-    if (ruleFiresOn(t, dateStr)) {
+    if (ruleFiresOn(t, dateStr) && countRemaining(t, occRows, dateStr) > 0) {
       out.push({ task: t, list: listById[t.list_id], occ: o || null,
                  time: t.due_time, date: dateStr, moved: false });
     }
@@ -172,6 +187,8 @@ function collectOverdue(tasks, occRows, today, horizonDays = 60) {
   for (const t of tasks) {
     if (t.archived) continue;
     if (t.is_note || !t.start_date) continue;
+    if (t.repeat_count && countRemaining(t, occRows, today) <= 0) continue;
+    if (t.repeat_count && countRemaining(t, occRows, today) <= 0) continue;
     if (t.repeat_type === "none") {
       if (t.start_date >= from && t.start_date < today) {
         const o = occByTD[t.id + "|" + t.start_date];
@@ -491,6 +508,10 @@ function openEditor(task) {
     rt === "afterdone" ? "Every … days after completion" : "Every …";
   document.getElementById("ed-nth-row").style.display =
     (rt === "nthmonth") ? "block" : "none";
+  document.getElementById("ed-count").value = t.repeat_count || "";
+  document.getElementById("ed-until").value = t.repeat_until || "";
+  document.getElementById("ed-ends-row").style.display =
+    (rt === "none") ? "none" : "block";
   selectedDows = Array.isArray(t.repeat_days) ? t.repeat_days.slice() : [];
   renderDows();
   p.classList.add("open");
@@ -554,7 +575,15 @@ async function saveEditor() {
       : null,
     repeat_nth: repeat === "nthmonth"
       ? Number(document.getElementById("ed-nth").value) || 1
-      : null
+      : null,
+    repeat_count:
+      (repeat !== "none" && document.getElementById("ed-count").value)
+        ? Number(document.getElementById("ed-count").value)
+        : null,
+    repeat_until:
+      (repeat !== "none" && document.getElementById("ed-until").value)
+        ? document.getElementById("ed-until").value
+        : null
   };
   if (!isNote && needsDow && !payload.repeat_days.length) {
     flash("pick at least one day of the week"); return;
@@ -617,6 +646,8 @@ function initEditorUI() {
       v === "afterdone" ? "Every … days after completion" : "Every …";
     document.getElementById("ed-nth-row").style.display =
       (v === "nthmonth") ? "block" : "none";
+    document.getElementById("ed-ends-row").style.display =
+      (v === "none") ? "none" : "block";
   });
   const md = document.getElementById("ed-mday");
   if (md) md.addEventListener("click", openMdayCal);
