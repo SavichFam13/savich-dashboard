@@ -137,10 +137,13 @@ function renderListView() {
   const rowFor = (t, note) => {
     const occToday = occCache.find(o => o.task_id === t.id && o.orig_date === today);
     const doneToday = occToday && occToday.status === "done";
+    const nx = nextFireDate(t, today);
     const nf = note ? "" : (t.start_date
       ? (t.repeat_type === "none"
         ? (t.start_date < today ? "past" : "next: " + t.start_date.slice(5))
-        : "next: " + (nextFireDate(t, today) || "—").slice(5))
+        : (t.repeat_type === "afterdone" && !nx)
+          ? "waits on completion"
+          : "next: " + (nx ? nx.slice(5) : "—"))
       : "unscheduled");
     return '<div class="task-row' + (note ? " note" : "") + (doneToday ? " done" : "") +
       '" data-task="' + t.id + '" data-date="' + today + '">' +
@@ -151,15 +154,15 @@ function renderListView() {
       "</div>";
   };
   let html = "";
-  for (const s of order) {
-    if (s) html += '<div class="sec-head">' + esc(s) + ' <span class="sec-count">· ' +
-      groups[s].length + "</span></div>";
-    for (const t of groups[s]) html += rowFor(t, false);
-  }
   if (notes.length) {
     html += '<div class="sec-head">Notes <span class="sec-count">· ' +
       notes.length + "</span></div>";
     for (const t of notes) html += rowFor(t, true);
+  }
+  for (const s of order) {
+    if (s) html += '<div class="sec-head">' + esc(s) + ' <span class="sec-count">· ' +
+      groups[s].length + "</span></div>";
+    for (const t of groups[s]) html += rowFor(t, false);
   }
   area.innerHTML = html;
   area.querySelectorAll(".task-row").forEach(row => {

@@ -236,3 +236,19 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   padding: 10px; margin-bottom: 10px;
   max-height: 320px; overflow-y: auto;
 }
+.task-row { position: relative; }
+.task-row .t-title { display: block; }
+.task-row .t-meta {
+  display: block;
+  margin: 1px 0 0 26px;
+  color: #f9a8d4;
+  font-size: 0.74rem;
+  white-space: normal;
+}
+.task-row .t-next {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  color: #f9a8d4;
+  font-size: 0.74rem;
+}
