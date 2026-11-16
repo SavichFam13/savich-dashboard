@@ -471,7 +471,8 @@ function openEditor(task) {
   editingTask = task || null;
   const p = document.getElementById("editor-panel");
   const t = task || {};
-  const rt = t.repeat_type || "none";
+  const rt = (t.repeat_type === "monthly" && Number(t.repeat_every) === 12)
+    ? "yearly" : (t.repeat_type || "none");
   document.getElementById("ed-heading").textContent =
     task ? "Edit Task Series" : "New Task";
   document.getElementById("ed-title").value = t.title || "";
@@ -496,12 +497,15 @@ function openEditor(task) {
     t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
   document.getElementById("ed-mday").dataset.own = t.repeat_mday || "";
   document.getElementById("ed-mday-row").style.display =
-    (rt === "monthly") ? "block" : "none";
+    (rt === "monthly" || rt === "yearly") ? "block" : "none";
   document.getElementById("ed-every").value = t.repeat_every ||
-    (rt === "afterdone" ? 3 : rt === "biweekly" ? 2 : rt === "monthly" ? 1 : 6);
+    (rt === "yearly" ? 12 : rt === "afterdone" ? 3 : rt === "biweekly" ? 2 :
+     rt === "monthly" ? 1 : 6);
   document.getElementById("ed-every").dataset.own = t.repeat_every || "";
+  document.getElementById("ed-every").dataset.rt0 = rt;
   document.getElementById("ed-every-row").style.display =
-    (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly") ? "block" : "none";
+    (rt !== "yearly" &&
+     (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly")) ? "block" : "none";
   document.getElementById("ed-every-label").textContent =
     (rt === "nthmonth" || rt === "monthly") ? "Every … months" :
     rt === "biweekly" ? "Every … weeks" :
@@ -547,7 +551,9 @@ function renderDows() {
 async function saveEditor() {
   const title = document.getElementById("ed-title").value.trim();
   if (!title) { flash("give the task a name first"); return; }
-  const repeat = document.getElementById("ed-repeat").value;
+  let repeat = document.getElementById("ed-repeat").value;
+  const isYearly = repeat === "yearly";
+  if (isYearly) repeat = "monthly";
   const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
   const needsEvery = repeat === "nthmonth" || repeat === "biweekly" ||
     repeat === "afterdone" || repeat === "monthly";
@@ -570,9 +576,9 @@ async function saveEditor() {
       repeat === "monthly"
         ? Number(document.getElementById("ed-mday").value) || 1
         : null,
-    repeat_every: needsEvery
+    repeat_every: isYearly ? 12 : (needsEvery
       ? Number(document.getElementById("ed-every").value) || 1
-      : null,
+      : null),
     repeat_nth: repeat === "nthmonth"
       ? Number(document.getElementById("ed-nth").value) || 1
       : null,
@@ -630,16 +636,27 @@ function initEditorUI() {
     document.getElementById("ed-dow-row").style.display =
       (v === "weekly" || v === "biweekly" || v === "nthmonth") ? "flex" : "none";
     document.getElementById("ed-mday-row").style.display =
-      (v === "monthly") ? "block" : "none";
-    if (v === "monthly") {
-      const evEl = document.getElementById("ed-every");
-      const mdEl = document.getElementById("ed-mday");
-      if (!evEl.dataset.own) evEl.value = 1;
-      if (!mdEl.dataset.own)
+      (v === "monthly" || v === "yearly") ? "block" : "none";
+    const evEl = document.getElementById("ed-every");
+    const mdEl = document.getElementById("ed-mday");
+    const rt0 = evEl.dataset.rt0 || "none";
+    if (v === rt0) {
+      evEl.value = evEl.dataset.own ||
+        (v === "yearly" ? 12 : v === "afterdone" ? 3 : v === "biweekly" ? 2 :
+         v === "monthly" ? 1 : 6);
+      if (v === "monthly" || v === "yearly")
+        mdEl.value = mdEl.dataset.own ||
+          Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
+    } else {
+      evEl.value = v === "yearly" ? 12 : v === "monthly" ? 1 :
+        v === "biweekly" ? 2 : v === "afterdone" ? 3 :
+        v === "nthmonth" ? 6 : evEl.value;
+      if (v === "monthly" || v === "yearly")
         mdEl.value = Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
     }
     document.getElementById("ed-every-row").style.display =
-      (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly") ? "block" : "none";
+      (v !== "yearly" &&
+       (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly")) ? "block" : "none";
     document.getElementById("ed-every-label").textContent =
       (v === "nthmonth" || v === "monthly") ? "Every … months" :
       v === "biweekly" ? "Every … weeks" :
