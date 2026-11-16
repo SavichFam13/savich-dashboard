@@ -72,6 +72,16 @@
     margin: 0;
     line-height: 1.55;
   }
+    /* ---- top row: two labeled sections side by side ---- */
+  .top-split {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; align-items: start; margin-bottom: 46px;
+  }
+  .top-split .nav-grid { margin-bottom: 0; }
+  @media (max-width: 780px) {
+    .top-split { grid-template-columns: 1fr; }
+  }
+
   .footer-note {
     font-size: 0.73rem;
     color: var(--dim);
@@ -93,7 +103,6 @@
 
   /* ---- Today widget (always the same size, never grows) ---- */
   .today-widget {
-    grid-column: 1 / -1;
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -253,20 +262,32 @@
 
 <h1>Savich Family Dashboard</h1>
 
-<h2 class="section">Today &amp; Tasks</h2>
-<nav class="nav-grid">
-  <a href="lists/today.html" class="today-widget" id="today-widget">
-    <div class="tw-head">
-      <span class="tw-title">Today</span>
-      <span class="tw-count" id="tw-count">loading…</span>
-      <span class="tw-overdue" id="tw-overdue"></span>
-    </div>
-    <div class="tw-progress"><div class="tw-bar" id="tw-bar"></div></div>
-    <div class="tw-next" id="tw-next">Checking the cloud…</div>
-    <div class="tw-open-hint">click to open today's list right here — ctrl/middle-click for the full page</div>
-  </a>
-</nav>
-
+<div class="top-split">
+  <div>
+    <h2 class="section">Health &amp; Wellness</h2>
+    <nav class="nav-grid">
+      <a href="health/checkin.html" class="nav-card">
+        <h3>Daily Health Checkin</h3>
+        <p>UNDER CONSTRUCTION!</p>
+      </a>
+    </nav>
+  </div>
+  <div>
+    <h2 class="section">Today at a Glance</h2>
+    <nav class="nav-grid">
+      <a href="lists/today.html" class="today-widget" id="today-widget">
+        <div class="tw-head">
+          <span class="tw-title">Today</span>
+          <span class="tw-count" id="tw-count">loading…</span>
+          <span class="tw-overdue" id="tw-overdue"></span>
+        </div>
+        <div class="tw-progress"><div class="tw-bar" id="tw-bar"></div></div>
+        <div class="tw-next" id="tw-next">Checking the cloud…</div>
+        <div class="tw-open-hint">click to open today's list right here — ctrl/middle-click for the full page</div>
+      </a>
+    </nav>
+  </div>
+</div>
 <h2 class="section">Guild Wars 2</h2>
 <nav class="nav-grid">
   <a href="gw2/trackers.html" class="nav-card">
@@ -307,13 +328,6 @@
   </a>
   <a href="home/bos.html" class="nav-card">
     <h3>Book of Shadows</h3>
-    <p>UNDER CONSTRUCTION!</p>
-  </a>
-</nav>
-<h2 class="section">Health & Wellness</h2>
-<nav class="nav-grid">
-  <a href="health/checkin.html" class="nav-card">
-    <h3>Daily Health Checkin</h3>
     <p>UNDER CONSTRUCTION!</p>
   </a>
 </nav>
