@@ -242,7 +242,7 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   flex: 1 1 100%;
   margin: 0;
   padding: 0 12px 0 34px;
-  color: #f9a8d4;
+  color: #ff01d9;
   font-size: 0.74rem;
   white-space: normal;
 }
@@ -250,11 +250,11 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   position: absolute;
   right: 12px;
   top: 10px;
-  color: #f9a8d4;
+  color: #ff01d9;
   font-size: 0.74rem;
   white-space: nowrap;
 }
-.task-row.note .t-meta { color: #f9a8d4; }
+.task-row.note .t-meta { color: #ff01d9; }
 .t-icon {
   flex: 0 0 auto;
   min-width: 26px;

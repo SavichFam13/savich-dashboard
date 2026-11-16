@@ -234,13 +234,6 @@ function renderListView() {
     if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), -1); };
     if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), 1); };
   });
-  area.querySelectorAll(".sec-head").forEach(h => {
-    const secName = h.getAttribute("data-sec");
-    const up = h.querySelector(".sec-up");
-    const dn = h.querySelector(".sec-down");
-    if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(secName, -1); };
-    if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(secName, 1); };
-  });  
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
     const t = tasksCache.find(x => x.id === taskId);
