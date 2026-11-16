@@ -115,11 +115,12 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .item-menu button:hover { border-color: var(--accent2); color: var(--accent2); }
 .item-menu button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .item-menu input[type="date"] { color-scheme: dark; cursor: text; }
-.menu-x {
+.item-menu .menu-x {
   position: absolute; top: -12px; right: -12px;
   width: 24px; height: 24px; border-radius: 50%;
   background: var(--bad); color: #121016; border: none;
   font-weight: bold; cursor: pointer; font-size: 0.8rem;
+  display: block; margin: 0; padding: 0; text-align: center;
 }
 .panel {
   position: fixed; top: 0; right: -420px; width: 380px; max-width: 92vw;
@@ -196,22 +197,24 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   display: flex; align-items: center; justify-content: space-between;
   margin: 2px 0 8px;
 }
-.mc-nav button {
+.item-menu .mc-nav button {
   background: none; border: 1px solid var(--border); color: var(--dim);
   border-radius: 4px; width: 22px; height: 22px; cursor: pointer;
   font-family: inherit;
+  display: inline-block; margin: 0; padding: 0; text-align: center;
 }
-.mc-nav button:hover { color: var(--accent2); border-color: var(--accent2); }
+.item-menu .mc-nav button:hover { color: var(--accent2); border-color: var(--accent2); }
 .mc-title { color: var(--accent2); font-size: 0.78rem; font-weight: 700; }
 .mc-grid { display: grid; grid-template-columns: repeat(7, 32px); gap: 3px; }
 .mc-dow { font-size: 0.62rem; color: var(--dim); text-align: center; padding: 2px 0; }
-.mc-day {
+.item-menu .mc-day {
   background: var(--panel); border: 1px solid var(--border); color: var(--text);
   border-radius: 5px; height: 26px; font-family: inherit; font-size: 0.76rem;
   cursor: pointer; padding: 0;
+  display: block; width: auto; margin: 0; text-align: center;
 }
-.mc-day:hover { border-color: var(--accent2); color: var(--accent2); }
-.mc-day.sel { background: var(--accent2); color: #121016; font-weight: 700; }
+.item-menu .mc-day:hover { border-color: var(--accent2); color: var(--accent2); }
+.item-menu .mc-day.sel { background: var(--accent2); color: #121016; font-weight: 700; }
 .task-row.note { opacity: 0.8; border-style: dashed; }
 .task-row.note .cb { visibility: hidden; }
 .task-row.note .t-meta { color: var(--accent); }
@@ -221,3 +224,15 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   text-transform: none; letter-spacing: 0; margin: 12px 0 0 0;
 }
 .panel .ed-note-flag input { width: auto; }
+.task-row.note { cursor: pointer; }
+.note-popup { width: 300px; max-width: 92vw; padding: 14px; }
+.np-title {
+  color: var(--accent); font-size: 0.85rem; font-weight: 700;
+  margin: 0 0 8px 0; padding-right: 20px;
+}
+.np-body {
+  font-size: 0.78rem; color: var(--text); white-space: pre-wrap;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px; margin-bottom: 10px;
+  max-height: 320px; overflow-y: auto;
+}

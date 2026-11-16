@@ -17,8 +17,10 @@ function repeatDescr(t) {
     case "weekly":   return "Weekly on " + dowsText(t) + tm;
     case "biweekly": return "Every " + (t.repeat_every || 2) +
                       " weeks on " + dowsText(t) + tm;
-    case "monthly":  return "Monthly on day " +
-                      (t.repeat_mday || Number(t.start_date.split("-")[2])) + tm;
+    case "monthly":  return ((t.repeat_every || 1) > 1
+                      ? "Every " + t.repeat_every + " mo. on day "
+                      : "Monthly on day ") +
+                      (t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2])) + tm;
     case "nthmonth": return "Every " + (t.repeat_every || 1) + " mo. on the " +
                       nthName(t.repeat_nth || 1) + " " + dowsText(t) + tm;
     case "afterdone":return "Every " + (t.repeat_every || 3) +
@@ -50,6 +52,34 @@ function fillListSelectForPage() {
     sel.appendChild(opt);
   }
   if (prev && pageLists().some(l => l.id === prev)) sel.value = prev;
+}
+let notePopupEl = null;
+function closeNotePopup() {
+  if (notePopupEl) { notePopupEl.remove(); notePopupEl = null; }
+}
+function openNotePopup(ev, t) {
+  closeMenus(); openMiniCancel(); closeNotePopup();
+  const el = document.createElement("div");
+  el.className = "item-menu note-popup";
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<div class="np-title">' + esc(t.title) + "</div>" +
+    '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
+    '<button data-act="edit">✎ edit this note</button>';
+  document.body.appendChild(el);
+  notePopupEl = el;
+  el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
+  el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
+  el.querySelector(".menu-x").onclick = closeNotePopup;
+  el.querySelector('[data-act="edit"]').onclick = () => { closeNotePopup(); openEditor(t); };
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(mev) {
+    if (notePopupEl && !notePopupEl.contains(mev.target)) closeNotePopup();
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+  setTimeout(() => document.addEventListener("keydown", function onEsc(kev) {
+    if (kev.key === "Escape") closeNotePopup();
+    document.removeEventListener("keydown", onEsc);
+  }), 0);
 }
 function renderListView() {
   const rail = document.getElementById("list-rail");
@@ -136,15 +166,17 @@ function renderListView() {
       if (ev.target.classList.contains("cb")) {
         if (row.classList.contains("done")) { await undoOverride(taskId, today); renderListView(); }
         else { await markDone(taskId, today); renderListView(); }
-      } else if (ev.target.classList.contains("t-title")) {
-        openEditor(t);
+      } else if (t.is_note || ev.target.classList.contains("t-title")) {
+        openDetailPopup(ev, t);
       }
     });
-    row.oncontextmenu = ev => openTaskMenu(ev, {
-      task: t,
-      occ: occCache.find(o => o.task_id === taskId && o.orig_date === today),
-      date: today, time: t.due_time
-    }, renderListView);
+    row.oncontextmenu = t.is_note
+      ? ev => { ev.preventDefault(); openDetailPopup(ev, t); }
+      : ev => openTaskMenu(ev, {
+          task: t,
+          occ: occCache.find(o => o.task_id === taskId && o.orig_date === today),
+          date: today, time: t.due_time
+        }, renderListView);
   });
 }
 async function initListPage(pageScope) {

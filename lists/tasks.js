@@ -103,7 +103,12 @@ function ruleFiresOn(task, dateStr) {
     }
     case "monthly": {
       const md = task.repeat_mday || Number(start.split("-")[2]);
-      return Number(dateStr.split("-")[2]) === md;
+      if (Number(dateStr.split("-")[2]) !== md) return false;
+      const every = task.repeat_every || 1;
+      const [y, m] = dateStr.split("-").map(Number);
+      const [sy, sm] = start.split("-").map(Number);
+      const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
+      return mdiff >= 0 && mdiff % every === 0;
     }
     case "nthmonth": {
       if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
@@ -289,6 +294,34 @@ async function undoOverride(taskId, dateStr) {
 function closeMenus() {
   document.querySelectorAll(".item-menu").forEach(m => m.remove());
 }
+let detailPopupEl = null;
+function closeDetailPopup() {
+  if (detailPopupEl) { detailPopupEl.remove(); detailPopupEl = null; }
+}
+function openDetailPopup(ev, t) {
+  closeMenus(); closeDetailPopup();
+  const el = document.createElement("div");
+  el.className = "item-menu note-popup";
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<div class="np-title">' + esc(t.title) + "</div>" +
+    '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
+    '<button data-act="edit">✎ edit series</button>';
+  document.body.appendChild(el);
+  detailPopupEl = el;
+  el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
+  el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
+  el.querySelector(".menu-x").onclick = closeDetailPopup;
+  el.querySelector('[data-act="edit"]').onclick = () => { closeDetailPopup(); openEditor(t); };
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(mev) {
+    if (detailPopupEl && !detailPopupEl.contains(mev.target)) closeDetailPopup();
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+  setTimeout(() => document.addEventListener("keydown", function onEsc(kev) {
+    if (kev.key === "Escape") closeDetailPopup();
+    document.removeEventListener("keydown", onEsc);
+  }), 0);
+}
 function openTaskMenu(e, item, rerender) {
   e.preventDefault();
   closeMenus();
@@ -447,11 +480,11 @@ function openEditor(task) {
   document.getElementById("ed-mday-row").style.display =
     (rt === "monthly") ? "block" : "none";
   document.getElementById("ed-every").value = t.repeat_every ||
-    (rt === "afterdone" ? 3 : rt === "biweekly" ? 2 : 6);
+    (rt === "afterdone" ? 3 : rt === "biweekly" ? 2 : rt === "monthly" ? 1 : 6);
   document.getElementById("ed-every-row").style.display =
-    (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone") ? "block" : "none";
+    (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly") ? "block" : "none";
   document.getElementById("ed-every-label").textContent =
-    rt === "nthmonth" ? "Every … months" :
+    (rt === "nthmonth" || rt === "monthly") ? "Every … months" :
     rt === "biweekly" ? "Every … weeks" :
     rt === "afterdone" ? "Every … days after completion" : "Every …";
   document.getElementById("ed-nth-row").style.display =
@@ -493,7 +526,8 @@ async function saveEditor() {
   if (!title) { flash("give the task a name first"); return; }
   const repeat = document.getElementById("ed-repeat").value;
   const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
-  const needsEvery = repeat === "nthmonth" || repeat === "biweekly" || repeat === "afterdone";
+  const needsEvery = repeat === "nthmonth" || repeat === "biweekly" ||
+    repeat === "afterdone" || repeat === "monthly";
   const isNote = document.getElementById("ed-note").checked;
   const dateVal = document.getElementById("ed-date").value;
   if (!isNote && repeat !== "none" && !dateVal) {
@@ -567,9 +601,9 @@ function initEditorUI() {
     document.getElementById("ed-mday-row").style.display =
       (v === "monthly") ? "block" : "none";
     document.getElementById("ed-every-row").style.display =
-      (v === "nthmonth" || v === "biweekly" || v === "afterdone") ? "block" : "none";
+      (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly") ? "block" : "none";
     document.getElementById("ed-every-label").textContent =
-      v === "nthmonth" ? "Every … months" :
+      (v === "nthmonth" || v === "monthly") ? "Every … months" :
       v === "biweekly" ? "Every … weeks" :
       v === "afterdone" ? "Every … days after completion" : "Every …";
     document.getElementById("ed-nth-row").style.display =
@@ -648,7 +682,7 @@ function wireRows(area, rerender, viewDate) {
         if (ev.shiftKey) { await undoOverride(taskId, dateStr); rerender(); }
         else { await markDone(taskId, dateStr); rerender(); }
       } else if (ev.target.classList.contains("t-title")) {
-        openEditor(t);
+        openDetailPopup(ev, t);
       }
     });
     row.oncontextmenu = ev =>
