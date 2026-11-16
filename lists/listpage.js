@@ -187,7 +187,7 @@ function renderListView() {
       : "unscheduled");
     return '<div class="task-row' + (note ? " note" : "") + (doneToday ? " done" : "") +
       '" data-task="' + t.id + '" data-date="' + today + '">' +
-      '<span class="cb" title="done today · shift-click = undo"></span>' +
+      '<span class="cb" title="click = done"></span>' +
       '<span class="t-title">' + esc(t.title) + "</span>" +
       '<span class="t-meta">' + esc(repeatDescr(t)) + "</span>" +
       '<span class="t-next">' + nf + "</span>" +
@@ -232,7 +232,7 @@ function renderListView() {
   }
   if (handled.length) {
     html += '<div class="sec-block" data-sec="__donetoday__">' +
-      '<div class="sec-head" data-sec="__donetoday__"><span class="sec-arrow">▾</span> Done · skipped today ' +
+      '<div class="sec-head" data-sec="__donetoday__"><span class="sec-arrow">▾</span> Completed ' +
       '<span class="sec-count">· ' + handled.length + "</span></div>";
     for (const t of handled) html += rowFor(t, false);
     html += "</div>";

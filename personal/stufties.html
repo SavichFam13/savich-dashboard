@@ -728,7 +728,6 @@ function render() {
   data.list.forEach((item, i) => {
     const div = document.createElement("div");
     div.className = "plushie" + (item.fav ? " fav" : "");
-    // stagger the float so a big herd ripples instead of bouncing in sync
     div.style.animationDelay = (i * 0.45) + "s";
     div.setAttribute("data-i", i);
     div.innerHTML = `
@@ -1013,7 +1012,7 @@ renderAll();
 (async function initSharedCloud() {
   try {
     const session = await requireAuth();
-    if (!session) return; // bounced to login
+    if (!session) return; 
 
     const cloud = await loadBlob(CLOUD_KEY);
     if (cloud) {

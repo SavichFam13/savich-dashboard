@@ -745,7 +745,7 @@ function taskRowHTML(it, isOverdue, rerender) {
     it.date.slice(5) : (fmtTime(it.time) || "anytime");
   return '<div class="task-row' + odAttr + '" data-task="' + t.id +
     '" data-date="' + (it.occ ? it.occ.orig_date : it.date) + '">' +
-    '<span class="cb" title="click = done · shift-click = undo"></span>' +
+    '<span class="cb" title="click = done"></span>' +
     '<span class="t-time' + (it.time ? "" : " none") + '">' + when + "</span>" +
     '<span class="t-title" title="click to edit the series">' +
     esc(t.title) + movedTag + "</span>" +
@@ -761,8 +761,7 @@ function wireRows(area, rerender, viewDate) {
     if (!t) return;
     row.addEventListener("click", async ev => {
       if (ev.target.classList.contains("cb")) {
-        if (ev.shiftKey) { await undoOverride(taskId, dateStr); rerender(); }
-        else { await markDone(taskId, dateStr); rerender(); }
+        await markDone(taskId, dateStr); rerender();
       } else if (ev.target.classList.contains("t-title")) {
         openDetailPopup(ev, t);
       }
