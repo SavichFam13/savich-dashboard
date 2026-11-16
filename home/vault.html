@@ -49,7 +49,6 @@
   }
   .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
-
   nav {
     display: flex; gap: 4px; margin-bottom: 24px;
     border-bottom: 1px solid var(--border);
@@ -62,7 +61,6 @@
   nav button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
   .page { display: none; }
   .page.visible { display: block; }
-
   .pool-panel {
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 8px; padding: 20px; margin-bottom: 24px;
@@ -81,7 +79,6 @@
   #pool-amount:focus { outline: none; border-color: var(--accent2); }
   .remaining { font-size: 0.78rem; color: var(--dim); margin-left: auto; align-self: center; }
   .remaining b { color: var(--accent2); }
-
   .actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
   button.primary {
     background: var(--accent2); color: #121016; border: none;
@@ -107,7 +104,6 @@
     font-weight: 600; font-family: inherit; cursor: pointer;
   }
  button.quiet:hover { border-color: var(--accent2); color: var(--accent2); }
-
   table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
   th {
     text-align: left; padding: 9px 12px; color: var(--dim);
@@ -129,7 +125,6 @@
   }
   input.weight:focus { outline: none; border-color: var(--accent2); }
   .empty { color: var(--dim); font-size: 0.8rem; padding: 18px 0; text-align: center; }
-
   .hist-row { cursor: pointer; }
   .hist-row:hover td { background: #1d1926 !important; }
   .detail-row td { background: #171420 !important; padding: 14px 20px 14px 32px; }
@@ -140,12 +135,10 @@
   .detail-grid div { display: flex; justify-content: space-between; gap: 10px; }
   .detail-grid span.v { color: var(--dim); }
   .detail-grid span.a { color: var(--accent2); font-variant-numeric: tabular-nums; }
-
   .sync-note {
     font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px;
   }
   .sync-note.live { color: var(--good); }
-
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -182,7 +175,6 @@
     border: 1px solid var(--border); font-weight: 400;
   }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
-
   .toast {
     position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--panel); border: 1px solid var(--accent2);
@@ -195,7 +187,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Vault Distribution</h1>
   <div class="top-right">
@@ -204,14 +195,11 @@
   </div>
 </div>
 <p class="sub">Save baby, save baby, save baby save!</p>
-
 <nav>
   <button id="tab-distribute" class="active">DISTRIBUTE</button>
   <button id="tab-history">HISTORY</button>
 </nav>
-
 <div class="page visible" id="page-distribute">
-
   <div class="pool-panel">
     <div class="pool-row">
       <div>
@@ -224,9 +212,7 @@
       </div>
     </div>
   </div>
-
   <div id="weight-warning" style="display:none; background:#2a1620; border:1px solid var(--bad); color:var(--bad); border-radius:8px; padding:10px 16px; margin:-8px 0 24px 0; font-size:0.8rem;"></div>
-
   <table>
     <thead>
       <tr>
@@ -238,13 +224,11 @@
     </thead>
     <tbody id="vault-body"></tbody>
   </table>
-
   <div class="actions">
     <button class="primary" onclick="saveCycle()">Save Pay Cycle to History</button>
     <button class="danger" onclick="resetCycle()">Reset</button>
   </div>
 </div>
-
 <div class="page" id="page-history">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
@@ -255,7 +239,6 @@
       <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
-
   <table>
     <thead>
       <tr>
@@ -269,7 +252,6 @@
   </table>
   <div class="empty" id="hist-empty">No pay cycles saved yet. Complete a distribution, then click "Save Pay Cycle to History".</div>
 </div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -281,7 +263,6 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
@@ -307,15 +288,12 @@ const DEFAULT_VAULTS = [
   { name: "Tech replacement", weight: 8 },
   { name: "Transportation", weight: 5 },
 ];
-
 const CFG_KEY  = "savich-vault-config";
 const CUR_KEY  = "savich-vault-current";
-
 let vaults  = DEFAULT_VAULTS.map(v => ({ ...v }));
 let current = { amount: "", done: {} };
 let history = [];
 let IS_ADMIN = false;
-
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -324,7 +302,6 @@ async function ensureAuth() {
     throw new Error("not signed in");
   }
 }
-
 async function getBlob(key) {
   const { data, error } = await sb()
     .from("app_data").select("data")
@@ -332,14 +309,12 @@ async function getBlob(key) {
   if (error) throw error;
   return data ? data.data : null;
 }
-
 async function putBlob(key, dataObj) {
   const { error } = await sb()
     .from("app_data")
     .upsert({ key: key, owner: "shared", data: dataObj });
   if (error) throw error;
 }
-
 async function loadHistoryRows() {
   const { data, error } = await sb()
     .from("vault_history").select("*")
@@ -349,31 +324,25 @@ async function loadHistoryRows() {
   if (error) throw error;
   history = data || [];
 }
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
 function transferFor(amount, weight) {
   if (amount === "" || !Number.isFinite(amount)) return "";
   if (weight === "" || !Number.isFinite(weight)) return "";
   return Math.round(amount * weight) / 100;
 }
-
 function money(n) {
   return "$" + Number(n).toLocaleString("en-US",
     { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function poolAmount() {
   const v = parseFloat(document.getElementById("pool-amount").value);
   return Number.isFinite(v) ? v : "";
 }
-
 let modalResolve = null;
-
 function askConfirm(title, message, destructive) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -384,12 +353,10 @@ function askConfirm(title, message, destructive) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-yes").onclick = () => closeModal(true);
 document.getElementById("modal-no").onclick = () => closeModal(false);
 document.getElementById("modal-overlay").addEventListener("click", e => {
@@ -401,7 +368,6 @@ document.addEventListener("keydown", e => {
     closeModal(false);
   }
 });
-
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -410,7 +376,6 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
 }
-
 function renderVaults() {
   const tbody = document.getElementById("vault-body");
   tbody.innerHTML = "";
@@ -421,7 +386,6 @@ function renderVaults() {
     const db = current.done[b.name] ? 1 : 0;
     return da - db;
   });
-
   order.forEach(v => {
     const t = transferFor(amount, v.weight);
     const tr = document.createElement("tr");
@@ -437,7 +401,6 @@ function renderVaults() {
         vaults.indexOf(v) + ', this.value)"></td>';
     tbody.appendChild(tr);
   });
-
   const wt = vaults.reduce((s, v) => s + (Number(v.weight) || 0), 0);
   const wtEl = document.getElementById("weight-total");
   wtEl.textContent = wt;
@@ -458,20 +421,17 @@ function renderVaults() {
   document.getElementById("done-count").textContent = dc;
   document.getElementById("vault-count").textContent = vaults.length;
 }
-
 function toggleDone(encName) {
   const name = decodeURIComponent(encName);
   current.done[name] = !current.done[name];
   putBlob(CUR_KEY, current).then(() => setSync(true)).catch(err => setSync(false));
   renderVaults();
 }
-
 function setWeight(i, val) {
   vaults[i].weight = val === "" ? 0 : Number(val);
   putBlob(CFG_KEY, { vaults: vaults }).then(() => setSync(true)).catch(err => setSync(false));
   renderVaults();
 }
-
 let curSaveTimer = null;
 document.getElementById("pool-amount").addEventListener("input", () => {
   current.amount = document.getElementById("pool-amount").value;
@@ -481,26 +441,22 @@ document.getElementById("pool-amount").addEventListener("input", () => {
     putBlob(CUR_KEY, current).then(() => setSync(true)).catch(err => setSync(false));
   }, 600);
 });
-
 async function saveCycle() {
   const amount = poolAmount();
   if (amount === "" || amount <= 0) {
     showToast("Enter the Extra Savings amount first.");
     return;
   }
-
   const wt = vaults.reduce((s, v) => s + (Number(v.weight) || 0), 0);
   if (wt !== 100) {
     showToast("Weights total " + wt + "%, not 100% — fix them before saving.");
     return;
   }
-
   const entries = vaults.map(v => ({
     name: v.name,
     weight: v.weight,
     transfer: transferFor(amount, v.weight)
   }));
-
   const ok = await askConfirm(
     "Save this Pay Cycle to History?",
     "Extra Savings: " + money(amount) + "\n" +
@@ -508,12 +464,10 @@ async function saveCycle() {
     false
   );
   if (!ok) return;
-
   const d = new Date();
   const dateStr = d.getFullYear() + "-" +
     String(d.getMonth() + 1).padStart(2, "0") + "-" +
     String(d.getDate()).padStart(2, "0");
-
   try {
     const { error } = await sb().from("vault_history").insert([{
       owner: "shared",
@@ -523,11 +477,9 @@ async function saveCycle() {
       done_state: { ...current.done }
     }]);
     if (error) throw error;
-
     current = { amount: "", done: {} };
     await putBlob(CUR_KEY, current);
     document.getElementById("pool-amount").value = "";
-
     await loadHistoryRows();
     renderVaults();
     renderHistory();
@@ -539,7 +491,6 @@ async function saveCycle() {
     showToast("Could not save — check your connection.");
   }
 }
-
 async function resetCycle() {
   const ok = await askConfirm(
     "Reset Vault Distribution?",
@@ -556,20 +507,15 @@ async function resetCycle() {
   renderVaults();
   showToast("Ready for the next pay cycle.");
 }
-
 function renderHistory() {
   const tbody = document.getElementById("history-body");
   const empty = document.getElementById("hist-empty");
   tbody.innerHTML = "";
-
   document.getElementById("hist-count").textContent =
     history.length + " pay cycle" + (history.length === 1 ? "" : "s");
-
   if (history.length === 0) { empty.style.display = "block"; return; }
   empty.style.display = "none";
-
   const sorted = [...history].reverse();
-
   sorted.forEach(row => {
     const [y, m, d] = row.cycle_date.split("-");
     const tr = document.createElement("tr");
@@ -588,11 +534,9 @@ function renderHistory() {
     tbody.appendChild(tr);
   });
 }
-
 function toggleDetail(tr, row) {
   const existing = document.getElementById("detail-" + row.id);
   if (existing) { existing.remove(); return; }
-
   const detail = document.createElement("tr");
   detail.className = "detail-row";
   detail.id = "detail-" + row.id;
@@ -602,7 +546,6 @@ function toggleDetail(tr, row) {
   detail.innerHTML = '<td colspan="4"><div class="detail-grid">' + cells + "</div></td>";
   tr.after(detail);
 }
-
 async function deleteCycle(id, btn) {
   const row = history.find(r => r.id === id);
   const label = row ? row.cycle_date : "this pay cycle";
@@ -649,7 +592,6 @@ async function clearHistory() {
     showToast("Could not clear history.");
   }
 }
-
 function exportHistory() {
   const payload = {
     vaults: vaults,
@@ -668,7 +610,6 @@ function exportHistory() {
   URL.revokeObjectURL(a.href);
   showToast("Backup downloaded (" + payload.history.length + " cycles).");
 }
-
 async function importHistory(input) {
   const file = input.files && input.files[0];
   input.value = "";
@@ -681,7 +622,6 @@ async function importHistory(input) {
     showToast("That file isn't valid JSON.");
     return;
   }
-
   let impVaults = null;
   let cycles = null;
   if (Array.isArray(parsed)) {
@@ -690,12 +630,10 @@ async function importHistory(input) {
     if (Array.isArray(parsed.history)) cycles = parsed.history;
     if (Array.isArray(parsed.vaults)) impVaults = parsed.vaults;
   }
-
   if (!cycles && !impVaults) {
     showToast("No recognizable vault data in that file.");
     return;
   }
-
   const lines = [];
   if (impVaults) lines.push(impVaults.length + " vaults (names + weights)");
   if (cycles) lines.push(cycles.length + " pay cycles");
@@ -703,14 +641,12 @@ async function importHistory(input) {
     showToast("Some cycles look malformed — aborting.");
     return;
   }
-
   const ok = await askConfirm(
     "Import this backup?",
     "Will add to the shared cloud data:\n" + lines.join("\n"),
     false
   );
   if (!ok) return;
-
   try {
     if (impVaults) {
       vaults = impVaults;
@@ -738,10 +674,8 @@ async function importHistory(input) {
     showToast("Import failed — nothing was half-added.");
   }
 }
-
 document.getElementById("tab-distribute").onclick = () => switchTab("distribute");
 document.getElementById("tab-history").onclick = () => switchTab("history");
-
 function switchTab(name) {
   document.querySelectorAll("nav button")
     .forEach(b => b.classList.remove("active"));
@@ -750,14 +684,12 @@ function switchTab(name) {
     .forEach(p => p.classList.remove("visible"));
   document.getElementById("page-" + name).classList.add("visible");
 }
-
 (async function init() {
   try {
     await ensureAuth();
   } catch (e) {
     return;
   }
-
   try {
     const { data, error } = await sb().rpc("is_admin");
     IS_ADMIN = !error && data === true;
@@ -765,7 +697,6 @@ function switchTab(name) {
   if (!IS_ADMIN) {
     document.getElementById("btn-clear-history").style.display = "none";
   }
-
   try {
     const cfg = await getBlob(CFG_KEY);
     if (cfg && Array.isArray(cfg.vaults) && cfg.vaults.length) {
@@ -773,12 +704,10 @@ function switchTab(name) {
     } else if (Array.isArray(cfg) && cfg.length) {
       vaults = cfg;
     }
-
     const cur = await getBlob(CUR_KEY);
     if (cur) {
       current = { amount: cur.amount || "", done: cur.done || {} };
     }
-
     await loadHistoryRows();
     setSync(true);
   } catch (err) {
@@ -786,12 +715,10 @@ function switchTab(name) {
     setSync(false);
     showToast("Loaded locally-known data — cloud unreachable.");
   }
-
   document.getElementById("pool-amount").value = current.amount || "";
   renderVaults();
   renderHistory();
 })();
 </script>
-
 </body>
 </html>

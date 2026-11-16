@@ -55,12 +55,9 @@
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
   .view { display: none; }
   .view.visible { display: block; }
-
   body.read-only .owner-only { display: none !important; }
-
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
@@ -74,14 +71,12 @@
   .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; border: none; }
   .btn-primary:hover { filter: brightness(1.1); }
   .btn-danger:hover { border-color: var(--bad); color: var(--bad); }
-
   input.search {
     background: #16131d; color: var(--text); border: 1px solid var(--border);
     border-radius: 5px; padding: 8px 12px; font-family: inherit;
     font-size: 0.82rem; width: 300px;
   }
   input.search:focus { outline: none; border-color: var(--accent2); }
-
   .toc-heading {
     font-size: 0.72rem; color: var(--dim); letter-spacing: 1.5px;
     text-transform: uppercase; margin-bottom: 8px;
@@ -95,11 +90,9 @@
   .toc-name:hover { color: var(--accent2); }
   .toc-meta { color: var(--dim); font-size: 0.73rem; white-space: nowrap; }
   .empty { color: var(--dim); font-size: 0.8rem; padding: 22px 0; text-align: center; }
-
   .recipe-title { font-size: 1.25rem; color: var(--accent); margin-bottom: 8px; line-height: 1.35; }
   .yield-line { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; }
   .yield-line b { color: var(--text); }
-
   .scale-bar {
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;
@@ -119,7 +112,6 @@
     font-size: 0.78rem; width: 62px;
   }
   .scale-input:focus { outline: none; border-color: var(--accent2); }
-
   .two-col {
     display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
     align-items: start;
@@ -142,7 +134,6 @@
     text-underline-offset: 2px;
   }
   .rlink:hover { color: var(--accent2); text-decoration-style: solid; }
-
   .nutrition {
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 16px; margin-bottom: 22px; font-size: 0.8rem;
@@ -152,7 +143,6 @@
     display: flex; gap: 10px; flex-wrap: wrap;
     margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border);
   }
-
   .form-grid { display: grid; grid-template-columns: 1fr 160px 160px 160px; gap: 14px; margin-bottom: 18px; }
   .field label {
     display: block; font-size: 0.66rem; color: var(--dim);
@@ -170,7 +160,6 @@
     display: flex; gap: 10px; flex-wrap: wrap;
     margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
   }
-
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -193,7 +182,6 @@
   .modal-yes { background: var(--accent2); color: #121016; border: none; }
   .modal-yes.destructive { background: var(--bad); }
   .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
-
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -204,7 +192,6 @@
     z-index: 110; max-width: 90vw; text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   .print-header { display: none; }
   @media print {
     body { background: #fff; color: #000; padding: 0; max-width: none; font-size: 12px; }
@@ -219,7 +206,6 @@
     .two-col { grid-template-columns: 1fr 1fr; gap: 20px; }
     .rlink { color: #000; cursor: auto; text-decoration: underline; text-decoration-style: solid; }
   }
-
   @media (max-width: 860px) {
     .two-col { grid-template-columns: 1fr; }
   }
@@ -239,7 +225,6 @@
   </div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
-
 <div class="view visible" id="view-index">
   <div class="toolbar">
     <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
@@ -255,17 +240,14 @@
   <div class="toc-heading">Table of Contents</div>
   <div id="recipe-list"></div>
 </div>
-
 <div class="view" id="view-recipe">
   <button class="back" id="back-btn" onclick="showView('index')">&larr; Table of Contents</button>
   <div class="print-header" id="print-header"></div>
   <div id="recipe-body"></div>
 </div>
-
 <div class="view" id="view-edit">
   <button class="back" onclick="cancelEdit()">&larr; Cancel</button>
   <h2 class="recipe-title" id="editor-heading" style="margin-bottom:20px;">New Recipe</h2>
-
   <div class="form-grid">
     <div class="field">
       <label for="f-name">Recipe Name</label>
@@ -285,12 +267,10 @@
       <input type="number" id="f-carbs" step="0.1" min="0" placeholder="optional">
     </div>
   </div>
-
   <div class="field" style="margin-bottom:18px;">
     <label for="f-yield">Yield (as written)</label>
     <input type="text" id="f-yield" placeholder="e.g. Serves 6 / makes 12 biscuits">
   </div>
-
   <div class="field" style="margin-bottom:18px;">
     <label for="f-ingredients">Ingredients</label>
     <textarea id="f-ingredients" rows="9" placeholder="One ingredient per line. Any of these work:
@@ -301,23 +281,19 @@
 3 cups of Marinara Sauce"></textarea>
     <div class="hint">One per line, lead with the amount. Fractions, decimals, and &#189;-style characters all scale. Mention another recipe by its exact name and it becomes a clickable link.</div>
   </div>
-
   <div class="field" style="margin-bottom:18px;">
     <label for="f-equipment">Equipment</label>
     <textarea id="f-equipment" rows="4" placeholder="One per line"></textarea>
   </div>
-
   <div class="field" style="margin-bottom:18px;">
     <label for="f-instructions">Instructions</label>
     <textarea id="f-instructions" rows="9" placeholder="One step per line"></textarea>
   </div>
-
   <div class="field" style="margin-bottom:18px;">
     <label for="f-notes">Notes</label>
     <textarea id="f-notes" rows="4" placeholder="One note per line"></textarea>
     <div class="hint">Each line becomes its own bulleted note.</div>
   </div>
-
   <div class="form-actions">
     <button class="btn btn-primary" onclick="saveRecipe()">Save Recipe</button>
     <button class="btn" onclick="cancelEdit()">Cancel</button>
@@ -334,12 +310,10 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
 const OWNER_EMAIL = "ALYSAVICH@PM.ME";
-
 const STORAGE_KEY = "savich-recipes-v1";
 const CLOUD_BLOB_KEY = "recipes";
 let recipes = [];
@@ -350,13 +324,11 @@ let scale = 1;
 let navStack = [];
 let isOwner = false;
 let cloudReady = false;
-
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-
 async function saveStorage() {
   if (cloudReady) {
     try {
@@ -369,57 +341,47 @@ async function saveStorage() {
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
 }
-
 function setSyncNote(ok, msg) {
   const el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = msg || (ok ? "\u2713" : "offline");
   el.classList.toggle("live", !!ok);
 }
-
 function requireOwner(action) {
   if (!isOwner) { showToast("Read-only access \u2014 ask the chef."); return false; }
   return true;
 }
-
 function adoptCloudBook(cloud) {
   recipes = Array.isArray(cloud) ? cloud : [];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   renderList();
 }
-
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("visible"));
   document.getElementById("view-" + name).classList.add("visible");
   window.scrollTo(0, 0);
 }
-
 function setSearch(term) {
   searchTerm = term.trim().toLowerCase();
   renderList();
 }
-
 function renderList() {
   const wrap = document.getElementById("recipe-list");
   wrap.innerHTML = "";
-
   let shown = recipes;
   if (searchTerm) {
     shown = recipes.filter(r =>
       r.name.toLowerCase().includes(searchTerm) ||
       (r.ingredients || []).some(i => i.toLowerCase().includes(searchTerm)));
   }
-
   shown = [...shown].sort((a, b) =>
     a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
-
   if (shown.length === 0) {
     wrap.innerHTML = recipes.length === 0
       ? '<div class="empty">No recipes yet. Click "+ New Recipe" to add your first one.</div>'
       : '<div class="empty">No recipes match "' + esc(searchTerm) + '".</div>';
     return;
   }
-
   shown.forEach(r => {
     const row = document.createElement("div");
     row.className = "toc-row";
@@ -444,17 +406,14 @@ const GLYPH_MAP = [
   [/(\d)\u215D/g, "$1 5/8"], [/\u215D/g, "5/8"],
   [/(\d)\u215E/g, "$1 7/8"], [/\u215E/g, "7/8"]
 ];
-
 function normalizeGlyphs(line) {
   let s = line;
   GLYPH_MAP.forEach(pair => { s = s.replace(pair[0], pair[1]); });
   return s;
 }
-
 const AMT = "(?:\\d+(?:\\.\\d+)?(?:\\s+\\d+\\/\\d+)?|\\d+\\/\\d+)";
 const RANGE_RE = new RegExp("^(" + AMT + ")\\s*[\u2013\u2014-]\\s*(" + AMT + ")\\s+(.*)$");
 const SINGLE_RE = new RegExp("^(" + AMT + ")(?:\\s+(.*))?$");
-
 function evalAmt(str) {
   let num = 0, found = false;
   str.trim().split(/\s+/).forEach(p => {
@@ -467,16 +426,13 @@ function evalAmt(str) {
   });
   return (found && num > 0) ? num : null;
 }
-
 function parseAmount(line) {
   const s = normalizeGlyphs(line);
-
   let m = s.match(RANGE_RE);
   if (m) {
     const lo = evalAmt(m[1]), hi = evalAmt(m[2]);
     if (lo && hi) return { low: lo, high: hi, rest: m[3] };
   }
-
   m = s.match(SINGLE_RE);
   if (m) {
     const n = evalAmt(m[1]);
@@ -484,13 +440,11 @@ function parseAmount(line) {
   }
   return null;
 }
-
 const DISPLAY_GLYPHS = [
   [0.125, "\u215B"], [0.25, "\u00BC"], [1/3, "\u2153"], [0.375, "\u215C"],
   [0.5, "\u00BD"], [0.625, "\u215D"], [2/3, "\u2154"], [0.75, "\u00BE"],
   [0.875, "\u215E"]
 ];
-
 function formatAmount(n) {
   if (Math.abs(n - Math.round(n)) < 0.001) return String(Math.round(n));
   const whole = Math.floor(n);
@@ -502,7 +456,6 @@ function formatAmount(n) {
   }
   return String(Math.round(n * 100) / 100);
 }
-
 function scaleYieldText(text, mult) {
   if (mult === 1) return text;
   return text.replace(/\d+(?:\.\d+)?(?!\s*-?\s*(?:inch|in|cm)\b)/g, function (m) {
@@ -513,10 +466,8 @@ function linkifyText(text, selfId) {
   const others = recipes
     .filter(r => r.id !== selfId && r.name)
     .sort((a, b) => b.name.length - a.name.length);
-
   let out = "";
   let rest = String(text);
-
   while (rest.length) {
     let best = null; 
     for (const r of others) {
@@ -527,9 +478,7 @@ function linkifyText(text, selfId) {
         best = { idx: idx, len: r.name.length, id: r.id };
       }
     }
-
     if (!best) { out += esc(rest); break; }
-
     out += esc(rest.slice(0, best.idx));
     out += '<span class="rlink" onclick="openLinkedRecipe(' + best.id + ')">' +
            esc(rest.substr(best.idx, best.len)) + "</span>";
@@ -537,11 +486,9 @@ function linkifyText(text, selfId) {
   }
   return out;
 }
-
 function scaleLine(line, mult, selfId) {
   const parsed = parseAmount(line);
   if (!parsed) return { html: linkifyText(line, selfId), raw: line };
-
   if (parsed.low !== undefined) {
     const lo = formatAmount(parsed.low * mult);
     const hi = formatAmount(parsed.high * mult);
@@ -555,7 +502,6 @@ function scaleLine(line, mult, selfId) {
           linkifyText(parsed.rest, selfId)
   };
 }
-
 function openRecipe(id, fromLink) {
   if (fromLink) {
     if (currentId != null && currentId !== id) navStack.push(currentId);
@@ -567,13 +513,11 @@ function openRecipe(id, fromLink) {
   renderRecipe();
   showView("recipe");
 }
-
 function openLinkedRecipe(id) {
   if (id === currentId) return;
   if (!recipes.some(r => r.id === id)) return;
   openRecipe(id, true);
 }
-
 function goBack() {
   while (navStack.length) {
     const prevId = navStack.pop();
@@ -587,7 +531,6 @@ function goBack() {
   }
   showView("index");
 }
-
 function updateBackButton() {
   const btn = document.getElementById("back-btn");
   const prevId = navStack.length ? navStack[navStack.length - 1] : null;
@@ -600,12 +543,10 @@ function updateBackButton() {
     btn.onclick = () => showView("index");
   }
 }
-
 function setScale(mult) {
   scale = mult;
   renderRecipe();
 }
-
 function setScaleCustom(val) {
   const n = parseFloat(val);
   if (Number.isFinite(n) && n > 0) {
@@ -613,29 +554,22 @@ function setScaleCustom(val) {
     renderRecipe();
   }
 }
-
 function renderRecipe() {
   const r = recipes.find(x => x.id === currentId);
   if (!r) { showView("index"); return; }
-
   updateBackButton();
-
   const body = document.getElementById("recipe-body");
   let html = "";
-
   html += '<div class="recipe-title">' + esc(r.name) + "</div>";
-
   let yieldText = r.yield ? r.yield : (r.servings ? "Serves " + r.servings : "");
   if (yieldText) yieldText = scaleYieldText(yieldText, scale);
   if (yieldText) html += '<div class="yield-line"><b>Yield:</b> ' + esc(yieldText) + "</div>";
-
   if (r.calories || r.carbs) {
     const bits = [];
     if (r.calories) bits.push("<b>" + r.calories + "</b> calories");
     if (r.carbs) bits.push("<b>" + r.carbs + " g</b> carbs");
     html += '<div class="nutrition">Per serving (as written): ' + bits.join(" \u00B7 ") + "</div>";
   }
-
   const effServ = r.servings ? Math.round(r.servings * scale * 10) / 10 : null;
   const servText = effServ ? "&nbsp;\u00B7&nbsp;makes about <b>" + effServ + "</b> serving" +
     (effServ === 1 ? "" : "s") : "";
@@ -646,10 +580,8 @@ function renderRecipe() {
     '<input type="number" class="scale-input" step="0.5" min="0.25" value="' + scale + '" ' +
     'onchange="setScaleCustom(this.value)" onfocus="this.select()">' +
     '<span style="font-size:0.72rem; color:var(--dim);">multiplier' + servText + "</span></div>";
-
   html += '<div class="two-col">';
   html += '<div>';
-
   if ((r.ingredients || []).length) {
     html += '<div class="sec"><div class="sec-title">Ingredients</div><ul class="list">';
     r.ingredients.forEach(line => {
@@ -657,16 +589,13 @@ function renderRecipe() {
     });
     html += "</ul></div>";
   }
-
   if ((r.equipment || []).length) {
     html += '<div class="sec"><div class="sec-title">Equipment</div><ul class="list">';
     r.equipment.forEach(line => { html += "<li>" + esc(line) + "</li>"; });
     html += "</ul></div>";
   }
-
   html += '</div>';
   html += '<div>';
-
   if ((r.instructions || []).length) {
     html += '<div class="sec"><div class="sec-title">Instructions</div><ol class="steps">';
     r.instructions.forEach(line => { html += "<li>" + linkifyText(line, r.id) + "</li>"; });
@@ -680,19 +609,15 @@ function renderRecipe() {
       .forEach(line => { html += "<li>" + linkifyText(line, r.id) + "</li>"; });
     html += "</ul></div>";
   }
-
   html += '</div>';
   html += '</div>';
-
   html += '<div class="detail-actions">' +
     '<button class="btn btn-primary owner-only" onclick="editRecipe(' + r.id + ')">Edit Recipe</button>' +
     '<button class="btn" onclick="printRecipe()">Print</button>' +
     '<button class="btn btn-danger owner-only" onclick="deleteRecipe(' + r.id + ')">Delete</button>' +
     "</div>";
-
   body.innerHTML = html;
 }
-
 function printRecipe() {
   const d = new Date();
   document.getElementById("print-header").textContent =
@@ -700,7 +625,6 @@ function printRecipe() {
     (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
   window.print();
 }
-
 function newRecipe() {
   if (!requireOwner()) return;
   editId = null;
@@ -711,7 +635,6 @@ function newRecipe() {
   showView("edit");
   document.getElementById("f-name").focus();
 }
-
 function editRecipe(id) {
   if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
@@ -729,21 +652,17 @@ function editRecipe(id) {
   document.getElementById("f-notes").value = r.notes || "";
   showView("edit");
 }
-
 function cancelEdit() {
   if (editId) { openRecipe(editId); }
   else { showView("index"); }
 }
-
 function saveRecipe() {
   if (!requireOwner()) return;
   const name = document.getElementById("f-name").value.trim();
   if (!name) { showToast("Give the recipe a name first."); return; }
-
   const split = id =>
     document.getElementById(id).value.split("\n")
       .map(l => l.trim()).filter(l => l.length > 0);
-
   const data = {
     name: name,
     servings: Number(document.getElementById("f-servings").value) || null,
@@ -755,7 +674,6 @@ function saveRecipe() {
     instructions: split("f-instructions"),
     notes: document.getElementById("f-notes").value.trim()
   };
-
   if (editId) {
     const idx = recipes.findIndex(x => x.id === editId);
     recipes[idx] = Object.assign({ id: editId }, data);
@@ -771,7 +689,6 @@ function saveRecipe() {
   }
   saveStorage();
 }
-
 async function deleteRecipe(id) {
   if (!requireOwner()) return;
   const r = recipes.find(x => x.id === id);
@@ -801,7 +718,6 @@ function exportData() {
   URL.revokeObjectURL(url);
   showToast("Backup downloaded. Keep it somewhere safe.");
 }
-
 function importData(e) {
   if (!requireOwner()) { e.target.value = ""; return; }
   const file = e.target.files[0];
@@ -829,7 +745,6 @@ function importData(e) {
   e.target.value = "";
 }
 let modalResolve = null;
-
 function askConfirm(title, message, destructive) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -840,12 +755,10 @@ function askConfirm(title, message, destructive) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-yes").onclick = () => closeModal(true);
 document.getElementById("modal-no").onclick = () => closeModal(false);
 document.getElementById("modal-overlay").addEventListener("click", e => {
@@ -868,25 +781,19 @@ function showToast(message) {
 (async function init() {
   const session = await requireAuth();
   if (!session) return;
-
   const email = ((session.user && session.user.email) || "").toLowerCase();
   isOwner = email === OWNER_EMAIL.trim().toLowerCase();
   if (!isOwner) document.body.classList.add("read-only");
-
   try {
     const cloud = await loadBlob(CLOUD_BLOB_KEY, null);
     cloudReady = true;
-
     if (cloud !== null) {
-
       adoptCloudBook(cloud);
     } else {
-
       adoptCloudBook([]);
     }
     setSyncNote(true);
   } catch (err) {
-
     setSyncNote(false, "offline \u2014 showing last synced copy");
     try {
       const cached = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -898,6 +805,5 @@ function showToast(message) {
   }
 })();
 </script>
-
 </body>
 </html>

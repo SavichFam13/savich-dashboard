@@ -72,7 +72,6 @@
     margin: 0;
     line-height: 1.55;
   }
-    /* ---- top row: two labeled sections side by side ---- */
   .top-split {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 20px; align-items: start; margin-bottom: 46px;
@@ -81,7 +80,6 @@
   @media (max-width: 780px) {
     .top-split { grid-template-columns: 1fr; }
   }
-
   .footer-note {
     font-size: 0.73rem;
     color: var(--dim);
@@ -100,8 +98,6 @@
     cursor: pointer;
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
-
-  /* ---- Today widget (always the same size, never grows) ---- */
   .today-widget {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -136,8 +132,6 @@
   }
   .tw-empty { font-size: 0.82rem; color: var(--dim); }
   .tw-open-hint { font-size: 0.72rem; color: var(--dim); margin-top: 6px; }
-
-  /* ---- Today popup (slides over the dashboard) ---- */
   .today-overlay {
     position: fixed; inset: 0; z-index: 250;
     background: rgba(10, 8, 14, 0.72);
@@ -182,7 +176,6 @@
     font-size: 0.7rem; border-bottom: 1px solid var(--border);
   }
   .to-body { padding: 16px 22px 24px; overflow-y: auto; }
-
   #gate {
     position: fixed; inset: 0; z-index: 300;
     background: var(--bg);
@@ -230,15 +223,12 @@
   .gate-btn:hover { filter: brightness(1.1); }
   .gate-btn:disabled { opacity: 0.5; cursor: wait; }
 </style>
-<!-- task-page styles (rows, menus, editor drawer, flash) reused by the popup -->
 <link rel="stylesheet" href="lists/tasks.css">
 <style>
-  /* tasks.css narrows the page; keep the dashboard's wide layout */
   body { max-width: 1060px; padding: 40px 20px; line-height: 1.6; }
 </style>
 </head>
 <body>
-
 <div id="gate">
   <div class="gate-dot" id="gate-dot"></div>
   <div class="gate-box" id="gate-box">
@@ -259,9 +249,7 @@
     </form>
   </div>
 </div>
-
 <h1>Savich Family Dashboard</h1>
-
 <div class="top-split">
   <div>
     <h2 class="section">Health &amp; Wellness</h2>
@@ -300,7 +288,6 @@
     <h3>Misc. GW2 stuff</h3>
   </a>
 </nav>
-
 <h2 class="section">Household &amp; Finances</h2>
 <nav class="nav-grid">
   <a href="home/vault.html" class="nav-card">
@@ -331,13 +318,10 @@
     <p>UNDER CONSTRUCTION!</p>
   </a>
 </nav>
-
 <div class="footer-note">
   <span id="who">Signed in</span>
   <button onclick="signOut()">Sign out</button>
 </div>
-
-<!-- ===== Today popup: slides over the dashboard ===== -->
 <div class="today-overlay" id="today-overlay">
   <div class="to-panel">
     <div class="to-head">
@@ -351,8 +335,6 @@
     <div class="to-body" id="overlay-tasks"></div>
   </div>
 </div>
-
-<!-- ===== series editor drawer (used from the popup) ===== -->
 <div class="panel" id="editor-panel">
   <button class="panel-x" id="ed-close">✕</button>
   <h2 id="ed-heading">New Task</h2>
@@ -360,7 +342,10 @@
   <input id="ed-title" type="text" placeholder="Clean off stove top">
   <label for="ed-list">List</label>
   <select id="ed-list"></select>
-  <label for="ed-date">Starts on</label>
+  <label for="ed-section">Section (blank = none)</label>
+  <input id="ed-section" list="ed-section-list" placeholder="e.g. To Buy, Deliveries">
+  <datalist id="ed-section-list"></datalist>
+  <label for="ed-date">Starts on (blank = parked in list only)</label>
   <input id="ed-date" type="date">
   <label for="ed-time">Time of day (blank = anytime)</label>
   <input id="ed-time" type="time">
@@ -388,34 +373,32 @@
   <div id="ed-nth-row" style="display:none">
     <label for="ed-nth">On the …</label>
     <select id="ed-nth">
-      <option value="1">1st</option>
-      <option value="2">2nd</option>
-      <option value="3">3rd</option>
-      <option value="4">4th</option>
-      <option value="5">5th (only if the month has one)</option>
+      <option value="1">First</option>
+      <option value="2">Second</option>
+      <option value="3">Third</option>
+      <option value="4">Fourth</option>
+      <option value="5">Last</option>
     </select>
   </div>
+  <label class="ed-note-flag"><input type="checkbox" id="ed-note">
+    note — never scheduled, never overdue</label>
   <label for="ed-notes">Notes</label>
   <textarea id="ed-notes" placeholder="optional details"></textarea>
   <button class="btn" id="ed-save">SAVE</button>
   <button class="btn btn-del" id="ed-delete">DELETE ENTIRE SERIES</button>
   <div class="panel-note">Editing affects the whole series. To change just one day's copy, right-click it in the list instead.</div>
 </div>
-
 <div class="flash-msg" id="flash-msg"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
 <script src="lists/tasks.js"></script>
 <script>
-  /* ================= gate (unchanged behavior) ================= */
   const gate = document.getElementById("gate");
   const gateDot = document.getElementById("gate-dot");
   const gateBox = document.getElementById("gate-box");
   const gateError = document.getElementById("gate-error");
   const gateBtn = document.getElementById("gate-btn");
   const UNLOCK_FLAG = "savich-unlocked";
-
   function showLoginForm(msg) {
     gateDot.style.display = "none";
     gateBox.classList.add("show");
@@ -424,20 +407,16 @@
       gateError.classList.add("show");
     }
   }
-
   function hideGate() {
     gate.classList.add("hidden");
   }
-
   async function signOut() {
     localStorage.removeItem(UNLOCK_FLAG);
     try { await sb().auth.signOut(); } catch (e) {}
     location.reload();
   }
-
   const unlocked = localStorage.getItem(UNLOCK_FLAG);
   if (unlocked) hideGate();
-
   (async function initGate() {
     let session = null;
     try {
@@ -457,7 +436,6 @@
       showLoginForm("Could not reach the cloud — check your connection.");
       return;
     }
-
     if (session) {
       localStorage.setItem(UNLOCK_FLAG, String(Date.now()));
       const email = session.user && session.user.email ? session.user.email : "";
@@ -466,11 +444,9 @@
       initTaskSystem();
       return;
     }
-
     localStorage.removeItem(UNLOCK_FLAG);
     showLoginForm();
   })();
-
   document.getElementById("gate-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     gateError.classList.remove("show");
@@ -493,10 +469,7 @@
       gateBtn.textContent = "SIGN IN";
     }
   });
-
-  /* ================= task system: widget + popup ================= */
   let taskSysReady = false;
-
   function initTaskSystem() {
     (async () => {
       try {
@@ -511,7 +484,6 @@
       initEditorUI();
       fillEdList();
       renderTodayWidget();
-
       subscribeRealtime(async () => {
         await loadAll();
         fillEdList();
@@ -521,7 +493,6 @@
       });
     })();
   }
-
   function fillEdList() {
     const sel = document.getElementById("ed-list");
     sel.innerHTML = "";
@@ -532,15 +503,12 @@
       sel.appendChild(opt);
     }
   }
-
-  /* ---- widget: fixed-size summary, never grows ---- */
   function renderTodayWidget() {
     const today = todayStr();
     const count = document.getElementById("tw-count");
     const overEl = document.getElementById("tw-overdue");
     const bar = document.getElementById("tw-bar");
     const next = document.getElementById("tw-next");
-
     const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
     let scheduled = 0, done = 0;
     const seen = new Set();
@@ -554,7 +522,6 @@
       if (!seen.has(it.task.id)) { seen.add(it.task.id); scheduled++; }
     }
     const over = collectOverdue(tasksCache, occCache, today);
-
     count.textContent = scheduled
       ? scheduled + " task" + (scheduled === 1 ? "" : "s") + " · " +
         done + " done · " + (scheduled - done) + " left"
@@ -563,7 +530,6 @@
     const pct = scheduled ? Math.round(done / scheduled * 100) : 0;
     bar.style.width = pct + "%";
     bar.classList.toggle("full", scheduled > 0 && done >= scheduled);
-
     const upcoming = todays.filter(it => it.time).sort((a, b) =>
       a.time < b.time ? -1 : a.time > b.time ? 1 : 0).slice(0, 4);
     if (!todays.length) {
@@ -581,23 +547,18 @@
       }).join("");
     }
   }
-
-  /* ---- popup: full list over the dashboard, scroll inside ---- */
   function openTodayPopup() {
     if (!taskSysReady) return;
     window.VIEW_DATE = todayStr();
     document.getElementById("today-overlay").classList.add("open");
     renderTodayPopup();
   }
-
   function closeTodayPopup() {
     document.getElementById("today-overlay").classList.remove("open");
   }
-
   function renderTodayPopup() {
     const today = todayStr();
     document.getElementById("ov-date").textContent = fmtDateLong(today);
-
     const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
     let scheduled = 0, done = 0;
     const seen = new Set();
@@ -615,32 +576,26 @@
     cEl.textContent = scheduled + " scheduled · " + done + " done" +
       (over.length ? " · " + over.length + " OVERDUE" : "");
     cEl.classList.toggle("over", !!over.length);
-
     renderDay({
       filterFn: list => !!list,
       rerender: renderTodayPopup,
       containerId: "overlay-tasks"
     });
   }
-
   window.__rerender = function () {
     renderTodayWidget();
     if (document.getElementById("today-overlay").classList.contains("open"))
       renderTodayPopup();
   };
-
-  /* click = popup; ctrl-click / middle-click = full page (browser default) */
   document.getElementById("today-widget").addEventListener("click", e => {
     if (e.ctrlKey || e.metaKey || e.button === 1) return;
     e.preventDefault();
     openTodayPopup();
   });
-
   document.getElementById("ov-close").onclick = closeTodayPopup;
   document.getElementById("today-overlay").addEventListener("click", e => {
     if (e.target === e.currentTarget) closeTodayPopup();
   });
-
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     if (document.querySelector(".item-menu")) { closeMenus(); openMiniCancel(); return; }
@@ -649,6 +604,5 @@
     closeTodayPopup();
   });
 </script>
-
 </body>
 </html>

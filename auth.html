@@ -81,28 +81,22 @@
 </style>
 </head>
 <body>
-
 <div class="box">
   <svg class="cat-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- ears -->
   <path d="M20 38 L18 12 L42 26 Z" fill="#14111a" stroke="#c9a0ff" stroke-width="4" stroke-linejoin="round"/>
   <path d="M80 38 L82 12 L58 26 Z" fill="#14111a" stroke="#c9a0ff" stroke-width="4" stroke-linejoin="round"/>
-  <!-- head -->
   <path d="M20 40 Q20 84 50 84 Q80 84 80 40 Q80 28 50 28 Q20 28 20 40 Z"
         fill="#14111a" stroke="#c9a0ff" stroke-width="4"/>
-  <!-- eyes (vertical slits) -->
   <ellipse cx="36" cy="52" rx="4" ry="9" fill="#5fd3c4"/>
   <ellipse cx="64" cy="52" rx="4" ry="9" fill="#5fd3c4"/>
-  <!-- nose + smile -->
   <path d="M46 64 L54 64 L50 69 Z" fill="#c9a0ff"/>
   <path d="M50 69 Q44 75 39 71 M50 69 Q56 75 61 71"
         stroke="#c9a0ff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <!-- whiskers -->
   <path d="M30 62 L16 58 M30 68 L16 72 M70 62 L84 58 M70 68 L84 72"
         stroke="#a89bbd" stroke-width="2" stroke-linecap="round"/>
 </svg>
   <h1>Savich Dashboard</h1>
-  <p class="sub">Sign-in — your data lives in the cloud now.</p>
+  <p class="sub">Sign-in</p>
   <div class="err" id="err"></div>
   <form id="login-form">
     <label for="email">Email</label>
@@ -112,19 +106,15 @@
     <button type="submit" class="primary" id="btn">SIGN IN</button>
   </form>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL  = "https://abcdefghij.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
-
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 (async () => {
   const { data } = await sb.auth.getSession();
   if (data.session) redirect();
 })();
-
 function redirect() {
   const params = new URLSearchParams(location.search);
   const next = params.get("next");
@@ -134,7 +124,6 @@ function redirect() {
     location.href = "index.html";
   }
 }
-
 document.getElementById("login-form").addEventListener("submit", async e => {
   e.preventDefault();
   const btn = document.getElementById("btn");
@@ -142,12 +131,10 @@ document.getElementById("login-form").addEventListener("submit", async e => {
   err.classList.remove("show");
   btn.disabled = true;
   btn.textContent = "SIGNING IN…";
-
   const { error } = await sb.auth.signInWithPassword({
     email: document.getElementById("email").value.trim(),
     password: document.getElementById("password").value
   });
-
   if (error) {
     err.textContent = error.message;
     err.classList.add("show");

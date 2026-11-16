@@ -8,7 +8,6 @@ function sb() {
 async function requireAuth() {
   const { data, error } = await sb().auth.getSession();
   if (error || !data.session) {
-    // bounce to the login screen, remembering where we came from
     location.href = "/auth.html?next=" + encodeURIComponent(location.href);
     return null;
   }
@@ -93,7 +92,6 @@ function isEpochDone(v) {
          typeof v.epoch === "number" &&
          v.done && typeof v.done === "object" && !Array.isArray(v.done);
 }
-
 function mergeEpochDone(lv, rv) {
   if (!isEpochDone(lv)) return rv;
   if (!isEpochDone(rv)) return lv;
@@ -103,7 +101,6 @@ function mergeEpochDone(lv, rv) {
   for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
   return { epoch: lv.epoch, done: done };
 }
-
 function createUserSync(opts) {
   const key = opts.key;
   const loadLocal = opts.loadLocal;

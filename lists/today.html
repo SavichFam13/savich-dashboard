@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="tasks.css">
 </head>
 <body>
-
 <div class="nav">
   <a class="nav-btn" href="../index.html">Dashboard</a>
   <a class="nav-btn active" href="today.html">Today</a>
@@ -17,7 +16,6 @@
   <a class="nav-btn" href="personal.html">Personal</a>
   <span class="sync-note" id="sync-note"></span>
 </div>
-
 <h1>Today</h1>
 <div class="date-nav">
   <button id="prev-day">←</button>
@@ -28,16 +26,11 @@
 </div>
 <div class="progress-outer"><div class="progress-inner" id="prog"></div></div>
 <div class="progress-label" id="prog-label"></div>
-
 <div class="add-bar">
   <button class="add-btn" id="add-btn">+ add task</button>
 </div>
-
-<div class="hint">left-click checkbox = done · shift-click = undo · right-click row = won't do / move / edit · click title = edit series</div>
-
+<div class="hint">left-click checkbox = done · shift-click checkbox = undo · right-click row = won't do / move / edit · click title = edit series</div>
 <div id="task-area"></div>
-
-<!-- series editor drawer -->
 <div class="panel" id="editor-panel">
   <button class="panel-x" id="ed-close">✕</button>
   <h2 id="ed-heading">New Task</h2>
@@ -45,7 +38,10 @@
   <input id="ed-title" type="text" placeholder="Clean off stove top">
   <label for="ed-list">List</label>
   <select id="ed-list"></select>
-  <label for="ed-date">Starts on</label>
+  <label for="ed-section">Section (blank = none)</label>
+  <input id="ed-section" list="ed-section-list" placeholder="e.g. To Buy, Deliveries">
+  <datalist id="ed-section-list"></datalist>
+  <label for="ed-date">Starts on (blank = parked in list only)</label>
   <input id="ed-date" type="date">
   <label for="ed-time">Time of day (blank = anytime)</label>
   <input id="ed-time" type="time">
@@ -60,11 +56,11 @@
     <option value="nthmonth">Every N months on the Nth weekday</option>
     <option value="afterdone">Every N days after completion</option>
   </select>
-  </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
   <div id="ed-mday-row" style="display:none">
     <label for="ed-mday">Day of month</label>
-    <input id="ed-mday" type="number" min="1" max="31">
+    <input id="ed-mday" type="number" min="1" max="31" readonly
+           style="cursor:pointer" title="click to pick the day">
   </div>
   <div id="ed-every-row" style="display:none">
     <label for="ed-every" id="ed-every-label">Every …</label>
@@ -73,43 +69,40 @@
   <div id="ed-nth-row" style="display:none">
     <label for="ed-nth">On the …</label>
     <select id="ed-nth">
-      <option value="1">1st</option>
-      <option value="2">2nd</option>
-      <option value="3">3rd</option>
-      <option value="4">4th</option>
-      <option value="5">5th (only if the month has one)</option>
+      <option value="1">First</option>
+      <option value="2">Second</option>
+      <option value="3">Third</option>
+      <option value="4">Fourth</option>
+      <option value="5">Last</option>
     </select>
   </div>
+  <label class="ed-note-flag"><input type="checkbox" id="ed-note">
+    note — never scheduled, never overdue</label>
   <label for="ed-notes">Notes</label>
   <textarea id="ed-notes" placeholder="optional details"></textarea>
   <button class="btn" id="ed-save">SAVE</button>
   <button class="btn btn-del" id="ed-delete" style="display:none">DELETE ENTIRE SERIES</button>
   <div class="panel-note">Editing affects the whole series. To change just one day's copy, right-click it on the main list instead.</div>
 </div>
-
 <div class="flash-msg" id="flash-msg"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script src="tasks.js"></script>
 <script>
   window.VIEW_DATE = todayStr();
-
   function rerender() {
     const view = window.VIEW_DATE;
     const today = todayStr();
     document.getElementById("date-line").textContent = fmtDateLong(view) +
       (view === today ? "" : "  (viewing another day)");
     renderDay({
-      filterFn: list => !!list,   // all visible lists: shared + own personal
+      filterFn: list => !!list,  
       rerender: rerender
     });
-    // progress counts TODAY only
     const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
     const doneCount = todays.filter(it =>
-      it.occ && it.occ.status === "done").length; // approx; done rows are filtered from view
+      it.occ && it.occ.status === "done").length; 
     const total = todays.length;
-    // recompute incl. done (buildDayModel hides done, so recount from rules)
     let scheduled = 0, completed = 0;
     const seen = new Set();
     for (const o of occCache) {
@@ -129,7 +122,6 @@
       scheduled ? completed + " of " + scheduled + " done (" + pct + "%)" : "";
   }
   window.__rerender = rerender;
-
   document.getElementById("prev-day").onclick = () => {
     window.VIEW_DATE = addDaysStr(window.VIEW_DATE, -1); rerender();
   };
@@ -140,14 +132,11 @@
     window.VIEW_DATE = todayStr(); rerender();
   };
   document.getElementById("add-btn").onclick = () => openEditor(null);
-
   initTaskPage({
     pageTitle: "Today",
     filterFn: list => !!list,
     rerender: rerender
   });
-
-  // fill list dropdown each render
   new MutationObserver(fillListSelect).observe(
     document.getElementById("editor-panel"), { attributes: true, attributeFilter: ["class"] });
   function fillListSelect() {
@@ -161,6 +150,5 @@
     }
   }
 </script>
-
 </body>
 </html>

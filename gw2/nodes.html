@@ -40,7 +40,6 @@
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 20px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
   .stats-line { color: var(--accent2); font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
   .progress-outer {
     background: #16131c; border-radius: 999px; height: 14px;
@@ -48,14 +47,12 @@
   }
   .progress-inner { background: var(--good); height: 100%; width: 0%; border-radius: 999px; transition: width 0.3s ease; }
   .progress-inner.full { background: var(--accent2); }
-
   .section-title {
     font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
     letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
     display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
   }
   .section-count { color: var(--dim); font-size: 0.75rem; letter-spacing: 0; text-transform: none; }
-
   .roster { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip {
     display: inline-flex; align-items: center; gap: 8px;
@@ -173,7 +170,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Home Instance Nodes</h1>
   <nav class="nav-bar">
@@ -215,7 +211,6 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
@@ -234,7 +229,6 @@ function normalizeState(s) {
 }
 let state = { owned: {}, custom: [], locs: {} };
 let filter = "all";
-
 const sync = createUserSync({
   key: STATE_KEY,
   sections: ["owned", "custom", "locs"],
@@ -245,9 +239,7 @@ const sync = createUserSync({
   onRender: () => render(),
   setOnline: (ok, msg) => setSync(ok, msg)
 });
-
 function save(immediate) { sync.save(immediate); }
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
@@ -636,7 +628,6 @@ function render() {
     }
     wrap.appendChild(roster);
   }
-
   for (const [id, f] of [["f-all","all"],["f-needed","needed"],["f-owned","owned"]])
     document.getElementById(id).className = "filter-btn" + (filter === f ? " on" : "");
 }
@@ -723,6 +714,5 @@ function showToast(message) {
   render();
 })();
 </script>
-
 </body>
 </html>

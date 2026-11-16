@@ -6,7 +6,6 @@ function esc(s) {
     .replace(/'/g, "&#39;")
     .replace(/"/g, "&quot;");
 }
-
 function todayStr(d) {
   const dt = d || new Date();
   return dt.getFullYear() + "-" +
@@ -50,7 +49,12 @@ function flash(msg) {
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove("show"), 1800);
 }
-
+function lastWeekdayOfMonth(y, m, weekday) {
+  const last = new Date(y, m, 0);
+  const back = (last.getDay() - weekday + 7) % 7;
+  last.setDate(last.getDate() - back);
+  return todayStr(last);
+}
 function nthWeekdayOfMonth(y, m, weekday, nth) {
   const first = new Date(y, m - 1, 1);
   const offset = (weekday - first.getDay() + 7) % 7;
@@ -59,7 +63,6 @@ function nthWeekdayOfMonth(y, m, weekday, nth) {
   if (probe.getMonth() !== m - 1) return null;
   return todayStr(probe);
 }
-
 function rollingDueDate(task) {
   const n = task.repeat_every || 3;
   let d = task.start_date;
@@ -72,7 +75,6 @@ function rollingDueDate(task) {
   }
   return d;
 }
-
 function ruleFiresOn(task, dateStr) {
   const start = task.start_date;
   if (dateStr < start) return false;
@@ -89,7 +91,7 @@ function ruleFiresOn(task, dateStr) {
     case "biweekly": {
       if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
         return false;
-      const every = task.repeat_every || 2;    // now every N weeks: 2, 4, ...
+      const every = task.repeat_every || 2;
       const a = parseDateStr(start);
       const b = parseDateStr(dateStr);
       const weekOf = dt => {
@@ -111,6 +113,8 @@ function ruleFiresOn(task, dateStr) {
       const [sy, sm] = start.split("-").map(Number);
       const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
       if (mdiff < 0 || mdiff % every !== 0) return false;
+      if ((task.repeat_nth || 1) === 5)
+        return lastWeekdayOfMonth(y, m, wd) === dateStr;
       return nthWeekdayOfMonth(y, m, wd, task.repeat_nth || 1) === dateStr;
     }
     case "afterdone":
@@ -123,7 +127,6 @@ function movedHereOn(occRows, taskId, dateStr) {
   return occRows.find(o =>
     o.task_id === taskId && o.moved_to === dateStr && o.status !== "done");
 }
-
 function buildDayModel(tasks, lists, occRows, dateStr, today) {
   const listById = {};
   for (const l of lists) listById[l.id] = l;
@@ -134,22 +137,19 @@ function buildDayModel(tasks, lists, occRows, dateStr, today) {
   const out = [];
   for (const t of tasks) {
     if (t.archived) continue;
+    if (t.is_note || !t.start_date) continue;
     const key = t.id + "|" + dateStr;
     const o = occByTaskDate[key];
-
     if (o && (o.status === "skipped")) continue;
     if (o && o.status === "done" && dateStr === today) continue;
     if (o && o.status === "done" && dateStr !== today) continue;
-
     if (o && o.moved_to && o.moved_to !== dateStr) continue;
-
     const mh = movedHereOn(occRows, t.id, dateStr);
     if (mh) {
       out.push({ task: t, list: listById[t.list_id], occ: mh,
                  time: t.due_time, date: mh.orig_date, moved: true });
       continue;
     }
-
     if (ruleFiresOn(t, dateStr)) {
       out.push({ task: t, list: listById[t.list_id], occ: o || null,
                  time: t.due_time, date: dateStr, moved: false });
@@ -157,7 +157,6 @@ function buildDayModel(tasks, lists, occRows, dateStr, today) {
   }
   return out;
 }
-
 function collectOverdue(tasks, occRows, today, horizonDays = 60) {
   const from = addDaysStr(today, -horizonDays);
   const listById = {};
@@ -167,6 +166,7 @@ function collectOverdue(tasks, occRows, today, horizonDays = 60) {
   const overdue = [];
   for (const t of tasks) {
     if (t.archived) continue;
+    if (t.is_note || !t.start_date) continue;
     if (t.repeat_type === "none") {
       if (t.start_date >= from && t.start_date < today) {
         const o = occByTD[t.id + "|" + t.start_date];
@@ -192,12 +192,10 @@ function collectOverdue(tasks, occRows, today, horizonDays = 60) {
   }
   return overdue;
 }
-
 let listsCache = [];
 let tasksCache = [];
 let occCache = [];
 let realtimeChannel = null;
-
 async function loadAll() {
   [listsCache, tasksCache, occCache] = await Promise.all([
     listRows("task_lists", { orderBy: "sort_order" }),
@@ -205,11 +203,9 @@ async function loadAll() {
     listRows("task_occurrences")
   ]);
 }
-
 async function refreshOcc() {
   occCache = await listRows("task_occurrences");
 }
-
 function subscribeRealtime(onChange) {
   try {
     if (!sb().channel) return false;
@@ -235,7 +231,6 @@ function subscribeRealtime(onChange) {
     return false;
   }
 }
-
 async function markDone(taskId, dateStr) {
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === dateStr);
@@ -253,7 +248,6 @@ async function markDone(taskId, dateStr) {
   await refreshOcc();
   flash("done — shift-click to undo");
 }
-
 async function markSkipped(taskId, dateStr) {
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === dateStr);
@@ -269,7 +263,6 @@ async function markSkipped(taskId, dateStr) {
   await refreshOcc();
   flash("won't do — instance only, future repeats unchanged");
 }
-
 async function moveTask(taskId, fromDate, toDate) {
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === fromDate);
@@ -286,7 +279,6 @@ async function moveTask(taskId, fromDate, toDate) {
   await refreshOcc();
   flash("moved to " + fmtDateLong(toDate));
 }
-
 async function undoOverride(taskId, dateStr) {
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === dateStr);
@@ -294,11 +286,9 @@ async function undoOverride(taskId, dateStr) {
   await refreshOcc();
   flash("undone — back on schedule");
 }
-
 function closeMenus() {
   document.querySelectorAll(".item-menu").forEach(m => m.remove());
 }
-
 function openTaskMenu(e, item, rerender) {
   e.preventDefault();
   closeMenus();
@@ -315,12 +305,10 @@ function openTaskMenu(e, item, rerender) {
     '<button data-act="edit">✎ edit series</button>' +
     '<button data-act="undo" class="danger">↺ undo override</button>';
   document.body.appendChild(menu);
-
   const rect = { x: e.clientX, y: e.clientY };
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
   menu.style.left = Math.min(rect.x, window.innerWidth - mw - 12) + "px";
   menu.style.top = Math.min(rect.y, window.innerHeight - mh - 12) + "px";
-
   menu.querySelector(".menu-x").onclick = closeMenus;
   menu.addEventListener("click", async ev => {
     const act = ev.target.getAttribute("data-act");
@@ -339,7 +327,6 @@ function openTaskMenu(e, item, rerender) {
     if (act === "edit") { openEditor(t); }
     if (act === "undo") { await undoOverride(t.id, orig); rerender(); }
   });
-
   setTimeout(() => document.addEventListener("keydown", function onEsc(ev) {
     if (ev.key === "Escape") { closeMenus(); openMiniCancel(); }
     document.removeEventListener("keydown", onEsc);
@@ -349,9 +336,63 @@ function openTaskMenu(e, item, rerender) {
     document.removeEventListener("click", onDoc);
   }), 0);
 }
-
 let miniDateEl = null;
 function openMiniCancel() { if (miniDateEl) { miniDateEl.remove(); miniDateEl = null; } }
+let mdayCalEl = null;
+let mdayCalY = 0, mdayCalM = 0;
+function closeMdayCal() { if (mdayCalEl) { mdayCalEl.remove(); mdayCalEl = null; } }
+function drawMdayCal() {
+  const inp = document.getElementById("ed-mday");
+  const el = mdayCalEl;
+  const first = new Date(mdayCalY, mdayCalM - 1, 1);
+  const days = new Date(mdayCalY, mdayCalM, 0).getDate();
+  let cells = "";
+  for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
+    cells += '<div class="mc-dow">' + n + "</div>";
+  for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+  for (let d = 1; d <= days; d++) {
+    cells += '<button type="button" class="mc-day' +
+      (Number(inp.value) === d ? " sel" : "") + '" data-d="' + d + '">' + d + "</button>";
+  }
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<div class="mc-nav">' +
+      '<button type="button" id="mc-prev">‹</button>' +
+      '<span class="mc-title">' +
+        first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
+      '</span>' +
+      '<button type="button" id="mc-next">›</button>' +
+    '</div>' +
+    '<div class="mc-grid">' + cells + "</div>";
+  el.querySelector(".menu-x").onclick = closeMdayCal;
+  el.querySelector("#mc-prev").onclick = () => {
+    mdayCalM--; if (mdayCalM < 1) { mdayCalM = 12; mdayCalY--; } drawMdayCal();
+  };
+  el.querySelector("#mc-next").onclick = () => {
+    mdayCalM++; if (mdayCalM > 12) { mdayCalM = 1; mdayCalY++; } drawMdayCal();
+  };
+  el.querySelectorAll(".mc-day").forEach(b => {
+    b.onclick = () => { inp.value = b.getAttribute("data-d"); closeMdayCal(); };
+  });
+}
+function openMdayCal() {
+  closeMenus(); openMiniCancel(); closeMdayCal();
+  const inp = document.getElementById("ed-mday");
+  const base = (document.getElementById("ed-date").value || todayStr()).split("-");
+  mdayCalY = Number(base[0]); mdayCalM = Number(base[1]);
+  const el = document.createElement("div");
+  el.className = "item-menu mday-cal";
+  document.body.appendChild(el);
+  mdayCalEl = el;
+  const r = inp.getBoundingClientRect();
+  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
+  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
+  drawMdayCal();
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
+    if (mdayCalEl && !mdayCalEl.contains(ev.target) && ev.target !== inp) closeMdayCal();
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+}
 function openMiniDate(anchorEvent, cb) {
   closeMenus(); openMiniCancel();
   const el = document.createElement("div");
@@ -374,10 +415,8 @@ function openMiniDate(anchorEvent, cb) {
     if (v) cb(v);
   });
 }
-
 let editingTask = null;
 let selectedDows = [];
-
 function openEditor(task) {
   editingTask = task || null;
   const p = document.getElementById("editor-panel");
@@ -388,7 +427,19 @@ function openEditor(task) {
   document.getElementById("ed-title").value = t.title || "";
   document.getElementById("ed-notes").value = t.notes || "";
   document.getElementById("ed-list").value = t.list_id || edDefaultListId();
-  document.getElementById("ed-date").value = t.start_date || todayStr();
+  document.getElementById("ed-date").value = t.start_date || "";
+  document.getElementById("ed-section").value = t.section || "";
+  document.getElementById("ed-note").checked = !!t.is_note;
+  const dl = document.getElementById("ed-section-list");
+  dl.innerHTML = "";
+  const secs = new Set();
+  const lid = t.list_id || edDefaultListId();
+  for (const x of tasksCache)
+    if (x.list_id === lid && x.section) secs.add(x.section);
+  for (const s of [...secs].sort()) {
+    const o = document.createElement("option");
+    o.value = s; dl.appendChild(o);
+  }
   document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
   document.getElementById("ed-repeat").value = rt;
   document.getElementById("ed-mday").value =
@@ -410,7 +461,6 @@ function openEditor(task) {
   p.classList.add("open");
   document.getElementById("ed-title").focus();
 }
-
 function edDefaultListId() {
   if (window.EDITOR_DEFAULT_LIST) {
     const pref = listsCache.find(l => l.id === window.EDITOR_DEFAULT_LIST);
@@ -418,11 +468,9 @@ function edDefaultListId() {
   }
   return listsCache.length ? listsCache[0].id : "";
 }
-
 function closeEditor() {
   document.getElementById("editor-panel").classList.remove("open");
 }
-
 function renderDows() {
   const row = document.getElementById("ed-dow-row");
   const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -440,18 +488,24 @@ function renderDows() {
     };
   });
 }
-
 async function saveEditor() {
   const title = document.getElementById("ed-title").value.trim();
   if (!title) { flash("give the task a name first"); return; }
   const repeat = document.getElementById("ed-repeat").value;
   const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
   const needsEvery = repeat === "nthmonth" || repeat === "biweekly" || repeat === "afterdone";
+  const isNote = document.getElementById("ed-note").checked;
+  const dateVal = document.getElementById("ed-date").value;
+  if (!isNote && repeat !== "none" && !dateVal) {
+    flash("repeating tasks need a start date"); return;
+  }
   const payload = {
     title: title,
     notes: document.getElementById("ed-notes").value.trim() || null,
     list_id: document.getElementById("ed-list").value,
-    start_date: document.getElementById("ed-date").value || todayStr(),
+    start_date: (isNote || repeat === "none") ? (dateVal || null) : (dateVal || todayStr()),
+    is_note: isNote,
+    section: document.getElementById("ed-section").value.trim() || null,
     due_time: document.getElementById("ed-time").value || null,
     repeat_type: repeat,
     repeat_days: needsDow ? selectedDows.slice().sort() : null,
@@ -466,7 +520,7 @@ async function saveEditor() {
       ? Number(document.getElementById("ed-nth").value) || 1
       : null
   };
-  if (needsDow && !payload.repeat_days.length) {
+  if (!isNote && needsDow && !payload.repeat_days.length) {
     flash("pick at least one day of the week"); return;
   }
   try {
@@ -485,7 +539,6 @@ async function saveEditor() {
   await loadAll();
   window.__rerender && window.__rerender();
 }
-
 async function deleteSeries() {
   if (!editingTask) return;
   if (!confirm("Delete the whole series \"" + editingTask.title +
@@ -502,7 +555,6 @@ async function deleteSeries() {
   window.__rerender && window.__rerender();
   flash("series deleted");
 }
-
 function initEditorUI() {
   document.getElementById("ed-save").onclick = saveEditor;
   document.getElementById("ed-close").onclick = closeEditor;
@@ -523,8 +575,9 @@ function initEditorUI() {
     document.getElementById("ed-nth-row").style.display =
       (v === "nthmonth") ? "block" : "none";
   });
+  const md = document.getElementById("ed-mday");
+  if (md) md.addEventListener("click", openMdayCal);
 }
-
 function renderDay({ filterFn, rerender, containerId = "task-area" }) {
   const area = document.getElementById(containerId);
   if (!area) return;
@@ -539,16 +592,13 @@ function renderDay({ filterFn, rerender, containerId = "task-area" }) {
     if (a.time !== b.time) return a.time < b.time ? -1 : 1;
     return a.task.title.localeCompare(b.task.title);
   });
-
   let over = collectOverdue(tasksCache, occCache, today);
   over = over.filter(it => filterFn(it.list));
   over.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-
   const buckets = ["Anytime", "Morning", "Afternoon", "Evening", "Night"];
   const grouped = {};
   for (const b of buckets) grouped[b] = [];
   for (const it of dayItems) grouped[timeBucket(it.time)].push(it);
-
   let html = "";
   const overdueCount = over.length;
 
@@ -556,23 +606,19 @@ function renderDay({ filterFn, rerender, containerId = "task-area" }) {
     html += '<div class="sec-head overdue-label">Overdue · ' + overdueCount + "</div>";
     for (const it of over) html += taskRowHTML(it, true, rerender);
   }
-
   for (const b of buckets) {
     if (!grouped[b].length) continue;
     html += '<div class="sec-head">' + b + ' <span class="sec-count">· ' +
       grouped[b].length + "</span></div>";
     for (const it of grouped[b]) html += taskRowHTML(it, false, rerender);
   }
-
   if (!overdueCount && !dayItems.length) {
     html = '<div class="empty-note">Nothing scheduled for this day. ' +
       'Add a task with the button above.</div>';
   }
   area.innerHTML = html;
-
   wireRows(area, rerender, viewDate);
 }
-
 function taskRowHTML(it, isOverdue, rerender) {
   const t = it.task;
   const li = it.list || { name: "?", color: "c9a0ff" };
@@ -591,15 +637,12 @@ function taskRowHTML(it, isOverdue, rerender) {
     '<span class="t-list">' + esc(li.name) + "</span>" +
     "</div>";
 }
-
 function wireRows(area, rerender, viewDate) {
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
     const dateStr = row.getAttribute("data-date");
-
     const t = tasksCache.find(x => x.id === taskId);
     if (!t) return;
-
     row.addEventListener("click", async ev => {
       if (ev.target.classList.contains("cb")) {
         if (ev.shiftKey) { await undoOverride(taskId, dateStr); rerender(); }
@@ -608,7 +651,6 @@ function wireRows(area, rerender, viewDate) {
         openEditor(t);
       }
     });
-
     row.oncontextmenu = ev =>
       openTaskMenu(ev,
         { task: t,
@@ -617,18 +659,14 @@ function wireRows(area, rerender, viewDate) {
         rerender);
   });
 }
-
 async function initTaskPage({ pageTitle, filterFn, rerender }) {
-
   initEditorUI();
   document.addEventListener("keydown", ev => {
     if (ev.key === "Escape") closeEditor();
   });
-
   const session = await requireAuth();
   if (!session) return;
   window.__rerender = rerender;
-
   document.getElementById("sync-note").textContent = "connecting…";
   try {
     await loadAll();
@@ -639,15 +677,12 @@ async function initTaskPage({ pageTitle, filterFn, rerender }) {
     rerender();
     return;
   }
-  document.getElementById("sync-note").textContent = "✓ synced";
-
+  document.getElementById("sync-note").textContent = "✓";
   rerender();
-
   subscribeRealtime(async () => {
     await loadAll();
     rerender();
   });
-
   window.addEventListener("focus", async () => {
     await loadAll();
     rerender();

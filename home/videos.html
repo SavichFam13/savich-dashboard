@@ -103,7 +103,6 @@ nav.tabs button:hover { color: var(--text); }
 nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
 .page { display: none; }
 .page.visible { display: block; }
-
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -119,7 +118,6 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
   letter-spacing: 1.5px;
   margin-bottom: 12px;
 }
-
 .owned-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 900px) { .owned-cols { grid-template-columns: 1fr; } }
 .type-col { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
@@ -164,7 +162,6 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
 .mini-btn:hover { border-color: var(--accent2); color: var(--accent2); }
 .mini-btn.del:hover { border-color: var(--bad); color: var(--bad); }
 .mini-btn.cc-toggle:hover { border-color: var(--good); color: var(--good); }
-
 table { width: 100%; border-collapse: collapse; }
 th {
   color: var(--dim); font-size: 0.7rem; font-weight: 700;
@@ -182,7 +179,6 @@ tr:hover td { background: #1d1926; }
 }
 .badge.movie { color: var(--accent2); border: 1px solid var(--accent2); }
 .badge.tv { color: var(--hot-pink); border: 1px solid var(--hot-pink); }
-
 .random-zone { text-align: center; padding: 34px 20px; }
 .slot {
   min-height: 96px;
@@ -198,7 +194,6 @@ tr:hover td { background: #1d1926; }
 .spinning { color: var(--accent2); font-size: 1.2rem; animation: blink 0.35s infinite alternate; }
 @keyframes blink { from { opacity: 1; } to { opacity: 0.25; } }
 .rand-stats { color: var(--dim); font-size: 0.75rem; margin-top: 6px; }
-
 .summary-strip {
   display: flex; gap: 24px; flex-wrap: wrap;
   background: var(--panel); border: 1px solid var(--border);
@@ -206,12 +201,9 @@ tr:hover td { background: #1d1926; }
 }
 .sum-item .sum-num { color: var(--accent2); font-size: 1.3rem; font-weight: 700; }
 .sum-item .sum-label { color: var(--dim); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; }
-
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .toolbar input[type="text"] { flex: 1; min-width: 160px; }
-
 .empty-note { color: var(--dim); font-size: 0.8rem; font-style: italic; padding: 8px 8px; }
-
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(10,8,14,0.75);
@@ -225,7 +217,6 @@ tr:hover td { background: #1d1926; }
 .modal-box h3 { color: var(--hot-pink); font-size: 1rem; margin-bottom: 10px; }
 .modal-box p { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; white-space: pre-line; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
   background: var(--panel); border: 1px solid var(--accent2);
@@ -237,7 +228,6 @@ tr:hover td { background: #1d1926; }
 </style>
 </head>
 <body>
-
 <div class="top">
   <div class="top-right">
     <span class="sync-note" id="sync-note">checking the cloud…</span>
@@ -247,21 +237,17 @@ tr:hover td { background: #1d1926; }
     <input type="file" id="importFile" accept=".json" style="display:none;">
   </div>
 </div>
-
 <header>
   <h1>Media Collection</h1>
   <p class="sub">Own it. Want it. Spin the wheel and watch it.</p>
 </header>
-
 <nav class="tabs">
   <button data-tab="owned" class="active">Owned</button>
   <button data-tab="wishlist">Wishlist</button>
   <button data-tab="random">Random Pick</button>
   <button data-tab="manage">Manage</button>
 </nav>
-
 <div class="summary-strip" id="summaryStrip"></div>
-
 <section class="page visible" id="page-owned">
   <div class="toolbar">
     <input type="text" id="ownedSearch" placeholder="Search owned titles...">
@@ -281,7 +267,6 @@ tr:hover td { background: #1d1926; }
   </div>
   <div class="owned-cols" id="ownedCols"></div>
 </section>
-
 <section class="page" id="page-wishlist">
   <div class="toolbar">
     <input type="text" id="wishSearch" placeholder="Search wishlist titles...">
@@ -306,7 +291,6 @@ tr:hover td { background: #1d1926; }
     </table>
   </div>
 </section>
-
 <section class="page" id="page-random">
   <div class="panel random-zone">
     <div class="section-title">Can't Decide? Roll For It</div>
@@ -321,7 +305,6 @@ tr:hover td { background: #1d1926; }
     <div class="rand-stats" id="randStats"></div>
   </div>
 </section>
-
 <section class="page" id="page-manage">
   <div class="panel">
     <div class="section-title">Categories</div>
@@ -332,7 +315,6 @@ tr:hover td { background: #1d1926; }
     <div id="catList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
   </div>
 </section>
-
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <h3 id="modalTitle"></h3>
@@ -343,7 +325,6 @@ tr:hover td { background: #1d1926; }
     </div>
   </div>
 </div>
-
 <div class="modal-overlay" id="addItemOverlay">
   <div class="modal-box">
     <h3 id="addItemHeading">Add Item</h3>
@@ -377,9 +358,7 @@ tr:hover td { background: #1d1926; }
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
@@ -389,7 +368,6 @@ var CACHE_KEY = "savich-media-cache";
 var LEGACY_ITEMS_KEY = "savich-media-v1";     
 var LEGACY_CATS_KEY = "savich-media-cats-v1";
 var DEFAULT_CATS = ["Sci-Fi", "Horror", "Fantasy", "Action", "Comedy", "Drama", "Animation", "Documentary", "Thriller", "Other"];
-
 var items = [];
 var cats = DEFAULT_CATS.slice();
 var cloudReady = false;
@@ -397,25 +375,20 @@ var lastSyncedPrint = null;
 var saveQueued = false;
 var saveTimer = null;
 var rtReloadTimer = null;
-
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
   });
 }
-
 function snapshot() { return { items: items, cats: cats }; }
-
 function adoptState(value) {
   var o = value && typeof value === "object" ? value : {};
   items = Array.isArray(o.items) ? o.items : [];
   cats = (Array.isArray(o.cats) && o.cats.length) ? o.cats : DEFAULT_CATS.slice();
 }
-
 function fingerprint() {
   try { return JSON.stringify(snapshot()); } catch (e) { return ""; }
 }
-
 function loadCache() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { return null; }
 }
@@ -430,14 +403,12 @@ function loadLegacy() {
   } catch (e) {}
   return null;
 }
-
 function setSync(ok, message) {
   var el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
 function save(immediate) {
   if (!cloudReady) return;
   clearTimeout(saveTimer);
@@ -461,12 +432,10 @@ function save(immediate) {
     }, 900);
   }
 }
-
 function persist(immediate) {
   cacheLocal();
   save(immediate);
 }
-
 function setupRealtime() {
   sb()
     .channel("media-realtime")
@@ -475,7 +444,6 @@ function setupRealtime() {
       function () { scheduleRemoteReload(); })
     .subscribe();
 }
-
 function scheduleRemoteReload() {
   if (saveQueued) {
     clearTimeout(rtReloadTimer);
@@ -504,13 +472,11 @@ function scheduleRemoteReload() {
     }
   }, 300);
 }
-
 adoptState(loadCache());
 if (!items.length) {
   var legacy = loadLegacy();
   if (legacy) { items = legacy.items; cats = legacy.cats; }
 }
-
 var toastTimer = null;
 function toast(msg) {
   var t = document.getElementById("toast");
@@ -519,7 +485,6 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
 }
-
 function askConfirm(title, msg) {
   return new Promise(function (resolve) {
     var ov = document.getElementById("modalOverlay");
@@ -544,7 +509,6 @@ function askConfirm(title, msg) {
     document.addEventListener("keydown", key);
   });
 }
-
 var tabBtns = document.querySelectorAll("nav.tabs button");
 tabBtns.forEach(function (b) {
   b.addEventListener("click", function () {
@@ -554,7 +518,6 @@ tabBtns.forEach(function (b) {
     document.getElementById("page-" + b.dataset.tab).classList.add("visible");
   });
 });
-
 function countBy(type, owned) {
   return items.filter(function (i) { return i.type === type && !!i.owned === owned; }).length;
 }
@@ -570,7 +533,6 @@ function renderSummary() {
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
-
 var addItemCtx = null;
 function openAddItem(mode, existing) {
   addItemCtx = { mode: mode, editId: existing ? existing.id : null };
@@ -616,11 +578,8 @@ function fillCatSelect(sel, chosen) {
     return '<option value="' + esc(c) + '"' + (c === chosen ? " selected" : "") + '>' + esc(c) + '</option>';
   }).join("");
 }
-
 document.getElementById("btnAddWish").addEventListener("click", function () { openAddItem("wishlist"); });
-
 var collapsedCats = {};
-
 function filteredOwned() {
   var q = document.getElementById("ownedSearch").value.trim().toLowerCase();
   var tf = document.getElementById("ownedTypeFilter").value;
@@ -634,13 +593,11 @@ function filteredOwned() {
       (!q || i.title.toLowerCase().indexOf(q) !== -1);
   });
 }
-
 function ccBadgeHTML(i) {
   return i.subs
     ? '<span class="cc-badge cc-has" title="Has subtitles">CC ✓</span>'
     : '<span class="cc-badge cc-no" title="Needs subtitles">CC?</span>';
 }
-
 function renderOwned() {
   var list = filteredOwned();
   var cols = document.getElementById("ownedCols");
@@ -679,7 +636,6 @@ function renderOwned() {
       colHtml + '</div>';
   });
   cols.innerHTML = html;
-
   cols.querySelectorAll(".cat-head").forEach(function (h) {
     h.addEventListener("click", function () {
       var key = h.dataset.key;
@@ -717,7 +673,6 @@ function renderOwned() {
     b.addEventListener("click", function () { openAddItem("owned"); });
   });
 }
-
 function filteredWish() {
   var q = document.getElementById("wishSearch").value.trim().toLowerCase();
   var tf = document.getElementById("wishTypeFilter").value;
@@ -725,7 +680,6 @@ function filteredWish() {
     return !i.owned && (!tf || i.type === tf) && (!q || i.title.toLowerCase().indexOf(q) !== -1);
   }).sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
 }
-
 function renderWish() {
   var list = filteredWish();
   var body = document.getElementById("wishBody");
@@ -772,7 +726,6 @@ function renderWish() {
     });
   });
 }
-
 var spinning = false;
 function doRandom(type) {
   var pool = items.filter(function (i) { return i.owned && i.type === type; });
@@ -804,7 +757,6 @@ function doRandom(type) {
 }
 document.getElementById("btnRandMovie").addEventListener("click", function () { doRandom("movie"); });
 document.getElementById("btnRandTV").addEventListener("click", function () { doRandom("tv"); });
-
 function renderCats() {
   var el = document.getElementById("catList");
   el.innerHTML = cats.map(function (c) {
@@ -834,7 +786,6 @@ document.getElementById("btnAddCat").addEventListener("click", function () {
   inp.value = "";
   persist(); renderAll(); toast("Category added.");
 });
-
 function refreshFilters() {
   var oc = document.getElementById("ownedCatFilter");
   var cur = oc.value;
@@ -849,7 +800,6 @@ function refreshFilters() {
 ["wishSearch", "wishTypeFilter"].forEach(function (id) {
   document.getElementById(id).addEventListener("input", renderWish);
 });
-
 document.getElementById("btnExport").addEventListener("click", function () {
   var d = new Date().toISOString().slice(0, 10);
   var blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type: "application/json" });
@@ -884,7 +834,6 @@ document.getElementById("importFile").addEventListener("change", function (e) {
   };
   reader.readAsText(f);
 });
-
 function renderAll() {
   refreshFilters();
   renderSummary();
@@ -893,20 +842,16 @@ function renderAll() {
   renderCats();
 }
 renderAll();
-
 (async function initSharedCloud() {
   try {
     var session = await requireAuth();
     if (!session) return; 
-
     var cloud = await loadBlob(CLOUD_KEY);
     if (cloud && cloud.items) {
-
       adoptState(cloud);
       cacheLocal();
       renderAll();
     } else {
-
       await saveBlob(CLOUD_KEY, snapshot());
     }
     lastSyncedPrint = fingerprint();

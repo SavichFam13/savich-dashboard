@@ -33,16 +33,13 @@
   .back-link { color: var(--dim); text-decoration: none; font-size: 0.9rem; }
   .back-link:hover { color: var(--accent); }
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
-
   .section-title {
     font-size: 0.9rem; color: var(--hot-pink); text-transform: uppercase;
     letter-spacing: 1.5px; font-weight: 700; margin: 26px 0 6px;
   }
   .section-note { color: var(--dim); font-size: 0.82rem; margin-bottom: 10px; }
-
   .clock { color: var(--dim); font-size: 0.95rem; margin-bottom: 14px; }
   .clock b { color: var(--text); }
-
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
   .roster {
@@ -133,7 +130,6 @@
     text-decoration: underline;
   }
   .sched-wp:hover { border-color: var(--accent); }
-
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--good);
@@ -169,7 +165,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Event Timers!</h1>
   <nav class="nav-bar">
@@ -180,7 +175,6 @@
     <a href="#" class="nav-btn active">Timers</a>
   </nav>
 </div>
-
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log &middot; shift-click = unlog/remove last &middot; right-click = schedule</span></div>
 <div class="section-title">World Bosses</div>
 <div class="roster" id="roster-wb"></div>
@@ -194,7 +188,6 @@
 <div class="roster" id="roster-misc"></div>
 <div class="section-title">Ad-hoc &amp; Seasonal</div>
 <div class="roster" id="roster-adhoc"></div>
-
 <div class="schedule-panel" id="schedule-panel">
   <div class="sched-head">
     <span class="sched-name" id="sched-name"></span>
@@ -203,13 +196,10 @@
   <div class="sched-pattern" id="sched-pattern"></div>
   <div id="sched-list"></div>
 </div>
-
 <div class="flash-msg" id="flash-msg"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-
 const WORLD_BOSSES = [
   { name: "Svanir Shaman Chief",     short: "Svanir Shaman Chief", interval: 120, offset: 15,  color: "#959393", tid: "wb_svanir", zone: "Wayfarer Foothills"},
   { name: "Fire Elemental",          short: "Fire Elemental", interval: 120, offset: 45,  color: "#959393", tid: "wb_fire", zone: "Metrica Province"},
@@ -222,7 +212,6 @@ const WORLD_BOSSES = [
   { name: "Megadestroyer",           short: "Megadestroyer", interval: 180, offset: 30,  color: "#959393", tid: "wb_mega", zone: "Mount Maelstrom" },
   { name: "Claw of Jormag",          short: "Claw of Jormag", interval: 180, offset: 150, color: "#959393", tid: "wb_jormag", zone: "Frostgorge Sound" }
 ];
-
 const DAILY_BOSSES = [
   {
     name: "Triple Trouble",
@@ -250,7 +239,6 @@ const DAILY_BOSSES = [
     zone: "Southsun Cove"
   }
 ];
-
 const CONVERGENCES = [
   { name: "Mount Balrior Convergence", short: "Cum Stained Bear", color: "#94a3ff",
     interval: 180, offset: 0, tid: "bear", zone: "Lowland Shores" },
@@ -261,7 +249,6 @@ const CONVERGENCES = [
   { name: "Dragonstorm", short: "Brahmance", color: "#2c21cc",
     interval: 120, offset: 60, tid: "brahmance", zone: "Eye of the North" }
 ];
-
 const METAS = [
   { name: "Hammerhart Rumble", short: "Family Time", color: "#e43710",
     interval: 120, offset: 160, tid: "family", zone: "Shipwreck Strand" },
@@ -284,7 +271,6 @@ const METAS = [
   { name: "The Battle of Tarir", short: "Forest Squid", color: "#b5e48c",
     interval: 120, offset: 300, tid: "squid", zone: "Auric Basin (West)" }
 ];
-
 const MISC = [
   { name: "Dragon's Stand", short: "Dragon's Stand", color: "#b5e48c",
     interval: 120, offset: 90, tid: "dragonstand", zone: "Dragon's Stand" },
@@ -327,7 +313,6 @@ const MISC = [
     zones: ["Diessa Plateau", "Brisban Wildlands", "Snowden Drifts", "Kessex Hills"],
     wps: ["[&BN0AAAA=]", "[&BHUAAAA=]", "[&BLQAAAA=]", "[&BBIAAAA=]"] },
 ];
-
 const ADHOC = [
   { short: "Raids", name: "Raids", tid: "raids", color: "#7c01ff", multi: true,
     zone: "Whatever wing we're doing", reward: "Raids are raids" },
@@ -358,22 +343,17 @@ const ADHOC = [
   { short: "Turtle Power", name: "Turtle Power", tid: "turtlepower", color: "#66e0ff",
     zone: "Gyala Delve (Sewers)", reward: "Runs whenever someone starts it" }
 ];
-
 const LOCAL_DAILY = "gw2-tracker-daily";
 const LOCAL_CARRY = "gw2-tracker-daily-carry";
 const ROLLOVER_MINS = { furby: 40, dragonstand: 90, island: 45, joras: 40 };
-
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-
 let USER_ID = null;
-
 let daily = { epoch: -1, done: {} };
 let carry = null;
 let updatedAt = {};
-
 function normDaily(s) {
   if (!s || typeof s !== "object" || typeof s.epoch !== "number" ||
       !s.done || typeof s.done !== "object") return { epoch: -1, done: {} };
@@ -384,7 +364,6 @@ function normCarry(s) {
       !s.done || typeof s.done !== "object") return null;
   return { epoch: s.epoch, done: { ...s.done } };
 }
-
 const sync = createUserSync({
   key: "gw2-tracker-daily",
   sections: ["daily", "carry"],
@@ -408,21 +387,17 @@ const sync = createUserSync({
   onRender: () => render(),
   setOnline: (ok, msg) => setSync(ok, msg)
 });
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
 function dailyEpoch(nowMs) { return Math.floor(nowMs / 86400000); }
-
 function getDailyState(nowMs) {
   const ep = dailyEpoch(nowMs);
   if (daily.epoch !== ep) daily = { epoch: ep, done: {} };
   return daily;
 }
-
 function saveDailyState(s) {
   daily = s;
   updatedAt.daily = Date.now();
@@ -432,22 +407,15 @@ function saveCarryState() {
   updatedAt.carry = Date.now();
   sync.save(true);
 }
-
 function isLogged(tid, nowMs) {
   return getDailyState(nowMs).done[tid] !== undefined;
 }
-
-// ---- multi-completion helpers ----
-// Multi events store done[tid] = [ms, ms, ...] instead of a single timestamp.
-// Legacy single-number values are treated as a 1-entry array.
-
 function getLogs(tid, nowMs) {
   const v = getDailyState(nowMs).done[tid];
   if (v === undefined) return [];
   if (Array.isArray(v)) return v;
   return [v];
 }
-
 function logMulti(ev, nowMs, removeLast) {
   const s = getDailyState(nowMs);
   const logs = getLogs(ev.tid, nowMs);
@@ -466,7 +434,6 @@ function logMulti(ev, nowMs, removeLast) {
   }
   saveDailyState(s);
 }
-
 function unlogAtIndex(ev, idx, nowMs) {
   const s = getDailyState(nowMs);
   const logs = getLogs(ev.tid, nowMs);
@@ -479,7 +446,6 @@ function unlogAtIndex(ev, idx, nowMs) {
         (logs.length ? " \u2014 \u00D7" + logs.length + " today" : ""));
   render();
 }
-
 function toggleLog(ev, nowMs, remove) {
   const s = getDailyState(nowMs);
   if (remove) {
@@ -496,14 +462,12 @@ function toggleLog(ev, nowMs, remove) {
   }
   saveDailyState(s);
 }
-
 function prevSlotMs(ev, nowMs) {
   if (!ev.interval && !ev.daily) return nowMs;
   const mu = minutesUntil(ev, nowMs);
   if (mu <= 5) return nowMs + mu * 60000;
   return nowMs - minutesSince(ev, nowMs) * 60000;
 }
-
 function logWithRollover(ev, nowMs, remove) {
   const slotMs   = prevSlotMs(ev, nowMs);
   const creditMs = slotMs + ROLLOVER_MINS[ev.tid] * 60000;
@@ -527,10 +491,8 @@ function logWithRollover(ev, nowMs, remove) {
   }
   saveCarryState();
 }
-
 let selectedEv = null;
 let liveChips = [];
-
 function zoneFor(ev, tMs) {
   if (!ev.zones) return ev.zone || "";
   const n = ev.zones.length;
@@ -538,7 +500,6 @@ function zoneFor(ev, tMs) {
   if (idx < 0) idx += n;
   return ev.zones[idx];
 }
-
 function wpFor(ev, tMs) {
   if (!ev.wps) return "";
   const n = ev.wps.length;
@@ -561,7 +522,6 @@ function wpBtn(wp) {
   };
   return btn;
 }
-
 function minutesUntil(ev, nowMs) {
   const nowMin = nowMs / 60000;
   if (ev.daily) {
@@ -580,7 +540,6 @@ function minutesUntil(ev, nowMs) {
   if (delta < 0) delta += ev.interval;
   return delta;
 }
-
 function minutesSince(ev, nowMs) {
   const nowMin = nowMs / 60000;
   if (ev.daily) {
@@ -599,7 +558,6 @@ function minutesSince(ev, nowMs) {
   if (since < 0) since += ev.interval;
   return since;
 }
-
 function nextOccurrences(ev, nowMs, count) {
   const out = [];
   if (ev.daily) {
@@ -621,7 +579,6 @@ function nextOccurrences(ev, nowMs, count) {
   }
   return out;
 }
-
 function fmtClock(ms) {
   const d = new Date(ms);
   let h = d.getHours() % 12; if (h === 0) h = 12;
@@ -647,7 +604,6 @@ function fmtCDShort(min) {
   if (h > 0) return h + "hr " + String(m).padStart(2, "0") + "m";
   return m + "m";
 }
-
 function patternFor(ev) {
   if (!ev.interval && !ev.daily) return ev.zone || "untimed";
   let s = "";
@@ -664,7 +620,6 @@ function patternFor(ev) {
   if (ev.heads) s += " \u00B7 " + ev.heads.join(", ") + " together";
   return s;
 }
-
 let flashTimer = null;
 function flash(msg) {
   const el = document.getElementById("flash-msg");
@@ -673,13 +628,11 @@ function flash(msg) {
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
-
 function openSchedule(ev, evt) {
   selectedEv = ev;
   const panel = document.getElementById("schedule-panel");
   panel.classList.add("open");
   renderSchedule(Date.now());
-
   const chipEl = evt && evt.currentTarget ? evt.currentTarget : null;
   if (chipEl) {
     panel.style.transform = "none";
@@ -702,38 +655,29 @@ function closeSchedule() {
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeSchedule();
 });
-
-// Renders the "Logged today (xN)" block for multi events, one line per
-// completion, each with its own remove button.
 function appendLoggedBlock(ev, now, list) {
   if (!ev.multi) return;
   const logs = getLogs(ev.tid, now);
   if (!logs.length) return;
-
   const head = document.createElement("div");
   head.className = "sched-logged-title";
   head.textContent = "Logged today (\u00D7" + logs.length + ")";
   list.appendChild(head);
-
   logs.forEach((t, i) => {
     const row = document.createElement("div");
     row.className = "sched-row";
-
     let where = "";
     let wp = "";
     if (ev.interval || ev.daily) {
       where = zoneFor(ev, t);
       wp = wpFor(ev, t);
     }
-
     const left = document.createElement("span");
     left.className = "sched-when";
     left.innerHTML = "<b>" + fmtClock(t) + "</b>" +
       (where ? "<span>" + where + "</span>" : "");
     row.appendChild(left);
-
     if (wp) row.appendChild(wpBtn(wp));
-
     const del = document.createElement("button");
     del.type = "button";
     del.className = "log-del";
@@ -741,20 +685,16 @@ function appendLoggedBlock(ev, now, list) {
     del.title = "remove this log";
     del.onclick = () => { unlogAtIndex(ev, i, Date.now()); };
     row.appendChild(del);
-
     list.appendChild(row);
   });
 }
-
 function renderSchedule(now) {
   if (!selectedEv) return;
   const ev = selectedEv;
   document.getElementById("sched-name").textContent = ev.name;
   document.getElementById("sched-pattern").textContent = patternFor(ev);
-
   const list = document.getElementById("sched-list");
   list.innerHTML = "";
-
   if (!ev.interval && !ev.daily) {
     const row = document.createElement("div");
     row.className = "sched-row";
@@ -764,9 +704,7 @@ function renderSchedule(now) {
     appendLoggedBlock(ev, now, list);
     return;
   }
-
   appendLoggedBlock(ev, now, list);
-
   const times = nextOccurrences(ev, now, 6);
   times.forEach((t, i) => {
     const row = document.createElement("div");
@@ -781,24 +719,19 @@ function renderSchedule(now) {
     list.appendChild(row);
   });
 }
-
 function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
   const roster = document.getElementById(containerId);
   roster.innerHTML = "";
-
   const sorted = preserveOrder || isAdhoc
     ? list.slice()
     : list.slice().sort((a, b) => minutesUntil(a, now) - minutesUntil(b, now));
-
   sorted.forEach(ev => {
     const chip = document.createElement("button");
     chip.type = "button";
-
     let cls = "chip";
     let inner =
       '<span class="dot" style="background:' + ev.color + '"></span>' +
       ev.short;
-
     if (isAdhoc) {
       const n = ev.multi ? getLogs(ev.tid, now).length : (isLogged(ev.tid, now) ? 1 : 0);
       const logged = n > 0;
@@ -822,11 +755,9 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
       const nextT = now + mu * 60000;
       const z = zoneFor(ev, nextT);
       const cdText = isActive ? "" : fmtCDShort(mu);
-
       cls += (isActive ? " active" : (mu <= 11 ? " next" : "")) +
              (logged ? " logged" : "") +
              (selectedEv === ev ? " selected" : "");
-
       inner += ' <span class="chip-cd"' + (isActive ? ' style="display:none"' : '') + '>' + cdText + '</span>' +
               (logged ? ' <span class="tick">\u2713' + (ev.multi ? " \u00D7" + logsN : "") + '</span>' : "");
       if (ev.multi) {
@@ -838,7 +769,6 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
           "\nLeft-click: log to dailies. Right-click: schedule.";
       }
     }
-
     chip.className = cls;
     chip.innerHTML = inner;
     chip.onclick = e => {
@@ -856,22 +786,18 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
     roster.appendChild(chip);
   });
 }
-
 function render() {
   const now = Date.now();
   liveChips = [];
   document.getElementById("clock-now").textContent = fmtClock(now);
-
   renderChips("roster-wb", WORLD_BOSSES, now);
   renderChips("roster-daily", DAILY_BOSSES, now);
   renderChips("roster-conv", CONVERGENCES, now);
   renderChips("roster-meta", METAS, now, true);
   renderChips("roster-misc", MISC, now, true);
   renderChips("roster-adhoc", ADHOC, now, true, true);
-
   renderSchedule(now);
 }
-
 (async function init() {
   const session = await requireAuth();
   if (!session) return;
@@ -884,11 +810,9 @@ if (cached && cached.daily && cached.daily.epoch === dailyEpoch(Date.now())) {
   render();
 }
   await sync.init();
-
   const today = dailyEpoch(Date.now());
   let dirty = false;
   if (daily.epoch !== today) { daily = { epoch: today, done: {} }; dirty = true; }
-
   const migKey = "gw2-timer-migrated:" + USER_ID;
   if (!Store.get(migKey)) {
     const ld = Store.get(LOCAL_DAILY);
@@ -900,18 +824,14 @@ if (cached && cached.daily && cached.daily.epoch === dailyEpoch(Date.now())) {
     if (lc && (!carry || lc.epoch >= carry.epoch)) { carry = normCarry(lc); dirty = true; }
     Store.set(migKey, true);
   }
-
   if (dirty) sync.save(true);
-
   render();
   setInterval(updateClock, 1000);
   setInterval(render, 60000);
 })();
-
 function updateClock() {
   const now = Date.now();
   document.getElementById("clock-now").textContent = fmtClock(now);
-
   liveChips.forEach(function(entry) {
     const chip = entry.chip, ev = entry.ev;
     if (!ev.interval && !ev.daily) return;
@@ -926,10 +846,8 @@ function updateClock() {
       cd.style.display = isActive ? "none" : "";
     }
   });
-
   if (selectedEv) renderSchedule(now);
 }
 </script>
-
 </body>
 </html>

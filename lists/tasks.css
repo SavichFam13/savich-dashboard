@@ -20,7 +20,6 @@ body {
   max-width: 900px;
   margin: 0 auto;
 }
-
 .nav {
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
   padding-bottom: 14px; margin-bottom: 22px;
@@ -35,9 +34,8 @@ body {
 }
 .nav-btn:hover { border-color: var(--accent); color: var(--text); }
 .nav-btn.active { border-color: var(--accent2); color: var(--accent2); }
-.sync-note { font-size: 0.75rem; color: var(--dim); order: -1; }
+.sync-note { font-size: 0.72rem; color: var(--good); letter-spacing: 0.5px; order: -1; }
 .sync-note.off { color: var(--bad); }
-
 h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .date-line { color: var(--dim); font-size: 0.85rem; margin-bottom: 14px; }
 .date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -64,13 +62,11 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   border-top: 1px dashed var(--border);
 }
 .overdue-label { color: var(--bad) !important; }
-
 .sec-head {
   font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase;
   color: var(--accent2); font-weight: 700; margin: 26px 0 10px 0;
 }
 .sec-count { color: var(--dim); font-weight: 400; letter-spacing: 0; }
-
 .task-row {
   display: flex; align-items: center; gap: 12px;
   background: var(--panel); border: 1px solid var(--border);
@@ -103,7 +99,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-row.overdue { border-color: var(--bad); }
 .task-row.overdue .t-time { color: var(--bad); }
-
 .item-menu {
   position: fixed; z-index: 300;
   background: var(--panel); border: 1px solid var(--accent);
@@ -126,7 +121,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   background: var(--bad); color: #121016; border: none;
   font-weight: bold; cursor: pointer; font-size: 0.8rem;
 }
-
 .panel {
   position: fixed; top: 0; right: -420px; width: 380px; max-width: 92vw;
   height: 100%; z-index: 400;
@@ -176,10 +170,7 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   border: 1px solid var(--border); cursor: pointer; font-size: 0.9rem;
 }
 .panel-x:hover { color: var(--bad); border-color: var(--bad); }
-
 .add-bar { margin: 18px 0; display: flex; gap: 10px; }
-
-
 .add-btn {
   background: var(--accent2); color: #121016; border: none;
   border-radius: 999px; padding: 8px 20px;
@@ -197,3 +188,36 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 }
 .flash-msg.show { opacity: 1; }
 .empty-note { color: var(--dim); font-size: 0.8rem; padding: 6px 2px; }
+#ed-mday::-webkit-outer-spin-button,
+#ed-mday::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#ed-mday { -moz-appearance: textfield; appearance: textfield; cursor: pointer; }
+.mday-cal { padding: 12px; width: auto; }
+.mc-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 2px 0 8px;
+}
+.mc-nav button {
+  background: none; border: 1px solid var(--border); color: var(--dim);
+  border-radius: 4px; width: 22px; height: 22px; cursor: pointer;
+  font-family: inherit;
+}
+.mc-nav button:hover { color: var(--accent2); border-color: var(--accent2); }
+.mc-title { color: var(--accent2); font-size: 0.78rem; font-weight: 700; }
+.mc-grid { display: grid; grid-template-columns: repeat(7, 32px); gap: 3px; }
+.mc-dow { font-size: 0.62rem; color: var(--dim); text-align: center; padding: 2px 0; }
+.mc-day {
+  background: var(--panel); border: 1px solid var(--border); color: var(--text);
+  border-radius: 5px; height: 26px; font-family: inherit; font-size: 0.76rem;
+  cursor: pointer; padding: 0;
+}
+.mc-day:hover { border-color: var(--accent2); color: var(--accent2); }
+.mc-day.sel { background: var(--accent2); color: #121016; font-weight: 700; }
+.task-row.note { opacity: 0.8; border-style: dashed; }
+.task-row.note .cb { visibility: hidden; }
+.task-row.note .t-meta { color: var(--accent); }
+.panel .ed-note-flag {
+  display: flex; gap: 8px; align-items: center;
+  font-size: 0.74rem; color: var(--dim);
+  text-transform: none; letter-spacing: 0; margin: 12px 0 0 0;
+}
+.panel .ed-note-flag input { width: auto; }

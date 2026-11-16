@@ -55,12 +55,9 @@
   }
   .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-  
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
-
   .clock { color: var(--dim); font-size: 0.95rem; margin-bottom: 14px; }
   .clock b { color: var(--text); }
-
   .section-title {
     font-size: 0.9rem; color: var(--hot-pink); text-transform: uppercase;
     letter-spacing: 1.5px; font-weight: 700; margin: 26px 0 6px;
@@ -97,7 +94,6 @@
     display: flex; align-items: center; gap: 10px;
   }
   .ghost-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-
   .info-panel {
     display: none; position: fixed; z-index: 100;
     width: min(560px, calc(100vw - 40px));
@@ -121,7 +117,6 @@
   .info-line .lab { color: var(--dim); }
   .info-line.missing { color: var(--now); font-weight: 700; }
   .info-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
-
 .info-del {
   background: none; border: none; color: var(--dim); cursor: pointer;
   font-family: inherit; font-size: 0.85rem; font-weight: 700;
@@ -135,7 +130,6 @@
   text-decoration: underline;
 }
 .info-wp:hover { border-color: var(--accent); }
-
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--good);
@@ -159,7 +153,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Daily &amp; Weekly Tracker</h1>
   <nav class="nav-bar">
@@ -170,9 +163,7 @@
     <a href="#" class="nav-btn active">Trackers</a>
   </nav>
 </div>
-
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log &middot; shift-click = unlog/remove last &middot; right-click = schedule</span></div>
-
 <div class="section-title">Dailies</div>
 <div class="section-note" id="daily-meta"></div>
 <div class="roster" id="roster-daily"></div>
@@ -188,15 +179,11 @@
   </div>
   <div id="info-lines"></div>
 </div>
-
 <div class="flash-msg" id="flash-msg"></div>
-
 <p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC. </p>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-
 const WEEKLY_RESET_MIN_UTC = 450; 
 const EVS = {
   nakedman:   { interval: 120, offset: 20,  map: true },
@@ -232,10 +219,8 @@ const DAILIES = [
   { id: "furby",      name: "Bondage Furby",               color: "#e43710", zone: "Starlit Weald",              reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
   { id: "vault",      name: "Daily Wizards Vault",         color: "#148eb4", zone: "Wherever my cold dead heart beats", reward: "Astral acclaim" }
 ];
-
 const TASK_BY_ID = {};
 DAILIES.forEach(t => { TASK_BY_ID[t.id] = t; });
-
 const KEY_DAILY  = "gw2-tracker-daily";
 const KEY_WEEKLY = "gw2-tracker-weekly";
 const KEY_CARRY = "gw2-tracker-daily-carry";
@@ -246,26 +231,19 @@ const INCURSION_ZONES = ["Diessa Plateau","Brisban Wildlands",
                          "Snowden Drifts","Kessex Hills"];
 const INCURSION_WPS = ["[&BN0AAAA=]","[&BHUAAAA=]",
                        "[&BLQAAAA=]","[&BBIAAAA=]"];
-
 function isMulti(tid) { return MULTI_TIDS.includes(tid); }
-
 function logsFor(tid, nowMs) {
   const v = getFreshState(KEY_DAILY, dailyEpoch(nowMs)).done[tid];
   if (v === undefined) return [];
   if (Array.isArray(v)) return v.slice().sort((a, b) => a - b);
   return [v];
 }
-
 function incursionZone(ms) { return INCURSION_ZONES[mod(new Date(ms).getUTCHours(), 4)]; }
 function incursionWp(ms)   { return INCURSION_WPS[mod(new Date(ms).getUTCHours(), 4)]; }
-
-// Snap an incursion log to its scheduled hour slot (matches timer.html,
-// which stores slot times — the hour identifies the zone).
 function incursionSlotMs(nowMs) {
   const slot = Math.floor(nowMs / 3600000) * 3600000;
   return (nowMs - slot >= 55 * 60000) ? slot + 3600000 : slot;
 }
-
 function logDailyEv(name, tid, ev, nowMs, remove) {
   const slotMs = evPrevMs(ev, nowMs);
   const creditMs = slotMs + ROLLOVER_MINS[tid] * 60000;
@@ -353,7 +331,6 @@ const WEEKLIES = [
   { id: "worldboss", name: "World Boss",                        rotating: "World Boss" },
   { id: "resource",  name: "Resource Action",                   rotating: "Resource Action" }
 ];
-
 const WEEKS = {
   1: { "Defeat Faction or Events/Bounties": "Defeat 50 Titanspawn or Elemental Enemies", "Instanced Content": "Complete Any Raid Encounter", "Meta Event": "Complete a Meta-Event or Events in Horn of Maguuma or 15 Events in Shiverpeak Mountains", "Jumping Puzzle": "Complete the Crimson Plateau Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 50 Veteran-Rank Enemies", "World Boss": "Defeat the Shadow Behemoth World Boss or 10 Complete Events in Queensdale", "Resource Action": "Identify 100 Pieces of Unidentified Gear" },
   2: { "Defeat Faction or Events/Bounties": "Complete 7 Rift Hunts in Castora or 7 Group Events", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Janthir or 15 Events in Orr", "Jumping Puzzle": "Complete the Dark Reverie Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Svanir Shaman Chief World Boss or Complete 10 Events in Wayfarer Foothills", "Resource Action": "Salvage 50 Items" },
@@ -378,14 +355,12 @@ const WEEKS = {
   52: { "Defeat Faction or Events/Bounties": "Defeat 50 Mordrem or Nightmare Court", "Instanced Content": "Complete a Convergence or 5 Fractals", "Meta Event": "Complete a Meta-Event or Events in Cantha or 15 Events in Maguuma Jungle", "Jumping Puzzle": "Complete the Coddler's Cove Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 1 Legendary-Rank Enemy", "World Boss": "Defeat the Great Jungle Wurm World Boss or Complete 10 Events in Caledon Forest", "Resource Action": "Salvage 50 Items" },
   53: { "Defeat Faction or Events/Bounties": "Complete 5 Bounty Missions in the Desolation or 5 Group Events", "Instanced Content": "Complete 3 Fractal in the Fractals of the Mists", "Meta Event": "Complete a Meta-Event or Events in Castora or 15 Events in Orr", "Jumping Puzzle": "Complete the The Collapsed Observatory Jumping Puzzle", "Defeat Enemy Ranks": "Defeat 10 Champion-Rank Enemies", "World Boss": "Defeat the Shatterer World Boss or Complete 10 Events in Blazeridge Steppes", "Resource Action": "Gather 100 Crafting Resources by Mining, Logging, Fishing, or Harvesting Resource Nodes" }
 };
-
 const NAKED_MAPS = ["Gendarran Fields", "Timberline Falls", "Iron Marches"];
 function mod(a, n) { return ((a % n) + n) % n; }
 function nakedMap(slotMs) {
   const h = new Date(slotMs).getUTCHours();
   return NAKED_MAPS[mod(Math.floor(h / 2) - 2, 3)];
 }
-
 function evPrevMs(ev, nowMs) {
   const nowMin = nowMs / 60000;
   const nx = evNextMs(ev, nowMs);
@@ -471,7 +446,6 @@ let weeklyOnline = false;
 let historyOnline = false;
 let historySyncReady = false;
 let lastWeeklyCounts = { done: 0, total: 0 };
-
 function normalizeDailyState(s) {
   s = s || {};
   return {
@@ -500,7 +474,6 @@ function updateSyncNote() {
 function setDailySync(ok)   { dailyOnline = !!ok; updateSyncNote(); }
 function setWeeklySync(ok)  { weeklyOnline = !!ok; updateSyncNote(); }
 function setHistorySync(ok) { historyOnline = !!ok; updateSyncNote(); }
-
 const dailySync = createUserSync({
   key: DAILY_CLOUD_KEY,
   sections: ["daily", "carry"],
@@ -518,7 +491,6 @@ const dailySync = createUserSync({
   onRender: () => render(),
   setOnline: setDailySync
 });
-
 const weeklySync = createUserSync({
   key: WEEKLY_CLOUD_KEY,
   sections: ["weekly"],
@@ -561,7 +533,6 @@ function saveState(key, value) {
     weeklySync.save(true);
   }
 }
-
 function dailyEpoch(nowMs) { return Math.floor(nowMs / 86400000); }
 function weeklyEpoch(nowMs) {
   const WEEK_MS = 7 * 86400000;
@@ -569,7 +540,6 @@ function weeklyEpoch(nowMs) {
   return Math.floor((nowMs - WEEKLY_ANCHOR) / WEEK_MS);
 }
 let rolloverLocked = false;
-
 function getFreshState(key, epoch) {
   const state = loadState(key);
   if (state && state.epoch === epoch) {
@@ -577,7 +547,6 @@ function getFreshState(key, epoch) {
     return state;
   }
   if (rolloverLocked) return state || { epoch: epoch, done: {} };
-
   if (key === KEY_DAILY) {
     if (state && state.epoch !== epoch && state.epoch >= 0) {
       archiveOldDay(state);
@@ -597,7 +566,6 @@ function getFreshState(key, epoch) {
   saveState(key, fresh);
   return fresh;
 }
-
 function archiveOldDay(oldState) {
   if (!oldState || typeof oldState.epoch !== "number") return;
   const done = oldState.done;
@@ -610,15 +578,12 @@ function archiveOldDay(oldState) {
   const year = String(d.getUTCFullYear());
   const dayKey = year + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") +
                  "-" + String(d.getUTCDate()).padStart(2, "0");
-
   historyLogs[year] = historyLogs[year] || {};
   const existing = historyLogs[year][dayKey] || {};
   for (const tid in done) if (existing[tid] === undefined) existing[tid] = done[tid];
   historyLogs[year][dayKey] = existing;
-
   if (historySyncReady) historySync.save(true); 
 }
-
 function loggedStamp(tid, nowMs, isWeekly) {
   const key = isWeekly ? KEY_WEEKLY : KEY_DAILY;
   const ep  = isWeekly ? weeklyEpoch(nowMs) : dailyEpoch(nowMs);
@@ -634,7 +599,6 @@ function toggleLogMulti(name, tid, nowMs) {
   render();
   saveState(KEY_DAILY, s);
 }
-
 function removeLastLog(name, tid, nowMs) {
   const s = getFreshState(KEY_DAILY, dailyEpoch(nowMs));
   const arr = logsFor(tid, nowMs);
@@ -646,7 +610,6 @@ function removeLastLog(name, tid, nowMs) {
   render();
   saveState(KEY_DAILY, s);
 }
-
 function removeLogAt(name, tid, tsMs, nowMs) {
   const s = getFreshState(KEY_DAILY, dailyEpoch(nowMs));
   const arr = logsFor(tid, nowMs);
@@ -686,19 +649,14 @@ function flash(msg) {
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
-
 let infoTask = null;
-
 function openInfo(task, evt, isWeekly) {
   infoTask = { t: task, isWeekly: isWeekly };
   const now = Date.now();
   const panel = document.getElementById("info-panel");
-
   document.getElementById("info-name").textContent = task.name;
-
   const lines = document.getElementById("info-lines");
   lines.innerHTML = "";
-
   function line(html, cls) {
     const div = document.createElement("div");
     div.className = "info-line" + (cls ? " " + cls : "");
@@ -739,15 +697,12 @@ function openInfo(task, evt, isWeekly) {
     if (!isWeekly && isMulti(task.id)) {
       line('<span class="lab">Status:</span> <b style="color:var(--good)">' +
            'done \u00D7' + logs.length + ' today</b>');
-
       logs.forEach(l => {
         const wp = (task.id === "fractalincursion") ? incursionWp(l) : "";
         let txt = fmtClock(l);
         if (task.id === "fractalincursion") txt += " \u00B7 " + incursionZone(l);
-
         const row = document.createElement("div");
         row.className = "info-line";
-
         const del = document.createElement("button");
         del.type = "button";
         del.className = "info-del";
@@ -755,11 +710,9 @@ function openInfo(task, evt, isWeekly) {
         del.title = "remove this log";
         del.onclick = () => { removeLogAt(task.name, task.id, l, Date.now()); closeInfo(); };
         row.appendChild(del);
-
         const label = document.createElement("b");
         label.textContent = txt;
         row.appendChild(label);
-
         if (wp) {
           const btn = document.createElement("button");
           btn.type = "button";
@@ -777,7 +730,6 @@ function openInfo(task, evt, isWeekly) {
         }
         lines.appendChild(row);
       });
-
     } else {
       const ts = logs[0];
       let stampTxt;
@@ -800,9 +752,7 @@ function openInfo(task, evt, isWeekly) {
     if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
     line('<span class="lab">Status:</span> ' + nextTxt);
   }
-
   panel.classList.add("open");
-
   const chipEl = evt && evt.currentTarget ? evt.currentTarget : null;
   if (chipEl) {
     const r = chipEl.getBoundingClientRect();
@@ -822,7 +772,6 @@ function closeInfo() {
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeInfo(); });
 function esc(s) { return String(s).replace(/"/g, "&quot;"); }
-
 function tooltipFor(task, isWeekly, nowMs) {
   let tip = task.name;
   if (task.zone) tip += "\nWhere: " + task.zone;
@@ -852,20 +801,16 @@ function cdSpanHtml(t, now) {
   if (t.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
   return ' <span class="chip-cd live-cd" data-ev="' + t.id + '">' + nextTxt + '</span>';
 }
-
 function renderDailyChips(now) {
   const roster = document.getElementById("roster-daily");
   roster.innerHTML = "";
   const s = getFreshState(KEY_DAILY, dailyEpoch(now));
-
   DAILIES.forEach(t => {
     const ts = s.done[t.id];
     const ev = t.ev ? EVS[t.id] : null;
-
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip" + (ts !== undefined ? " logged" : "");
-
     let inner = '<span class="dot" style="background:' + t.color + '"></span>' + t.name;
     if (ts !== undefined) {
       let stampTxt = fmtClock(ts);
@@ -882,7 +827,6 @@ function renderDailyChips(now) {
     }
     chip.innerHTML = inner;
     chip.title = tooltipFor(t, false, now);
-
 chip.onclick = e => {
   e.preventDefault();
   if (ev && ROLLOVER_MINS[t.id]) {
@@ -898,17 +842,14 @@ chip.onclick = e => {
 chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, false); };
 roster.appendChild(chip);
 });
-
   return Object.keys(s.done).filter(k => DAILIES.some(d => d.id === k)).length + " of " + DAILIES.length + " done";
 }
 function renderGhosts(now) {
   const block = document.getElementById("ghost-block");
   block.innerHTML = "";
   const s = getFreshState(KEY_DAILY, dailyEpoch(now));
-
   const dailyIds = {};
   DAILIES.forEach(t => { dailyIds[t.id] = true; });
-
   const ghosts = Object.keys(s.done)
     .filter(tid => !dailyIds[tid])
     .map(tid => {
@@ -917,39 +858,30 @@ function renderGhosts(now) {
       return { tid: tid, ts: arr[arr.length - 1], logs: arr };
     })
     .sort((a, b) => a.ts - b.ts);
-
   if (ghosts.length === 0) return;
-
   const roster = document.createElement("div");
   roster.className = "roster";
   block.appendChild(roster);
-
   ghosts.forEach(g => {
     const x = EXTRAS[g.tid] || { name: g.tid, zone: "logged from Event Timers" };
     const multi = isMulti(g.tid);
-
     let stamp = fmtClock(g.ts);
     if (g.tid === "fractalincursion") stamp += " \u00B7 " + incursionZone(g.ts);
-
     let tick = ' <span class="tick">\u2713</span>';
     if (multi && g.logs.length > 1) tick = ' <span class="tick">\u2713 \u00D7' + g.logs.length + '</span>';
-
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip ghost logged";
     chip.innerHTML = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' +
                      x.name + tick + '<span class="stamp-info">@ ' + stamp + '</span>';
-
     let tip = x.name + "\nWhere: " + (x.zone || "?");
     if (x.reward) tip += "\nReward: " + x.reward;
     tip += multi
       ? "\nLeft-click: log. Shift-click: remove last. Right-click: details."
       : "\nLeft-click: log. Shift-click: remove last. Right-click: details.";
     chip.title = tip;
-
     const ghostTask = { id: g.tid, name: x.name, zone: x.zone || "",
                         reward: x.reward || "", isGhost: true };
-
     chip.onclick = e => {
       e.preventDefault();
       if (multi) {
@@ -965,24 +897,19 @@ function renderGhosts(now) {
     roster.appendChild(chip);
   });
 }
-
 function renderWeeklyChips(now) {
   const roster = document.getElementById("roster-weekly");
   roster.innerHTML = "";
   const s = getFreshState(KEY_WEEKLY, weeklyEpoch(now));
   const wk = isoWeek(now);
   const weekData = WEEKS[wk] || null;
-
   let doneCount = 0;
   WEEKLIES.forEach(t => {
     const ts = s.done[t.id];
     if (ts !== undefined) doneCount++;
-
     const missing = t.rotating && !(weekData && weekData[t.rotating]);
-
     const chip = document.createElement("button");
     chip.className = "chip" + (ts !== undefined ? " logged" : "") + (missing ? " warn" : "");
-
 let inner = '<span class="dot" style="background:#148eb4"></span>' + t.name;
 if (ts !== undefined) {
   inner += ' <span class="tick">\u2713</span>';
@@ -991,7 +918,6 @@ if (ts !== undefined) {
 }
 chip.innerHTML = inner;
 chip.title = tooltipFor(t, true, now);
-
     chip.onclick = e => {
       e.preventDefault();
       toggleLog(t.name, t.id, Date.now(), true, undefined, e.shiftKey);
@@ -1000,25 +926,20 @@ chip.title = tooltipFor(t, true, now);
     chip.oncontextmenu = e => { e.preventDefault(); openInfo(t, e, true); };
     roster.appendChild(chip);
   });
-
   const pct = WEEKLIES.length ? (doneCount / WEEKLIES.length) * 100 : 0;
   const bar = document.getElementById("weekly-bar");
   bar.style.width = pct + "%";
   bar.className = "progress-inner" + (pct === 100 ? " full" : "");
-
   lastWeeklyCounts = { done: doneCount, total: WEEKLIES.length };
   return lastWeeklyCounts;
 }
 function render() {
   const now = Date.now();
   document.getElementById("clock-now").textContent = fmtClock(now);
-
   renderDailyChips(now);
   document.getElementById("daily-meta").innerHTML =
     "resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";
-
   renderGhosts(now);
-
   const w = renderWeeklyChips(now);
   document.getElementById("weekly-meta").innerHTML =
     "Week " + isoWeek(now) + " \u00B7 " + w.done + " of " + w.total + " done" +
@@ -1029,21 +950,16 @@ function render() {
   if (!session) return;
   USER_ID = session.user && session.user.id;
   if (!USER_ID) return;
-
   rolloverLocked = true;
-
   const dc = Store.get(DAILY_CLOUD_KEY + ":" + USER_ID);
   const wc = Store.get(WEEKLY_CLOUD_KEY + ":" + USER_ID);
-
   if (dc) dailyState = normalizeDailyState(dc);
   if (wc) weeklyState = normalizeWeeklyState(wc);
   render();
-
   await dailySync.init();
   await weeklySync.init();
   await historySync.init();
   historySyncReady = true;
-
   const legacyYearKeys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -1063,20 +979,16 @@ function render() {
   }
   if (adoptedYears) historySync.save(true);
   if (adoptedYears && legacyYearKeys.length) legacyYearKeys.forEach(key => localStorage.removeItem(key));
-
   rolloverLocked = false; 
-
   const nowMs = Date.now();
   getFreshState(KEY_DAILY, dailyEpoch(nowMs));
   getFreshState(KEY_WEEKLY, weeklyEpoch(nowMs));
-
   render();
   setInterval(updateClock, 1000);
   setInterval(render, 60000);
 })();
 function updateClock() {
   const now = Date.now();
-
   document.getElementById("clock-now").textContent = fmtClock(now);
   document.getElementById("daily-meta").innerHTML =
     "resets in <b>" + fmtDur(nextDailyReset(now) - now) + "</b>";

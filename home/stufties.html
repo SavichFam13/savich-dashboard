@@ -55,12 +55,9 @@
     pointer-events: none;
     z-index: 0;
   }
-
-  /* ============ BACKGROUND MAGIC: unicorns + glitter everywhere ============ */
   .sky { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   .sky span { position: absolute; opacity: .6; animation: drift 10s ease-in-out infinite alternate; }
   @keyframes drift { from { transform: translateY(0) rotate(-10deg);} to { transform: translateY(-28px) rotate(12deg);} }
-
   .glitter-field { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
   .glitter-field::before, .glitter-field::after {
     content: "";
@@ -79,7 +76,6 @@
   }
   .glitter-field::after { animation-delay: 1.3s; background-position: 210px 170px; }
   @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
-
   .fall-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
   .fall { position: absolute; top: -8vh; animation: fall linear infinite; }
   @keyframes fall {
@@ -88,7 +84,6 @@
     92% { opacity: .8; }
     100% { transform: translateY(116vh) rotate(200deg); opacity: 0; }
   }
-
   .wrap { position: relative; z-index: 1; }
   .top {
     display: flex; justify-content: space-between; align-items: center;
@@ -123,7 +118,6 @@
     cursor: pointer;
   }
   .backup-btn:hover { filter: brightness(1.15); }
-
   header { text-align: center; margin-bottom: 36px; position: relative; }
   .rainbow-bar {
     height: 10px; border-radius: 999px;
@@ -158,7 +152,6 @@
     transform: rotate(0.8deg);
     background: rgba(255,79,163,.10);
   }
-
   h2.section {
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -177,7 +170,6 @@
     font-size: 0.95rem;
     box-shadow: 0 0 10px rgba(255,79,163,.5);
   }
-
   .stats {
     display: flex; gap: 14px; justify-content: center;
     margin-bottom: 8px; flex-wrap: wrap;
@@ -199,7 +191,6 @@
     margin-bottom: 10px;
   }
   .card:hover { border-color: var(--lf-pink); transition: border-color .2s; }
-
   .addgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   input[type="text"], textarea {
     width: 100%;
@@ -215,7 +206,6 @@
   input::placeholder, textarea::placeholder { color: var(--dim); }
   input:focus, textarea:focus { border-color: var(--lf-blush); box-shadow: 0 0 10px rgba(255,158,207,.3); }
   .full { grid-column: 1 / -1; }
-
   .squish-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .squish-row .lbl { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
   .squish {
@@ -225,7 +215,6 @@
   }
   .squish.lit { filter: none; transform: scale(1.15); }
   .squish:hover { transform: scale(1.25); filter: none; }
-
   button.go {
     margin-top: 12px;
     padding: 10px 26px;
@@ -254,7 +243,6 @@
       inset 0 0 0 1px rgba(255,255,255,.08),
       0 0 36px rgba(216,27,127,.18);
   }
-
   .playpen::after {
     content: "";
     position: absolute;
@@ -264,7 +252,6 @@
     background: linear-gradient(to bottom, var(--wood), var(--wood-dark));
     box-shadow: 0 2px 0 rgba(0,0,0,.35);
   }
-
   .post {
     position: absolute;
     width: 16px; height: calc(100% - 20px);
@@ -283,7 +270,6 @@
     background: radial-gradient(circle at 35% 30%, #ffe98a, var(--lf-gold) 60%, #c9a026);
     box-shadow: 0 2px 6px rgba(0,0,0,.4);
   }
-
   .slats {
     position: absolute;
     top: 12px; bottom: 12px;
@@ -297,7 +283,6 @@
   }
   .slats.left  { left: 15px; }
   .slats.right { right: 15px; }
-
   .pen-sign {
     position: absolute;
     top: 40px; right: 38px;
@@ -313,20 +298,17 @@
     box-shadow: 0 3px 10px rgba(0,0,0,.4);
   }
   .pen-sign::before { content: "🦄 "; }
-
   .pen {
     position: relative; z-index: 2;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
     gap: 26px 18px;
   }
-
   .plushie {
     position: relative;
     padding: 20px 15px 12px;
     background: var(--panel);
     border: 2px dashed rgba(255,158,207,.4);
-
     border-radius: 46px 46px 16px 16px;
     transition: box-shadow .25s ease, border-color .25s ease;
     animation: floaty 5s ease-in-out infinite;
@@ -335,8 +317,6 @@
   .plushie:nth-child(3n)   { border-radius: 46px 46px 10px 10px; }
   .plushie:nth-child(3n+1) { border-radius: 50%; }
   .plushie:nth-child(3n+2) { border-radius: 60px 22px 60px 22px; }
-
-
   @keyframes floaty {
     0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
     50%      { transform: translateY(-6px) rotate(calc(var(--tilt, 0deg) * -0.6)); }
@@ -345,13 +325,10 @@
   .plushie:nth-child(4n+2) { --tilt: 1.5deg; }
   .plushie:nth-child(4n+3) { --tilt: -1deg; }
   .plushie:nth-child(4n)   { --tilt: 2deg; }
-
   .plushie:nth-child(4n+1) { background-color: var(--pastel-pink); }
   .plushie:nth-child(4n+2) { background-color: var(--pastel-blush); }
   .plushie:nth-child(4n+3) { background-color: var(--pastel-magenta); }
   .plushie:nth-child(4n)   { background-color: var(--pastel-lilac); }
-
-
   .plushie::before, .plushie::after {
     content: "";
     position: absolute;
@@ -362,10 +339,8 @@
     border-bottom: none;
     border-radius: 50% 50% 40% 40%;
   }
-
   .plushie:nth-child(odd)::before { left: 26px; transform: rotate(-18deg); }
   .plushie:nth-child(odd)::after  { right: 26px; transform: rotate(18deg); }
-
   .plushie:nth-child(even)::before {
     left: 38px; width: 20px; height: 30px;
     border-radius: 50%;
@@ -376,13 +351,10 @@
     border-radius: 50%;
     transform: rotate(24deg);
   }
-
   .plushie:nth-child(4n+1)::before, .plushie:nth-child(4n+1)::after { background-color: var(--pastel-pink); }
   .plushie:nth-child(4n+2)::before, .plushie:nth-child(4n+2)::after { background-color: var(--pastel-blush); }
   .plushie:nth-child(4n+3)::before, .plushie:nth-child(4n+3)::after { background-color: var(--pastel-magenta); }
   .plushie:nth-child(4n)::before,   .plushie:nth-child(4n)::after   { background-color: var(--pastel-lilac); }
-
-
   .plushie:hover {
     animation-play-state: paused;
     transform: translateY(-10px) scale(1.04);
@@ -394,7 +366,6 @@
     box-shadow: 0 0 22px rgba(255,79,163,.25);
   }
   .plushie.fav::before, .plushie.fav::after { border-color: var(--lf-pink); }
-
   .plushie .emoji {
     font-size: 2.2rem; line-height: 1;
     margin-bottom: 8px;
@@ -402,7 +373,6 @@
     animation: wobble 3s ease-in-out infinite;
   }
   @keyframes wobble { 0%,100% { transform: rotate(-7deg);} 50% { transform: rotate(7deg);} }
-
   .plushie h3 {
     font-size: 1.02rem; color: var(--accent);
     margin-bottom: 2px; line-height: 1.35;
@@ -449,13 +419,11 @@
   .fav-btn.on { filter: none; transform: scale(1.2); }
   .fav-btn:hover { transform: scale(1.3); filter: none; }
   .spacer { flex: 1; }
-
   .empty-msg {
     grid-column: 1 / -1;
     text-align: center; padding: 40px 20px;
     color: var(--dim); font-size: 0.85rem;
   }
-
   .footer-note {
     font-size: 0.73rem;
     color: var(--dim);
@@ -464,7 +432,6 @@
     margin-top: 40px;
     text-align: center;
   }
-
   .toast {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--lf-pink);
@@ -474,7 +441,6 @@
     display: none;
   }
   .toast.show { display: block; }
-
   .glitter {
     position: fixed; pointer-events: none; font-size: 1.4rem;
     animation: pop 900ms ease-out forwards; z-index: 50;
@@ -483,7 +449,6 @@
     0% { transform: scale(.4) translateY(0); opacity: 1; }
     100% { transform: scale(1.7) translateY(-60px); opacity: 0; }
   }
-
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -517,7 +482,6 @@
     border: 1px solid var(--border); font-weight: 400;
   }
   .modal-no:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
-
   .edit-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -554,11 +518,9 @@
     border: 1px solid var(--border); font-weight: 400;
   }
   .edit-cancel:hover { border-color: var(--lf-blush); color: var(--lf-blush); }
-
   @media (prefers-reduced-motion: reduce) {
     .plushie, .plushie .emoji, .sky span, .fall { animation: none; }
   }
-
   @media (max-width: 640px) {
     .addgrid { grid-template-columns: 1fr; }
     .playpen { padding: 50px 14px 36px; }
@@ -567,13 +529,10 @@
 </style>
 </head>
 <body>
-
 <div class="glitter-field"></div>
 <div class="fall-layer" id="fall"></div>
 <div class="sky" id="sky"></div>
-
 <div class="wrap">
-
   <div class="top">
     <span class="sync-note" id="sync-note">checking the cloud…</span>
     <div class="top-right">
@@ -583,14 +542,12 @@
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
   </div>
-
   <header>
     <div class="rainbow-bar"></div>
     <h1>🦄 Iri's Stufties 🧸</h1>
     <p class="tagline">💖✨ A very pink playpen of floof, glitter & squeaks ✨💖</p>
     <div class="stats" id="stats"></div>
   </header>
-
   <h2 class="section"><span class="n">🌟</span> Drop Someone in the Pen</h2>
   <div class="card">
     <div class="addgrid">
@@ -603,7 +560,6 @@
     </div>
     <button class="go" onclick="addStuffie()">into the playpen 💖</button>
   </div>
-
   <h2 class="section"><span class="n">🪵</span> Inside the Playpen</h2>
   <div class="playpen">
     <div class="post tl"></div>
@@ -613,10 +569,8 @@
     <div class="pen-sign">STUFTIES LIVE HERE</div>
     <div class="pen" id="pen"></div>
   </div>
-
   <p class="footer-note">✦ hungriest hearts collect the softest things ✦💖✨</p>
 </div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -624,7 +578,6 @@
     <div class="modal-buttons" id="modal-buttons"></div>
   </div>
 </div>
-
 <div class="edit-overlay" id="edit-overlay">
   <div class="edit-box">
     <h2 id="edit-title">✏️ Edit stufty</h2>
@@ -642,28 +595,22 @@
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
 const CLOUD_KEY = "savich-stufties";
 const CACHE_KEY = "savich-stufties-cache";
-
 let data = { list: [] };
 let cloudReady = false;
-
 let rtChannel = null;
 let rtReloadTimer = null;
 let lastSyncedPrint = null; 
 let saveQueued = false;
-
 function normalizeState(value) {
   const source = value && typeof value === "object" ? value : {};
   return { list: Array.isArray(source.list) ? source.list : [] };
 }
-
 const Store = {
   get(key) {
     try { return JSON.parse(localStorage.getItem(key)); }
@@ -673,14 +620,12 @@ const Store = {
     localStorage.setItem(key, JSON.stringify(value));
   }
 };
-
 function setSync(ok, message) {
   const el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = ok ? (message || "✓ One playpen, whole household") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
 let saveTimer = null;
 function save(immediate) {
   if (!cloudReady) return;
@@ -705,7 +650,6 @@ function save(immediate) {
     }, 900);
   }
 }
-
 function cacheLocal() {
   Store.set(CACHE_KEY, data);
 }
@@ -713,7 +657,6 @@ function fingerprint(obj) {
   try { return JSON.stringify(obj); }
   catch (e) { return ""; }
 }
-
 function setupRealtime() {
   rtChannel = sb()
     .channel("stufties-realtime")
@@ -722,7 +665,6 @@ function setupRealtime() {
       () => scheduleRemoteReload())
     .subscribe();
 }
-
 function scheduleRemoteReload() {
   if (saveQueued) {
     clearTimeout(rtReloadTimer);
@@ -736,7 +678,6 @@ function scheduleRemoteReload() {
       if (!cloud) return;
       const fresh = normalizeState(cloud);
       const fp = fingerprint(fresh);
-
       if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
       if (fp === fingerprint(data)) return;
       data = fresh;
@@ -744,12 +685,10 @@ function scheduleRemoteReload() {
       cacheLocal();
       renderAll();
     } catch (e) {
-
       console.warn("realtime reload skipped:", e.message);
     }
   }, 300);
 }
-
 const SPECIES_EMOJI = [
   ["uni", "🦄"], ["unicorn", "🦄"], ["bear", "🧸"], ["teddy", "🧸"], ["dragon", "🐉"],
   ["cat", "🐱"], ["kitten", "🐱"], ["dog", "🐶"], ["puppy", "🐶"], ["bunny", "🐰"],
@@ -758,7 +697,6 @@ const SPECIES_EMOJI = [
   ["llama", "🦙"], ["alpaca", "🦙"], ["fox", "🦊"], ["bee", "🐝"], ["dino", "🦕"],
   ["dinosaur", "🦕"], ["turtle", "🐢"], ["monkey", "🐵"], ["mouse", "🐭"], ["sheep", "🐑"]
 ];
-
 function emojiFor(species, txt) {
   const hay = ((species || "") + " " + (txt || "")).toLowerCase();
   for (const [word, emo] of SPECIES_EMOJI) {
@@ -766,11 +704,9 @@ function emojiFor(species, txt) {
   }
   return "✨";
 }
-
 function escapeHtml(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
-
 function renderStats() {
   const total = data.list.length;
   const favs = data.list.filter(i => i.fav).length;
@@ -782,7 +718,6 @@ function renderStats() {
      <span class="stat">💖 <b>${favs}</b> favorites</span>
      <span class="stat">🖐️ <b>${avgSquish}</b> avg squish</span>`;
 }
-
 function render() {
   const pen = document.getElementById("pen");
   pen.innerHTML = "";
@@ -811,12 +746,10 @@ function render() {
     pen.appendChild(div);
   });
 }
-
 function renderAll() {
   render();
   renderStats();
 }
-
 let squishValue = 0;
 (function buildSquish() {
   const row = document.getElementById("squishRow");
@@ -834,7 +767,6 @@ let squishValue = 0;
     row.appendChild(b);
   }
 })();
-
 function addStuffie() {
   const g = id => document.getElementById(id);
   const name = g("f-name").value.trim();
@@ -861,7 +793,6 @@ function addStuffie() {
 }
 let editIndex = null;
 let editSquishValue = 0;
-
 function openEdit(i) {
   const item = data.list[i];
   if (!item) return;
@@ -876,7 +807,6 @@ function openEdit(i) {
     el.classList.toggle("lit", idx < editSquishValue));
   document.getElementById("edit-overlay").classList.add("open");
 }
-
 (function buildEditSquish() {
   const row = document.getElementById("edit-squish-row");
   for (let n = 1; n <= 5; n++) {
@@ -893,13 +823,11 @@ function openEdit(i) {
     row.appendChild(b);
   }
 })();
-
 function closeEdit() {
   document.getElementById("edit-overlay").classList.remove("open");
   editIndex = null;
   editSquishValue = 0;
 }
-
 function saveEdit() {
   if (editIndex === null) return;
   const item = data.list[editIndex];
@@ -921,7 +849,6 @@ function saveEdit() {
   renderAll();
   showToast("Glow-up complete ✨");
 }
-
 document.getElementById("edit-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("edit-overlay")) closeEdit();
 });
@@ -931,8 +858,6 @@ document.addEventListener("keydown", e => {
     closeEdit();
   }
 });
-
-
 function toggleFav(i) {
   data.list[i].fav = !data.list[i].fav;
   cacheLocal();
@@ -940,7 +865,6 @@ function toggleFav(i) {
   renderAll();
   if (data.list[i].fav) showToast("Extra special floof detected 💖");
 }
-
 async function removeStuffie(i) {
   const item = data.list[i];
   const ok = await askConfirm(
@@ -955,7 +879,6 @@ async function removeStuffie(i) {
   renderAll();
   showToast("Off to a new adventure. 👋");
 }
-
 function burst(ev) {
   const icons = ["✨","💖","🦄","⭐","🌟","💕","🌈","💫"];
   const x = ev && ev.clientX ? ev.clientX : window.innerWidth / 2;
@@ -971,7 +894,6 @@ function burst(ev) {
     setTimeout(() => s.remove(), 1200);
   }
 }
-
 function exportData() {
   const blob = new Blob([JSON.stringify(data, null, 2)],
     { type: "application/json" });
@@ -984,7 +906,6 @@ function exportData() {
   URL.revokeObjectURL(url);
   showToast("Backup downloaded. Guard it with glitter.");
 }
-
 function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1014,9 +935,7 @@ function importData(e) {
   reader.readAsText(file);
   e.target.value = "";
 }
-
 let modalResolve = null;
-
 function askChoice(title, message, choices) {
   return new Promise(resolve => {
     modalResolve = resolve;
@@ -1036,19 +955,16 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
     { label: "NO", value: false },
     { label: "YES", value: true, primary: true, destructive: !!destructive }
   ]);
 }
-
 function closeModal(result) {
   document.getElementById("modal-overlay").classList.remove("open");
   if (modalResolve) { modalResolve(result); modalResolve = null; }
 }
-
 document.getElementById("modal-overlay").addEventListener("click", e => {
   if (e.target === document.getElementById("modal-overlay")) closeModal(null);
 });
@@ -1058,7 +974,6 @@ document.addEventListener("keydown", e => {
     closeModal(null);
   }
 });
-
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -1095,7 +1010,6 @@ function showToast(message) {
 })();
 data = normalizeState(Store.get(CACHE_KEY));
 renderAll();
-
 (async function initSharedCloud() {
   try {
     const session = await requireAuth();
@@ -1119,6 +1033,5 @@ renderAll();
   }
 })();
 </script>
-
 </body>
 </html>
