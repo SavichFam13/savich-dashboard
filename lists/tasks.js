@@ -477,10 +477,12 @@ function openEditor(task) {
   document.getElementById("ed-repeat").value = rt;
   document.getElementById("ed-mday").value =
     t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
+  document.getElementById("ed-mday").dataset.own = t.repeat_mday || "";
   document.getElementById("ed-mday-row").style.display =
     (rt === "monthly") ? "block" : "none";
   document.getElementById("ed-every").value = t.repeat_every ||
     (rt === "afterdone" ? 3 : rt === "biweekly" ? 2 : rt === "monthly" ? 1 : 6);
+  document.getElementById("ed-every").dataset.own = t.repeat_every || "";
   document.getElementById("ed-every-row").style.display =
     (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly") ? "block" : "none";
   document.getElementById("ed-every-label").textContent =
@@ -600,6 +602,13 @@ function initEditorUI() {
       (v === "weekly" || v === "biweekly" || v === "nthmonth") ? "flex" : "none";
     document.getElementById("ed-mday-row").style.display =
       (v === "monthly") ? "block" : "none";
+    if (v === "monthly") {
+      const evEl = document.getElementById("ed-every");
+      const mdEl = document.getElementById("ed-mday");
+      if (!evEl.dataset.own) evEl.value = 1;
+      if (!mdEl.dataset.own)
+        mdEl.value = Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
+    }
     document.getElementById("ed-every-row").style.display =
       (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly") ? "block" : "none";
     document.getElementById("ed-every-label").textContent =
