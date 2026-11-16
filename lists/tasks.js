@@ -60,6 +60,19 @@ function nthWeekdayOfMonth(y, m, weekday, nth) {
   return todayStr(probe);
 }
 
+function rollingDueDate(task) {
+  const n = task.repeat_every || 3;
+  let d = task.start_date;
+  const map = {};
+  for (const o of occCache) if (o.task_id === task.id) map[o.orig_date] = o;
+  for (let guard = 0; guard < 1000; guard++) {
+    const o = map[d];
+    if (o && (o.status === "done" || o.status === "skipped")) d = addDaysStr(d, n);
+    else return d;
+  }
+  return d;
+}
+
 function ruleFiresOn(task, dateStr) {
   const start = task.start_date;
   if (dateStr < start) return false;
@@ -76,6 +89,7 @@ function ruleFiresOn(task, dateStr) {
     case "biweekly": {
       if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
         return false;
+      const every = task.repeat_every || 2;    // now every N weeks: 2, 4, ...
       const a = parseDateStr(start);
       const b = parseDateStr(dateStr);
       const weekOf = dt => {
@@ -83,7 +97,7 @@ function ruleFiresOn(task, dateStr) {
         d.setDate(d.getDate() - d.getDay());
         return Math.round((d - new Date(d.getFullYear(), 0, 1)) / 604800000);
       };
-      return weekOf(a) % 2 === weekOf(b) % 2;
+      return weekOf(a) % every === weekOf(b) % every;
     }
     case "monthly": {
       const md = task.repeat_mday || Number(start.split("-")[2]);
@@ -99,6 +113,8 @@ function ruleFiresOn(task, dateStr) {
       if (mdiff < 0 || mdiff % every !== 0) return false;
       return nthWeekdayOfMonth(y, m, wd, task.repeat_nth || 1) === dateStr;
     }
+    case "afterdone":
+      return dateStr === rollingDueDate(task);
     default:
       return false;
   }
@@ -366,6 +382,7 @@ function openEditor(task) {
   editingTask = task || null;
   const p = document.getElementById("editor-panel");
   const t = task || {};
+  const rt = t.repeat_type || "none";
   document.getElementById("ed-heading").textContent =
     task ? "Edit Task Series" : "New Task";
   document.getElementById("ed-title").value = t.title || "";
@@ -373,15 +390,21 @@ function openEditor(task) {
   document.getElementById("ed-list").value = t.list_id || edDefaultListId();
   document.getElementById("ed-date").value = t.start_date || todayStr();
   document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
-  document.getElementById("ed-repeat").value = t.repeat_type || "none";
+  document.getElementById("ed-repeat").value = rt;
   document.getElementById("ed-mday").value =
     t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
   document.getElementById("ed-mday-row").style.display =
-    (t.repeat_type === "monthly") ? "block" : "none";
-  document.getElementById("ed-every").value = t.repeat_every || 6;
-  document.getElementById("ed-nth").value = String(t.repeat_nth || 1);
+    (rt === "monthly") ? "block" : "none";
+  document.getElementById("ed-every").value = t.repeat_every ||
+    (rt === "afterdone" ? 3 : rt === "biweekly" ? 2 : 6);
+  document.getElementById("ed-every-row").style.display =
+    (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone") ? "block" : "none";
+  document.getElementById("ed-every-label").textContent =
+    rt === "nthmonth" ? "Every … months" :
+    rt === "biweekly" ? "Every … weeks" :
+    rt === "afterdone" ? "Every … days after completion" : "Every …";
   document.getElementById("ed-nth-row").style.display =
-    (t.repeat_type === "nthmonth") ? "block" : "none";
+    (rt === "nthmonth") ? "block" : "none";
   selectedDows = Array.isArray(t.repeat_days) ? t.repeat_days.slice() : [];
   renderDows();
   p.classList.add("open");
@@ -423,6 +446,7 @@ async function saveEditor() {
   if (!title) { flash("give the task a name first"); return; }
   const repeat = document.getElementById("ed-repeat").value;
   const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
+  const needsEvery = repeat === "nthmonth" || repeat === "biweekly" || repeat === "afterdone";
   const payload = {
     title: title,
     notes: document.getElementById("ed-notes").value.trim() || null,
@@ -435,7 +459,7 @@ async function saveEditor() {
       repeat === "monthly"
         ? Number(document.getElementById("ed-mday").value) || 1
         : null,
-    repeat_every: repeat === "nthmonth"
+    repeat_every: needsEvery
       ? Number(document.getElementById("ed-every").value) || 1
       : null,
     repeat_nth: repeat === "nthmonth"
@@ -485,13 +509,19 @@ function initEditorUI() {
   const del = document.getElementById("ed-delete");
   if (del) del.onclick = deleteSeries;
   document.getElementById("ed-repeat").addEventListener("change", function () {
+    const v = this.value;
     document.getElementById("ed-dow-row").style.display =
-      (this.value === "weekly" || this.value === "biweekly" ||
-       this.value === "nthmonth") ? "flex" : "none";
+      (v === "weekly" || v === "biweekly" || v === "nthmonth") ? "flex" : "none";
     document.getElementById("ed-mday-row").style.display =
-      (this.value === "monthly") ? "block" : "none";
+      (v === "monthly") ? "block" : "none";
+    document.getElementById("ed-every-row").style.display =
+      (v === "nthmonth" || v === "biweekly" || v === "afterdone") ? "block" : "none";
+    document.getElementById("ed-every-label").textContent =
+      v === "nthmonth" ? "Every … months" :
+      v === "biweekly" ? "Every … weeks" :
+      v === "afterdone" ? "Every … days after completion" : "Every …";
     document.getElementById("ed-nth-row").style.display =
-      (this.value === "nthmonth") ? "block" : "none";
+      (v === "nthmonth") ? "block" : "none";
   });
 }
 

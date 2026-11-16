@@ -56,25 +56,28 @@
     <option value="biweekly">Every 2 weeks</option>
     <option value="monthly">Monthly</option>
     <option value="nthmonth">Every N months on the Nth weekday</option>
+    <option value="afterdone">Every N days after completion</option>
+  </select>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
   <div id="ed-mday-row" style="display:none">
     <label for="ed-mday">Day of month</label>
     <input id="ed-mday" type="number" min="1" max="31">
   </div>
+  <div id="ed-every-row" style="display:none">
+    <label for="ed-every" id="ed-every-label">Every …</label>
+    <input id="ed-every" type="number" min="1" max="120">
+  </div>
   <div id="ed-nth-row" style="display:none">
-    <label for="ed-every">Every … months</label>
-    <input id="ed-every" type="number" min="1" max="60">
     <label for="ed-nth">On the …</label>
     <select id="ed-nth">
       <option value="1">1st</option>
       <option value="2">2nd</option>
       <option value="3">3rd</option>
-      <option value="4th">4th</option>
+      <option value="4">4th</option>
       <option value="5">5th (only if the month has one)</option>
     </select>
-  </div>
-  <label for="ed-notes">Notes</label>
+  </div>or="ed-notes">Notes</label>
   <textarea id="ed-notes" placeholder="optional details"></textarea>
   <button class="btn" id="ed-save">SAVE</button>
   <button class="btn btn-del" id="ed-delete">DELETE ENTIRE SERIES</button>

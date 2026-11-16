@@ -58,13 +58,15 @@
     <option value="biweekly">Every 2 weeks</option>
     <option value="monthly">Monthly</option>
     <option value="nthmonth">Every N months on the Nth weekday</option>
+    <option value="afterdone">Every N days after completion</option>
+  </select>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
   <div id="ed-mday-row" style="display:none">
     <label for="ed-mday">Day of month</label>
     <input id="ed-mday" type="number" min="1" max="31">
   </div>
-    <div id="ed-nth-row" style="display:none">
+  <div id="ed-nth-row" style="display:none">
     <label for="ed-every">Every … months</label>
     <input id="ed-every" type="number" min="1" max="60">
     <label for="ed-nth">On the …</label>

@@ -8,7 +8,6 @@ function dowsText(t) {
   if (!Array.isArray(t.repeat_days) || !t.repeat_days.length) return "?";
   return t.repeat_days.map(d => DNAMES[d]).join(", ");
 }
-
 function repeatDescr(t) {
   const tm = t.due_time ? " · " + fmtTime(t.due_time) : " · anytime";
   switch (t.repeat_type) {
@@ -16,14 +15,18 @@ function repeatDescr(t) {
     case "daily":    return "Every day" + tm;
     case "weekdays": return "Weekdays Mon–Fri" + tm;
     case "weekly":   return "Weekly on " + dowsText(t) + tm;
-    case "biweekly": return "Every 2 weeks on " + dowsText(t) + tm;
+    case "biweekly": return "Every " + (t.repeat_every || 2) +
+                      " weeks on " + dowsText(t) + tm;
     case "monthly":  return "Monthly on day " +
                       (t.repeat_mday || Number(t.start_date.split("-")[2])) + tm;
     case "nthmonth": return "Every " + (t.repeat_every || 1) + " mo. on the " +
                       nthName(t.repeat_nth || 1) + " " + dowsText(t) + tm;
+    case "afterdone":return "Every " + (t.repeat_every || 3) +
+                      " days after completion" + tm;
     default:         return "";
   }
 }
+
 function nextFireDate(t, fromStr, maxDays) {
   maxDays = maxDays || 550;
   for (let i = 1; i <= maxDays; i++) {

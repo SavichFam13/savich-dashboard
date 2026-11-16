@@ -33,7 +33,6 @@
     margin-bottom: 10px;
     letter-spacing: 0.5px;
   }
-  p.sub { color: var(--dim); margin-bottom: 38px; font-size: 0.9rem; }
   h2.section {
     font-size: 0.75rem;
     letter-spacing: 2px;
@@ -92,7 +91,7 @@
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
 
-  /* ---- Today widget ---- */
+  /* ---- Today widget (always the same size, never grows) ---- */
   .today-widget {
     grid-column: 1 / -1;
     background: var(--panel);
@@ -102,6 +101,7 @@
     text-decoration: none;
     color: var(--text);
     display: block;
+    cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
   .today-widget:hover { transform: translateY(-3px); border-color: var(--accent2); }
@@ -126,9 +126,56 @@
     margin-right: 8px; vertical-align: middle;
   }
   .tw-empty { font-size: 0.82rem; color: var(--dim); }
+  .tw-open-hint { font-size: 0.72rem; color: var(--dim); margin-top: 6px; }
+
+  /* ---- Today popup (slides over the dashboard) ---- */
+  .today-overlay {
+    position: fixed; inset: 0; z-index: 250;
+    background: rgba(10, 8, 14, 0.72);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .today-overlay.open { display: flex; }
+  .to-panel {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    width: min(780px, 96vw);
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .to-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 18px 22px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .to-title { color: var(--accent2); font-size: 1.2rem; font-weight: 700; }
+  .to-date { color: var(--dim); font-size: 0.85rem; }
+  .to-count { color: var(--dim); font-size: 0.85rem; }
+  .to-count.over { color: var(--bad); font-weight: 700; }
+  .to-full {
+    margin-left: auto; align-self: center;
+    color: var(--dim); font-size: 0.75rem; text-decoration: none;
+    padding-right: 10px;
+  }
+  .to-full:hover { color: var(--accent2); }
+  .to-x {
+    align-self: center;
+    background: none; color: var(--dim);
+    border: 1px solid var(--border); border-radius: 50%;
+    width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem;
+  }
+  .to-x:hover { color: var(--bad); border-color: var(--bad); }
+  .to-hint {
+    padding: 8px 22px 12px; color: var(--dim);
+    font-size: 0.7rem; border-bottom: 1px solid var(--border);
+  }
+  .to-body { padding: 16px 22px 24px; overflow-y: auto; }
 
   #gate {
-    position: fixed; inset: 0; z-index: 200;
+    position: fixed; inset: 0; z-index: 300;
     background: var(--bg);
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
@@ -146,12 +193,8 @@
   .gate-box { width: 100%; max-width: 360px; text-align: center; display: none; }
   .gate-box.show { display: block; }
   .gate-box .cat { font-size: 2.2rem; margin-bottom: 8px; }
-  .gate-box h2 {
-    color: var(--accent); font-size: 1.2rem; margin-bottom: 6px;
-  }
-  .gate-box p.hint {
-    color: var(--dim); font-size: 0.8rem; margin-bottom: 24px;
-  }
+  .gate-box h2 { color: var(--accent); font-size: 1.2rem; margin-bottom: 6px; }
+  .gate-box p.hint { color: var(--dim); font-size: 0.8rem; margin-bottom: 24px; }
   .gate-field { margin-bottom: 14px; text-align: left; }
   .gate-field label {
     display: block; font-size: 0.68rem; color: var(--dim);
@@ -177,6 +220,12 @@
   }
   .gate-btn:hover { filter: brightness(1.1); }
   .gate-btn:disabled { opacity: 0.5; cursor: wait; }
+</style>
+<!-- task-page styles (rows, menus, editor drawer, flash) reused by the popup -->
+<link rel="stylesheet" href="lists/tasks.css">
+<style>
+  /* tasks.css narrows the page; keep the dashboard's wide layout */
+  body { max-width: 1060px; padding: 40px 20px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -214,6 +263,7 @@
     </div>
     <div class="tw-progress"><div class="tw-bar" id="tw-bar"></div></div>
     <div class="tw-next" id="tw-next">Checking the cloud…</div>
+    <div class="tw-open-hint">click to open today's list right here — ctrl/middle-click for the full page</div>
   </a>
 </nav>
 
@@ -222,7 +272,7 @@
   <a href="gw2/trackers.html" class="nav-card">
     <h3>Daily & Weekly Tracker</h3>
   </a>
-    <a href="gw2/timer.html" class="nav-card">
+  <a href="gw2/timer.html" class="nav-card">
     <h3>Event Timer</h3>
   </a>
   <a href="gw2/misc.html" class="nav-card">
@@ -249,22 +299,22 @@
 </nav>
 <h2 class="section">Personal Shit</h2>
 <nav class="nav-grid">
-      <a href="home/bucket.html" class="nav-card">
+  <a href="home/bucket.html" class="nav-card">
     <h3>Bucket List</h3>
   </a>
-      <a href="home/stufties.html" class="nav-card">
+  <a href="home/stufties.html" class="nav-card">
     <h3>Iri's Stufties</h3>
   </a>
-      <a href="home/bos.html" class="nav-card">
+  <a href="home/bos.html" class="nav-card">
     <h3>Book of Shadows</h3>
     <p>UNDER CONSTRUCTION!</p>
   </a>
 </nav>
 <h2 class="section">Health & Wellness</h2>
 <nav class="nav-grid">
-      <a href="health/checkin.html" class="nav-card">
+  <a href="health/checkin.html" class="nav-card">
     <h3>Daily Health Checkin</h3>
-        <p>UNDER CONSTRUCTION!</p>
+    <p>UNDER CONSTRUCTION!</p>
   </a>
 </nav>
 
@@ -273,10 +323,77 @@
   <button onclick="signOut()">Sign out</button>
 </div>
 
+<!-- ===== Today popup: slides over the dashboard ===== -->
+<div class="today-overlay" id="today-overlay">
+  <div class="to-panel">
+    <div class="to-head">
+      <span class="to-title">Today</span>
+      <span class="to-date" id="ov-date"></span>
+      <span class="to-count" id="ov-count"></span>
+      <a href="lists/today.html" class="to-full" id="ov-fullpage">open full page ↗</a>
+      <button class="to-x" id="ov-close" title="close (Esc)">✕</button>
+    </div>
+    <div class="to-hint">checkbox = done · shift-click = undo · right-click = won't do / move / edit · click title = edit series</div>
+    <div class="to-body" id="overlay-tasks"></div>
+  </div>
+</div>
+
+<!-- ===== series editor drawer (used from the popup) ===== -->
+<div class="panel" id="editor-panel">
+  <button class="panel-x" id="ed-close">✕</button>
+  <h2 id="ed-heading">New Task</h2>
+  <label for="ed-title">Title</label>
+  <input id="ed-title" type="text" placeholder="Clean off stove top">
+  <label for="ed-list">List</label>
+  <select id="ed-list"></select>
+  <label for="ed-date">Starts on</label>
+  <input id="ed-date" type="date">
+  <label for="ed-time">Time of day (blank = anytime)</label>
+  <input id="ed-time" type="time">
+  <label for="ed-repeat">Repeat</label>
+  <select id="ed-repeat">
+    <option value="none">Doesn't repeat (one time)</option>
+    <option value="daily">Every day</option>
+    <option value="weekdays">Weekdays (Mon–Fri)</option>
+    <option value="weekly">Weekly</option>
+    <option value="biweekly">Every 2 weeks</option>
+    <option value="monthly">Monthly</option>
+    <option value="nthmonth">Every N months on the Nth weekday</option>
+    <option value="afterdone">Every N days after completion</option>
+  </select>
+  <div class="dow-row" id="ed-dow-row" style="display:none"></div>
+  <div id="ed-mday-row" style="display:none">
+    <label for="ed-mday">Day of month</label>
+    <input id="ed-mday" type="number" min="1" max="31">
+  </div>
+  <div id="ed-every-row" style="display:none">
+    <label for="ed-every" id="ed-every-label">Every …</label>
+    <input id="ed-every" type="number" min="1" max="120">
+  </div>
+  <div id="ed-nth-row" style="display:none">
+    <label for="ed-nth">On the …</label>
+    <select id="ed-nth">
+      <option value="1">1st</option>
+      <option value="2">2nd</option>
+      <option value="3">3rd</option>
+      <option value="4">4th</option>
+      <option value="5">5th (only if the month has one)</option>
+    </select>
+  </div>
+  <label for="ed-notes">Notes</label>
+  <textarea id="ed-notes" placeholder="optional details"></textarea>
+  <button class="btn" id="ed-save">SAVE</button>
+  <button class="btn btn-del" id="ed-delete">DELETE ENTIRE SERIES</button>
+  <div class="panel-note">Editing affects the whole series. To change just one day's copy, right-click it in the list instead.</div>
+</div>
+
+<div class="flash-msg" id="flash-msg"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="db.js"></script>
 <script src="lists/tasks.js"></script>
 <script>
+  /* ================= gate (unchanged behavior) ================= */
   const gate = document.getElementById("gate");
   const gateDot = document.getElementById("gate-dot");
   const gateBox = document.getElementById("gate-box");
@@ -329,10 +446,9 @@
     if (session) {
       localStorage.setItem(UNLOCK_FLAG, String(Date.now()));
       const email = session.user && session.user.email ? session.user.email : "";
-      document.getElementById("who").textContent =
-        "Signed in as " + email;
+      document.getElementById("who").textContent = "Signed in as " + email;
       hideGate();
-      initTodayWidget();
+      initTaskSystem();
       return;
     }
 
@@ -363,8 +479,10 @@
     }
   });
 
-  /* ---- compact Today widget ---- */
-  function initTodayWidget() {
+  /* ================= task system: widget + popup ================= */
+  let taskSysReady = false;
+
+  function initTaskSystem() {
     (async () => {
       try {
         await loadAll();
@@ -373,14 +491,34 @@
           "Could not reach the task cloud — check your connection.";
         return;
       }
+      taskSysReady = true;
+      window.VIEW_DATE = todayStr();
+      initEditorUI();
+      fillEdList();
       renderTodayWidget();
+
       subscribeRealtime(async () => {
         await loadAll();
+        fillEdList();
         renderTodayWidget();
+        if (document.getElementById("today-overlay").classList.contains("open"))
+          renderTodayPopup();
       });
     })();
   }
 
+  function fillEdList() {
+    const sel = document.getElementById("ed-list");
+    sel.innerHTML = "";
+    for (const l of listsCache) {
+      const opt = document.createElement("option");
+      opt.value = l.id;
+      opt.textContent = l.name + (l.scope === "personal" ? " (mine)" : "");
+      sel.appendChild(opt);
+    }
+  }
+
+  /* ---- widget: fixed-size summary, never grows ---- */
   function renderTodayWidget() {
     const today = todayStr();
     const count = document.getElementById("tw-count");
@@ -388,7 +526,6 @@
     const bar = document.getElementById("tw-bar");
     const next = document.getElementById("tw-next");
 
-    /* done + scheduled, counted from rules + overrides */
     const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
     let scheduled = 0, done = 0;
     const seen = new Set();
@@ -401,7 +538,6 @@
     for (const it of todays) {
       if (!seen.has(it.task.id)) { seen.add(it.task.id); scheduled++; }
     }
-
     const over = collectOverdue(tasksCache, occCache, today);
 
     count.textContent = scheduled
@@ -413,14 +549,14 @@
     bar.style.width = pct + "%";
     bar.classList.toggle("full", scheduled > 0 && done >= scheduled);
 
-    /* next 4 upcoming with times */
     const upcoming = todays.filter(it => it.time).sort((a, b) =>
       a.time < b.time ? -1 : a.time > b.time ? 1 : 0).slice(0, 4);
     if (!todays.length) {
-      next.innerHTML = '<span class="tw-empty">A clean slate — add tasks on the Today page.</span>';
+      next.innerHTML = '<span class="tw-empty">A clean slate — add tasks from the Today list.</span>';
     } else if (!upcoming.length) {
       next.innerHTML = '<span class="tw-empty">' + todays.length +
-        ' anytime task' + (todays.length === 1 ? "" : "s") + ' — see the Today page.</span>';
+        ' anytime task' + (todays.length === 1 ? "" : "s") +
+        ' — click to see them all.</span>';
     } else {
       next.innerHTML = upcoming.map(it => {
         const li = it.list || { name: "?", color: "c9a0ff" };
@@ -430,6 +566,73 @@
       }).join("");
     }
   }
+
+  /* ---- popup: full list over the dashboard, scroll inside ---- */
+  function openTodayPopup() {
+    if (!taskSysReady) return;
+    window.VIEW_DATE = todayStr();
+    document.getElementById("today-overlay").classList.add("open");
+    renderTodayPopup();
+  }
+
+  function closeTodayPopup() {
+    document.getElementById("today-overlay").classList.remove("open");
+  }
+
+  function renderTodayPopup() {
+    const today = todayStr();
+    document.getElementById("ov-date").textContent = fmtDateLong(today);
+
+    const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
+    let scheduled = 0, done = 0;
+    const seen = new Set();
+    for (const o of occCache) {
+      if (o.orig_date === today && o.status === "done") {
+        done++;
+        if (!seen.has(o.task_id)) { seen.add(o.task_id); scheduled++; }
+      }
+    }
+    for (const it of todays) {
+      if (!seen.has(it.task.id)) { seen.add(it.task.id); scheduled++; }
+    }
+    const over = collectOverdue(tasksCache, occCache, today);
+    const cEl = document.getElementById("ov-count");
+    cEl.textContent = scheduled + " scheduled · " + done + " done" +
+      (over.length ? " · " + over.length + " OVERDUE" : "");
+    cEl.classList.toggle("over", !!over.length);
+
+    renderDay({
+      filterFn: list => !!list,
+      rerender: renderTodayPopup,
+      containerId: "overlay-tasks"
+    });
+  }
+
+  window.__rerender = function () {
+    renderTodayWidget();
+    if (document.getElementById("today-overlay").classList.contains("open"))
+      renderTodayPopup();
+  };
+
+  /* click = popup; ctrl-click / middle-click = full page (browser default) */
+  document.getElementById("today-widget").addEventListener("click", e => {
+    if (e.ctrlKey || e.metaKey || e.button === 1) return;
+    e.preventDefault();
+    openTodayPopup();
+  });
+
+  document.getElementById("ov-close").onclick = closeTodayPopup;
+  document.getElementById("today-overlay").addEventListener("click", e => {
+    if (e.target === e.currentTarget) closeTodayPopup();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (document.querySelector(".item-menu")) { closeMenus(); openMiniCancel(); return; }
+    const ep = document.getElementById("editor-panel");
+    if (ep && ep.classList.contains("open")) { closeEditor(); return; }
+    closeTodayPopup();
+  });
 </script>
 
 </body>
