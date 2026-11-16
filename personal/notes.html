@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sticky Notes</title>
+<style>
+  :root {
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #f2eef7;
+    --accent: #c9a0ff;
+    --accent2: #5fd3c4;
+    --hot-pink: #e10ab2;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --good: #7ddba3;
+    --bad: #ff8a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 32px 20px;
+    max-width: 1340px;
+    margin: 0 auto;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
+  .top-right {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
+
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  .toolbar-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 14px; border-radius: 5px;
+    font-family: inherit; font-size: 0.78rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent2); }
+  .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  #note-count { font-size: 0.79rem; color: var(--dim); }
+  #search-box {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 8px 12px; font-family: inherit;
+    font-size: 0.82rem; width: 240px;
+  }
+  #search-box:focus { outline: none; border-color: var(--accent2); }
+
+  /* ---- the board ---- */
+  .board {
+    position: relative;
+    min-height: 72vh;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(201,160,255,0.03), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(95,211,196,0.03), transparent 40%);
+  }
+  .board-hint {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--dim); font-size: 0.85rem; text-align: center;
+    pointer-events: none; line-height: 2;
+  }
+
+  /* ---- sticky notes ---- */
+  .note {
+    --nb: #2b2240;
+    --nbord: #c9a0ff;
+    position: absolute;
+    width: 245px;
+    background: var(--nb);
+    border: 1px solid var(--nbord);
+    border-radius: 4px 4px 16px 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    transform: rotate(var(--rot, -2deg));
+    transition: box-shadow 0.15s ease;
+  }
+  .note.dragging {
+    box-shadow: 0 16px 34px rgba(0,0,0,0.6);
+    transition: none;
+    z-index: 9999 !important;
+  }
+  .note.dimmed { opacity: 0.18; }
+  .note.c0 { --nb: #2b2240; --nbord: #c9a0ff; }
+  .note.c1 { --nb: #163a35; --nbord: #5fd3c4; }
+  .note.c2 { --nb: #3a1733; --nbord: #e10ab2; }
+  .note.c3 { --nb: #3a2222; --nbord: #ff8a8a; }
+  .note.c4 { --nb: #211d2b; --nbord: #a89bbd; }
+  /* tape strip */
+  .note::before {
+    content: "";
+    position: absolute; top: -9px; left: 50%;
+    width: 64px; height: 18px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: rgba(242,238,247,0.13);
+    border: 1px solid rgba(242,238,247,0.06);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .note-grab {
+    height: 30px;
+    cursor: grab;
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 34px 0 10px;
+    border-bottom: 1px solid rgba(242,238,247,0.07);
+    touch-action: none;
+  }
+  .note-grab:active { cursor: grabbing; }
+  .grab-handle { color: var(--nbord); font-size: 0.75rem; opacity: 0.5; }
+  .palette {
+    margin-left: auto; display: none; gap: 5px; padding: 4px 0;
+  }
+  .note:hover .palette { display: flex; }
+  .pdot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.4);
+    cursor: pointer; padding: 0;
+  }
+  .pdot:hover { outline: 1px solid var(--text); }
+  .pdot.p0 { background: #c9a0ff; } .pdot.p1 { background: #5fd3c4; }
+  .pdot.p2 { background: #e10ab2; } .pdot.p3 { background: #ff8a8a; }
+  .pdot.p4 { background: #a89bbd; }
+  .note-del {
+    position: absolute; top: 5px; right: 6px;
+    background: none; border: 1px solid transparent; color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 2px 6px;
+    font-size: 0.72rem; font-family: inherit;
+    line-height: 1;
+  }
+  .note-del:hover { border-color: var(--bad); color: var(--bad); }
+  .note textarea {
+    width: 100%; background: transparent; border: none; resize: none;
+    color: var(--text); font-family: inherit; font-size: 0.82rem;
+    line-height: 1.55; padding: 10px 12px 14px;
+    min-height: 130px; outline: none; display: block;
+    overflow: hidden;
+  }
+  .note textarea::placeholder { color: var(--dim); opacity: 0.6; }
+  .note-meta {
+    font-size: 0.62rem; color: var(--dim); opacity: 0.65;
+    padding: 0 12px 8px; text-align: right;
+  }
+
+  /* ---- modal + toast (same as inventory page) ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 { font-size: 0.96rem; color: var(--hot-pink); margin-bottom: 12px; line-height: 1.4; }
+  .modal-box p { font-size: 0.81rem; color: var(--dim); line-height: 1.6; margin-bottom: 22px; white-space: pre-line; }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--bad); color: #121016; border: none; }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 110; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 640px) {
+    .note { width: 210px; }
+    #search-box { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Sticky Notes</h1>
+  <div class="top-right">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <a href="../index.html" class="nav-btn">Dashboard</a>
+    <button class="nav-btn" onclick="doSignOut()">Sign Out</button>
+  </div>
+</div>
+<p class="sub">Your personal wall of stickies &mdash; private to your account, saved to the cloud as you type. Grab a note by its top strip to move it anywhere on the board.</p>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
+    <span id="note-count">0 notes</span>
+  </div>
+  <input type="search" id="search-box" placeholder="Search your notes&hellip;">
+</div>
+
+<div class="board" id="board">
+  <div class="board-hint" id="board-hint">
+    A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons">
+      <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script>
+let notes = [];          // the rows from the cloud
+let uid = null;
+let zTop = 10;
+let editingId = null;    // note whose textarea has focus (skip during live reload)
+let draggingId = null;    // note currently being dragged
+const textTimers = {};    // per-note debounced text saves
+const PALETTE_COUNT = 5;
+
+function esc(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function ensureAuth() {
+  if (typeof requireAuth === "function") return await requireAuth();
+  const { data } = await sb().auth.getSession();
+  if (!data || !data.session) {
+    location.href = "../auth.html?next=" + encodeURIComponent(location.pathname);
+    throw new Error("not signed in");
+  }
+}
+
+async function doSignOut() {
+  try { await sb().auth.signOut(); } catch (e) {}
+  location.href = "../auth.html";
+}
+
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "\u2713 live") : "offline \u2014 changes NOT saved";
+  el.classList.toggle("live", !!ok);
+}
+
+/* ---------- load / save ---------- */
+
+async function loadNotes() {
+  const { data, error } = await sb()
+    .from("sticky_notes").select("*")
+    .eq("user_id", uid)
+    .order("id", { ascending: true });
+  if (error) throw error;
+  notes = data || [];
+}
+
+function stampNow() { return new Date().toISOString(); }
+
+async function savePatch(note, patch) {
+  note.updated_at = stampNow();
+  try {
+    const { error } = await sb().from("sticky_notes")
+      .update(patch).eq("id", note.id);
+    if (error) throw error;
+    setSync(true);
+  } catch (e) {
+    console.error("sticky save failed:", e.message);
+    setSync(false);
+  }
+}
+
+function queueTextSave(note, text) {
+  note.text = text;
+  clearTimeout(textTimers[note.id]);
+  textTimers[note.id] = setTimeout(() => {
+    savePatch(note, { text: note.text, updated_at: stampNow() });
+  }, 700);
+}
+
+/* ---------- create / delete / color ---------- */
+
+async function createNote() {
+  const idx = notes.length;
+  const board = document.getElementById("board");
+  const x = Math.min(
+    30 + (idx % 6) * 262 + (Math.random() * 40 - 20),
+    Math.max(20, board.clientWidth - 265)
+  );
+  const y = 40 + Math.floor(idx / 6) * 270 + (Math.random() * 40 - 20);
+  const color = Math.floor(Math.random() * PALETTE_COUNT);
+
+  try {
+    const { data, error } = await sb().from("sticky_notes")
+      .insert([{ user_id: uid, text: "", color: color, x: Math.round(x), y: Math.round(y) }])
+      .select().single();
+    if (error) throw error;
+    notes.push(data);
+    renderNotes();
+    setSync(true);
+    const el = document.querySelector('.note[data-id="' + data.id + '"] textarea');
+    if (el) { el.focus(); bringToFront(el.closest(".note")); }
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Could not create the note.");
+  }
+}
+
+async function deleteNote(id) {
+  const n = notes.find(r => r.id === id);
+  if (!n) return;
+  const preview = (n.text || "").split("\n")[0].slice(0, 60);
+  const ok = await askConfirm(
+    "Throw this sticky away?",
+    (preview ? '"' + preview + '"\n\n' : "") +
+    "This permanently deletes it from the cloud.",
+    true
+  );
+  if (!ok) return;
+  try {
+    const { error } = await sb().from("sticky_notes").delete().eq("id", id);
+    if (error) throw error;
+    notes = notes.filter(r => r.id !== id);
+    renderNotes();
+    setSync(true);
+  } catch (e) {
+    console.error(e);
+    showToast("Could not delete the note.");
+  }
+}
+
+function setColor(id, c) {
+  const n = notes.find(r => r.id === id);
+  if (!n) return;
+  n.color = c;
+  const el = document.querySelector('.note[data-id="' + id + '"]');
+  if (el) el.className = el.className.replace(/\bc\d\b/g, "c" + c);
+  savePatch(n, { color: c });
+}
+
+/* ---------- render ---------- */
+
+function fmtAge(iso) {
+  if (!iso) return "";
+  const mins = Math.floor((Date.now() - Date.parse(iso)) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + "h ago";
+  return Math.floor(hrs / 24) + "d ago";
+}
+
+function renderNotes() {
+  const board = document.getElementById("board");
+  board.querySelectorAll(".note").forEach(el => el.remove());
+  document.getElementById("board-hint").style.display =
+    notes.length ? "none" : "block";
+  document.getElementById("note-count").textContent =
+    notes.length + " note" + (notes.length === 1 ? "" : "s");
+
+  const q = document.getElementById("search-box").value.trim().toLowerCase();
+
+  for (const n of notes) {
+    const note = document.createElement("article");
+    note.className = "note c" + (n.color || 0) + (draggingId === n.id ? " dragging" : "");
+    note.dataset.id = n.id;
+    const rot = ((n.id * 37) % 9) - 4;   // same tilt everywhere, from the id alone
+    note.style.left = n.x + "px";
+    note.style.top = n.y + "px";
+    note.style.setProperty("--rot", rot + "deg");
+
+    const grab = document.createElement("div");
+    grab.className = "note-grab";
+    grab.innerHTML = '<span class="grab-handle">&#9776;</span>';
+    const pal = document.createElement("div");
+    pal.className = "palette";
+    for (let c = 0; c < PALETTE_COUNT; c++) {
+      const d = document.createElement("button");
+      d.className = "pdot p" + c;
+      d.title = "change color";
+      d.onclick = (e) => { e.stopPropagation(); setColor(n.id, c); };
+      pal.appendChild(d);
+    }
+    grab.appendChild(pal);
+
+    const del = document.createElement("button");
+    del.className = "note-del";
+    del.title = "delete note";
+    del.innerHTML = "&#10005;";
+    del.onclick = (e) => { e.stopPropagation(); deleteNote(n.id); };
+
+    const ta = document.createElement("textarea");
+    ta.placeholder = "type here\u2026";
+    ta.spellcheck = false;
+    ta.value = n.text || "";
+    if (editingId === n.id) ta.focus();
+    ta.addEventListener("focus", () => { editingId = n.id; bringToFront(note); });
+    ta.addEventListener("blur", () => { if (editingId === n.id) editingId = null; });
+    ta.addEventListener("input", () => {
+      ta.style.height = "auto";
+      ta.style.height = Math.max(130, ta.scrollHeight) + "px";
+      queueTextSave(n, ta.value);
+    });
+
+    const meta = document.createElement("div");
+    meta.className = "note-meta";
+    meta.textContent = "saved " + fmtAge(n.updated_at);
+
+    note.appendChild(grab);
+    note.appendChild(del);
+    note.appendChild(ta);
+    note.appendChild(meta);
+    attachDrag(note, grab, n);
+    board.appendChild(note);
+
+    ta.style.height = "auto";
+    ta.style.height = Math.max(130, ta.scrollHeight) + "px";
+
+    if (q && !(n.text || "").toLowerCase().includes(q)) note.classList.add("dimmed");
+  }
+}
+
+function bringToFront(el) {
+  el.style.zIndex = ++zTop;
+}
+
+/* ---------- dragging ---------- */
+
+function attachDrag(noteEl, grabEl, n) {
+  let startX = 0, startY = 0, origX = 0, origY = 0, moved = false;
+
+  grabEl.addEventListener("pointerdown", (e) => {
+    if (e.target.classList.contains("pdot")) return;
+    e.preventDefault();
+    grabEl.setPointerCapture(e.pointerId);
+    startX = e.clientX; startY = e.clientY;
+    origX = n.x; origY = n.y;
+    moved = false;
+    draggingId = n.id;
+    noteEl.classList.add("dragging");
+    bringToFront(noteEl);
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX, dy = ev.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      const board = document.getElementById("board");
+      n.x = Math.max(0, Math.min(origX + dx, board.clientWidth - noteEl.offsetWidth));
+      n.y = Math.max(0, origY + dy);
+      noteEl.style.left = n.x + "px";
+      noteEl.style.top = n.y + "px";
+    };
+    const onUp = () => {
+      grabEl.removeEventListener("pointermove", onMove);
+      grabEl.removeEventListener("pointerup", onUp);
+      draggingId = null;
+      noteEl.classList.remove("dragging");
+      if (moved) savePatch(n, { x: n.x, y: n.y });
+    };
+    grabEl.addEventListener("pointermove", onMove);
+    grabEl.addEventListener("pointerup", onUp);
+  });
+
+  noteEl.addEventListener("pointerdown", () => bringToFront(noteEl));
+}
+
+/* ---------- live sync ---------- */
+
+let rtTimer = null;
+function setupRealtime() {
+  sb()
+    .channel("sticky-notes-rt-" + uid)
+    .on("postgres_changes",
+      { event: "*", schema: "public", table: "sticky_notes",
+        filter: "user_id=eq." + uid },
+      () => scheduleRemoteReload())
+    .subscribe();
+}
+
+function scheduleRemoteReload() {
+  // don't yank the wall out from under someone mid-edit / mid-drag
+  if (editingId !== null || draggingId !== null) {
+    clearTimeout(rtTimer);
+    rtTimer = setTimeout(scheduleRemoteReload, 800);
+    return;
+  }
+  clearTimeout(rtTimer);
+  rtTimer = setTimeout(async () => {
+    try {
+      await loadNotes();
+      renderNotes();
+    } catch (e) {
+      console.warn("sticky realtime reload skipped:", e);
+    }
+  }, 250);
+}
+
+/* ---------- modal + toast (same pattern as inventory) ---------- */
+
+let modalResolve = null;
+function askConfirm(title, message, destructive) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-yes").classList.add("modal-yes");
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+document.getElementById("modal-yes").onclick = () => closeModal(true);
+document.getElementById("modal-no").onclick = () => closeModal(false);
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) closeModal(false);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" &&
+      document.getElementById("modal-overlay").classList.contains("open")) {
+    closeModal(false);
+  }
+});
+
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+document.getElementById("search-box").addEventListener("input", renderNotes);
+
+/* ---------- boot ---------- */
+
+(async function init() {
+  try { await ensureAuth(); } catch (e) { return; }
+  const session = await sb().auth.getSession();
+  uid = session.data && session.data.session && session.data.session.user.id;
+  if (!uid) return;
+
+  try {
+    await loadNotes();
+    setupRealtime();
+    setSync(true);
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not load your notes from the cloud.");
+  }
+  renderNotes();
+})();
+</script>
+
+</body>
+</html>
