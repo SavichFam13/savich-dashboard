@@ -282,8 +282,15 @@ async function markSkipped(taskId, dateStr) {
       task_id: taskId, orig_date: dateStr, status: "skipped"
     });
   }
+  const t = tasksCache.find(x => x.id === taskId);
+  if (t && t.repeat_type === "none" && !t.archived) {
+    await updateRow("tasks", t.id, { archived: true });
+    flash("won't do — one-time task filed under Done · skipped today");
+  } else {
+    flash("won't do — instance only, future repeats unchanged");
+  }
   await refreshOcc();
-  flash("won't do — instance only, future repeats unchanged");
+  await loadAll();
 }
 async function moveTask(taskId, fromDate, toDate) {
   const existing = occCache.find(o =>
@@ -305,7 +312,12 @@ async function undoOverride(taskId, dateStr) {
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === dateStr);
   if (existing) await deleteRow("task_occurrences", existing.id);
+  const t = tasksCache.find(x => x.id === taskId);
+  if (t && t.archived) {
+    await updateRow("tasks", t.id, { archived: false });
+  }
   await refreshOcc();
+  await loadAll();
   flash("undone — back on schedule");
 }
 function closeMenus() {

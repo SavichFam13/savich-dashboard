@@ -171,6 +171,12 @@ function renderListView() {
     if (!groups[s]) { groups[s] = []; order.push(s); }
     groups[s].push(t);
   }
+  const handledToday = new Set();
+  for (const o of occCache)
+    if (o.orig_date === today && (o.status === "done" || o.status === "skipped"))
+      handledToday.add(o.task_id);
+  for (const s of order)
+    groups[s] = groups[s].filter(t => !handledToday.has(t.id));  
   const rowFor = (t, note) => {
     const occToday = occCache.find(o => o.task_id === t.id && o.orig_date === today);
     const doneToday = occToday && occToday.status === "done";
@@ -200,6 +206,7 @@ function renderListView() {
   for (const s of order) {
     const label = s || "No Section";
     const key = s || "__loose__";
+    if (!groups[s].length) continue;
     html += '<div class="sec-block' + (collapsed.has(key) ? " closed" : "") +
       '" data-sec="' + key + '">' +
       '<div class="sec-head" data-sec="' + key + '"><span class="sec-arrow">▾</span> ' +
@@ -215,6 +222,19 @@ function renderListView() {
       '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
       '<span class="sec-count">· ' + notes.length + "</span></div>";
     for (const t of notes) html += rowFor(t, true);
+    html += "</div>";
+  }
+    const handled = [];
+  for (const o of occCache) {
+    if (o.orig_date !== today || (o.status !== "done" && o.status !== "skipped")) continue;
+    const t = tasksCache.find(x => x.id === o.task_id);
+    if (t && !t.is_note && !handled.includes(t)) handled.push(t);
+  }
+  if (handled.length) {
+    html += '<div class="sec-block" data-sec="__donetoday__">' +
+      '<div class="sec-head" data-sec="__donetoday__"><span class="sec-arrow">▾</span> Done · skipped today ' +
+      '<span class="sec-count">· ' + handled.length + "</span></div>";
+    for (const t of handled) html += rowFor(t, false);
     html += "</div>";
   }
   area.innerHTML = html;
