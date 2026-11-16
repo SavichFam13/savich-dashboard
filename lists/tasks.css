@@ -270,26 +270,9 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .sec-block.closed .task-row { display: none; }
 .rail-chip { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .rail-chip .t-icon { flex: 0 0 auto; }
-.rail-chip .rail-count { margin-left: auto; flex: 0 0 auto; }
-.rail-chip.rail-new { border-style: dashed; opacity: 0.85; }
 .new-list-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
   display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh;
-}
-.new-list-modal {
-  background: var(--pane, #16181e); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px; width: 340px; max-width: 92vw;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-}
-.new-list-modal h3 { margin: 0 0 14px 0; color: var(--accent); font-size: 0.95rem; }
-.new-list-modal label {
-  display: block; font-size: 0.72rem; color: var(--dim); margin-bottom: 12px;
-}
-.new-list-modal input {
-  display: block; width: 100%; margin-top: 4px;
-  background: var(--bg, #101216); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--text); font-size: 0.85rem;
-  padding: 8px 10px; box-sizing: border-box;
 }
 .nl-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .nl-btns button {
@@ -298,3 +281,10 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 }
 .nl-btns .nl-create { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
 .nl-msg { font-size: 0.72rem; color: #e06c75; margin-top: 10px; min-height: 1em; }
+.rail-chip { max-width: 100%; overflow: hidden; }
+.rail-chip .rail-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

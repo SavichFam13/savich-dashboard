@@ -119,12 +119,10 @@ function renderListView() {
     '<span class="rail-count">' + count + "</span></button>";
     }).join("");
   }
-  railHtml += '<button class="rail-chip rail-new" id="rail-new-list">＋ new list</button>';
   rail.innerHTML = railHtml;
   rail.querySelectorAll(".rail-chip[data-list]").forEach(b => {
     b.onclick = () => { LP_SEL = b.getAttribute("data-list"); renderListView(); };
   });
-  document.getElementById("rail-new-list").onclick = openNewList;
   fillListSelectForPage();
   window.EDITOR_DEFAULT_LIST = LP_SEL || undefined;
   if (!LP_SEL) {
@@ -137,10 +135,22 @@ function renderListView() {
       'hit “+ add task” to create the first one.</div>';
     return;
   }
-  const sorter = (a, b) =>
-    (a.due_time || "99") < (b.due_time || "99") ? -1 :
-    (a.due_time || "99") > (b.due_time || "99") ? 1 :
-    a.title.localeCompare(b.title);
+  function nextSortDate(t) {
+    if (!t.start_date) return null;
+    if (t.repeat_type === "none") return t.start_date;
+    return nextFireDate(t, today) || t.start_date;
+  }
+  const sorter = (a, b) => {
+    const da = nextSortDate(a);
+    const db = nextSortDate(b);
+    if (da && db && da !== db) return da < db ? -1 : 1;
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    const ta = a.due_time || "99";
+    const tb = b.due_time || "99";
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return a.title.localeCompare(b.title);
+  };
   const notes = tsks.filter(t => t.is_note).sort(sorter);
   const real = tsks.filter(t => !t.is_note).sort(sorter);
   const groups = {};
@@ -220,73 +230,6 @@ function renderListView() {
           date: today, time: t.due_time
         }, renderListView);
   });
-}
-let newListOverlay = null;
-function closeNewList() {
-  if (newListOverlay) { newListOverlay.remove(); newListOverlay = null; }
-}
-function openNewList() {
-  closeMenus(); closeDetailPopup(); closeNewList();
-  const ov = document.createElement("div");
-  ov.className = "new-list-overlay";
-  ov.innerHTML =
-    '<div class="new-list-modal">' +
-    '<h3>' + (LP_SCOPE === "household" ? "New shared list" : "New personal list") + "</h3>" +
-    '<label>List name<input id="nl-name" maxlength="60" placeholder="e.g. Stuff To Fix"></label>' +
-    '<label>Emoji (optional)<input id="nl-icon" maxlength="8" placeholder="🔧"></label>' +
-    '<div class="nl-btns"><button class="nl-cancel">cancel</button>' +
-    '<button class="nl-create">create</button></div>' +
-    '<div class="nl-msg"></div>' +
-    "</div>";
-  document.body.appendChild(ov);
-  newListOverlay = ov;
-  const msg = ov.querySelector(".nl-msg");
-  const nameEl = ov.querySelector("#nl-name");
-  ov.onclick = ev => { if (ev.target === ov) closeNewList(); };
-  ov.querySelector(".nl-cancel").onclick = closeNewList;
-  ov.querySelector(".nl-create").onclick = () => doCreateList();
-  nameEl.addEventListener("keydown", ev => {
-    if (ev.key === "Enter") doCreateList();
-  });
-  setTimeout(() => document.addEventListener("keydown", function onEsc(k) {
-    if (k.key === "Escape") closeNewList();
-    document.removeEventListener("keydown", onEsc);
-  }), 0);
-  nameEl.focus();
-  async function doCreateList() {
-    const name = nameEl.value.trim();
-    if (!name) { msg.textContent = "Give it a name first."; nameEl.focus(); return; }
-    const icon = ov.querySelector("#nl-icon").value.trim() || null;
-    msg.textContent = "creating…";
-    try {
-      const l = await createNewList(name, icon);
-      listsCache.push(l);
-      LP_SEL = l.id;
-      closeNewList();
-      renderListView();
-    } catch (err) {
-      msg.textContent = "Couldn't create: " + (err && err.message ? err.message : err);
-    }
-  }
-}
-async function createNewList(name, icon) {
-  const maxSort = listsCache.reduce((m, l) => Math.max(m, l.sort_order || 0), 0);
-  const row = {
-    id: crypto.randomUUID(),
-    name: name,
-    icon: icon,
-    color: "8a7cff",
-    page: LP_SCOPE,
-    scope: LP_SCOPE === "household" ? "shared" : "personal",
-    sort_order: maxSort + 1
-  };
-  if (row.scope === "personal") {
-    const res = await sb.auth.getUser();
-    if (res && res.data && res.data.user) row.owner_id = res.data.user.id;
-  }
-  const { data, error } = await sb.from("task_lists").insert(row).select().single();
-  if (error) throw error;
-  return data;
 }
 async function initListPage(pageScope) {
   LP_SCOPE = pageScope;
