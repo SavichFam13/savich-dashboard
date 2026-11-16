@@ -268,6 +268,9 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .sec-head .sec-arrow { display: inline-block; font-size: 0.75em; margin-right: 2px; }
 .sec-block.closed .sec-arrow { transform: rotate(-90deg); }
 .sec-block.closed .task-row { display: none; }
+.rail-chip { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.rail-chip .t-icon { flex: 0 0 auto; }
+.rail-chip .rail-count { margin-left: auto; flex: 0 0 auto; }
 .rail-chip.rail-new { border-style: dashed; opacity: 0.85; }
 .new-list-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
