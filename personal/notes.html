@@ -117,6 +117,9 @@
   .note.c2 { --nb: #3a1733; --nbord: #e10ab2; }
   .note.c3 { --nb: #3a2222; --nbord: #ff8a8a; }
   .note.c4 { --nb: #211d2b; --nbord: #a89bbd; }
+  .note.c5 { --nb: #352c1e; --nbord: #e8c27a; }
+  .note.c6 { --nb: #1c3328; --nbord: #7ddba3; }
+  .note.c7 { --nb: #22304a; --nbord: #8ab4ff; }
   /* tape strip */
   .note::before {
     content: "";
@@ -132,25 +135,12 @@
     height: 30px;
     cursor: grab;
     display: flex; align-items: center; gap: 7px;
-    padding: 0 34px 0 10px;
+    padding: 0 40px 0 10px;
     border-bottom: 1px solid rgba(242,238,247,0.07);
     touch-action: none;
   }
   .note-grab:active { cursor: grabbing; }
   .grab-handle { color: var(--nbord); font-size: 0.75rem; opacity: 0.5; }
-  .palette {
-    margin-left: auto; display: none; gap: 5px; padding: 4px 0;
-  }
-  .note:hover .palette { display: flex; }
-  .pdot {
-    width: 12px; height: 12px; border-radius: 50%;
-    border: 1px solid rgba(0,0,0,0.4);
-    cursor: pointer; padding: 0;
-  }
-  .pdot:hover { outline: 1px solid var(--text); }
-  .pdot.p0 { background: #c9a0ff; } .pdot.p1 { background: #5fd3c4; }
-  .pdot.p2 { background: #e10ab2; } .pdot.p3 { background: #ff8a8a; }
-  .pdot.p4 { background: #a89bbd; }
   .note-del {
     position: absolute; top: 5px; right: 6px;
     background: none; border: 1px solid transparent; color: var(--dim);
@@ -221,7 +211,6 @@
   <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
     <a href="../index.html" class="nav-btn">Dashboard</a>
-    <button class="nav-btn" onclick="doSignOut()">Sign Out</button>
   </div>
 </div>
 <p class="sub">Your personal wall of stickies &mdash; private to your account, saved to the cloud as you type. Grab a note by its top strip to move it anywhere on the board.</p>
@@ -261,7 +250,7 @@ let zTop = 10;
 let editingId = null;    // note whose textarea has focus (skip during live reload)
 let draggingId = null;    // note currently being dragged
 const textTimers = {};    // per-note debounced text saves
-const PALETTE_COUNT = 5;
+const PALETTE_COUNT = 8;  // 0 lavender, 1 teal, 2 pink, 3 salmon, 4 grey, 5 gold, 6 mint, 7 sky
 
 function esc(str) {
   return String(str == null ? "" : str)
@@ -276,11 +265,6 @@ async function ensureAuth() {
     location.href = "../auth.html?next=" + encodeURIComponent(location.pathname);
     throw new Error("not signed in");
   }
-}
-
-async function doSignOut() {
-  try { await sb().auth.signOut(); } catch (e) {}
-  location.href = "../auth.html";
 }
 
 function setSync(ok, msg) {
@@ -323,7 +307,7 @@ function queueTextSave(note, text) {
   }, 700);
 }
 
-/* ---------- create / delete / color ---------- */
+/* ---------- create / delete ---------- */
 
 async function createNote() {
   const idx = notes.length;
@@ -375,15 +359,6 @@ async function deleteNote(id) {
   }
 }
 
-function setColor(id, c) {
-  const n = notes.find(r => r.id === id);
-  if (!n) return;
-  n.color = c;
-  const el = document.querySelector('.note[data-id="' + id + '"]');
-  if (el) el.className = el.className.replace(/\bc\d\b/g, "c" + c);
-  savePatch(n, { color: c });
-}
-
 /* ---------- render ---------- */
 
 function fmtAge(iso) {
@@ -418,16 +393,6 @@ function renderNotes() {
     const grab = document.createElement("div");
     grab.className = "note-grab";
     grab.innerHTML = '<span class="grab-handle">&#9776;</span>';
-    const pal = document.createElement("div");
-    pal.className = "palette";
-    for (let c = 0; c < PALETTE_COUNT; c++) {
-      const d = document.createElement("button");
-      d.className = "pdot p" + c;
-      d.title = "change color";
-      d.onclick = (e) => { e.stopPropagation(); setColor(n.id, c); };
-      pal.appendChild(d);
-    }
-    grab.appendChild(pal);
 
     const del = document.createElement("button");
     del.className = "note-del";
@@ -476,7 +441,6 @@ function attachDrag(noteEl, grabEl, n) {
   let startX = 0, startY = 0, origX = 0, origY = 0, moved = false;
 
   grabEl.addEventListener("pointerdown", (e) => {
-    if (e.target.classList.contains("pdot")) return;
     e.preventDefault();
     grabEl.setPointerCapture(e.pointerId);
     startX = e.clientX; startY = e.clientY;
@@ -548,7 +512,6 @@ function askConfirm(title, message, destructive) {
     modalResolve = resolve;
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
-    document.getElementById("modal-yes").classList.add("modal-yes");
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
