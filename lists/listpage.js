@@ -96,6 +96,17 @@ function saveCollapsed(set) {
   try { localStorage.setItem(collapsedStoreKey(), JSON.stringify(Array.from(set))); }
   catch (e) { /* private mode etc. — just don't remember it */ }
 }
+function secOrderKey() {
+  return "lp-sec-order-" + (LP_SEL || "none");
+}
+function getSecOrder() {
+  try { return JSON.parse(localStorage.getItem(secOrderKey()) || "[]"); }
+  catch (e) { return []; }
+}
+function saveSecOrder(arr) {
+  try { localStorage.setItem(secOrderKey(), JSON.stringify(arr)); }
+  catch (e) { /* ignore */ }
+}
 function renderListView() {
   const rail = document.getElementById("list-rail");
   const area = document.getElementById("task-area");
@@ -177,16 +188,22 @@ function renderListView() {
       "</div>";
   };
   const collapsed = getCollapsed();
+  const pref = getSecOrder();
+  order.sort((a, b) => {
+    const pa = pref.indexOf(a), pb = pref.indexOf(b);
+    if (pa === -1 && pb === -1) return 0;
+    if (pa === -1) return 1;
+    if (pb === -1) return -1;
+    return pa - pb;
+  });
   let html = "";
   for (const s of order) {
-    if (!s) {                                   
-      for (const t of groups[s]) html += rowFor(t, false);
-      continue;
-    }
-    html += '<div class="sec-block' + (collapsed.has(s) ? " closed" : "") +
-      '" data-sec="' + esc(s) + '">' +
-      '<div class="sec-head" data-sec="' + esc(s) + '"><span class="sec-arrow">▾</span> ' +
-      esc(s) + ' <span class="sec-count">· ' + groups[s].length + "</span></div>";
+    const label = s || "No Section";
+    const key = s || "__loose__";
+    html += '<div class="sec-block' + (collapsed.has(key) ? " closed" : "") +
+      '" data-sec="' + key + '">' +
+      '<div class="sec-head" data-sec="' + key + '"><span class="sec-arrow">▾</span> ' +
+      esc(label) + ' <span class="sec-count">· ' + groups[s].length + "</span></div>";
     for (const t of groups[s]) html += rowFor(t, false);
     html += "</div>";
   }
@@ -200,7 +217,8 @@ function renderListView() {
   }
   area.innerHTML = html;
   area.querySelectorAll(".sec-head").forEach(h => {
-    h.onclick = () => {
+    h.onclick = ev => {
+      if (ev.target.closest(".sec-up") || ev.target.closest(".sec-down")) return;
       const blk = h.closest(".sec-block");
       const key = h.getAttribute("data-sec");
       const nowClosed = !blk.classList.contains("closed");
@@ -209,7 +227,18 @@ function renderListView() {
       if (nowClosed) set.add(key); else set.delete(key);
       saveCollapsed(set);
     };
+    const up = h.querySelector(".sec-up");
+    const dn = h.querySelector(".sec-down");
+    if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), -1); };
+    if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), 1); };
   });
+  area.querySelectorAll(".sec-head").forEach(h => {
+    const secName = h.getAttribute("data-sec");
+    const up = h.querySelector(".sec-up");
+    const dn = h.querySelector(".sec-down");
+    if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(secName, -1); };
+    if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(secName, 1); };
+  });  
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
     const t = tasksCache.find(x => x.id === taskId);
@@ -238,4 +267,17 @@ async function initListPage(pageScope) {
     filterFn: () => true,
     rerender: renderListView
   });
+}
+function moveSection(name, dir) {
+  const cur = [];
+  for (const h of document.querySelectorAll('.sec-head[data-sec]'))
+    cur.push(h.getAttribute("data-sec"));
+  const pref = getSecOrder().filter(x => cur.includes(x));
+  for (const s of cur) if (!pref.includes(s)) pref.push(s);
+  const i = pref.indexOf(name);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= pref.length) return;
+  pref.splice(j, 0, pref.splice(i, 1)[0]);
+  saveSecOrder(pref);
+  renderListView();
 }

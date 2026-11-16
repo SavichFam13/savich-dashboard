@@ -288,3 +288,11 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.sec-move { margin-left: auto; display: none; }
+.sec-head:hover .sec-move { display: inline-flex; gap: 4px; }
+.sec-move button {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--dim); cursor: pointer; font-size: 0.6rem;
+  padding: 1px 5px; font-family: inherit;
+}
+.sec-move button:hover { color: var(--accent2); border-color: var(--accent2); }

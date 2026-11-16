@@ -353,6 +353,7 @@ function openTaskMenu(e, item, rerender) {
     '<button data-act="tomorrow">→ move to tomorrow</button>' +
     '<button data-act="moveto">📅 move to date…</button>' +
     '<button data-act="edit">✎ edit series</button>' +
+    '<button data-act="delete" class="danger">🗑 delete entire series</button>' +
     '<button data-act="undo" class="danger">↺ undo override</button>';
   document.body.appendChild(menu);
   const rect = { x: e.clientX, y: e.clientY };
@@ -375,6 +376,17 @@ function openTaskMenu(e, item, rerender) {
       });
     }
     if (act === "edit") { openEditor(t); }
+    if (act === "delete") {
+      if (confirm("Delete the whole series \"" + t.title +
+          "\"?\nThis removes every occurrence, past overrides included.")) {
+        try { await deleteRow("tasks", t.id); }
+        catch (err) { flash("delete failed: " + err.message); return; }
+        await loadAll();
+        rerender();
+        flash("series deleted");
+      }
+      return;
+    }
     if (act === "undo") { await undoOverride(t.id, orig); rerender(); }
   });
   setTimeout(() => document.addEventListener("keydown", function onEsc(ev) {

@@ -81,20 +81,24 @@
     .top-split { grid-template-columns: 1fr; }
   }
   .footer-note {
-    font-size: 0.73rem;
-    color: var(--dim);
     padding-top: 20px;
     border-top: 1px solid var(--border);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    flex-wrap: wrap;
     gap: 10px;
+    margin-top: 46px;
+  }
+  .footer-note .foot-who {
+    background: var(--panel); color: var(--dim);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 16px; font-family: inherit;
+    font-size: 0.78rem;
   }
   .footer-note button {
-    background: none; color: var(--dim);
-    border: 1px solid var(--border); border-radius: 5px;
-    padding: 6px 14px; font-family: inherit; font-size: 0.72rem;
+    background: var(--panel); color: var(--dim);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 16px; font-family: inherit; font-size: 0.78rem;
     cursor: pointer;
   }
   .footer-note button:hover { border-color: var(--bad); color: var(--bad); }
@@ -260,6 +264,12 @@
         <p>UNDER CONSTRUCTION!</p>
       </a>
     </nav>
+        <nav class="nav-grid">
+      <a href="personal/sticky.html" class="nav-card">
+        <h3>Sticky notes</h3>
+        <p>UNDER CONSTRUCTION!</p>
+      </a>
+    </nav>
   </div>
   <div>
     <h2 class="section">Today at a Glance</h2>
@@ -305,22 +315,23 @@
   <a href="home/videos.html" class="nav-card">
     <h3>Movie & TV Shows</h3>
   </a>
-</nav>
-<h2 class="section">Personal Shit</h2>
-<nav class="nav-grid">
-  <a href="home/bucket.html" class="nav-card">
-    <h3>Bucket List</h3>
-  </a>
-  <a href="home/stufties.html" class="nav-card">
-    <h3>Iri's Stufties</h3>
-  </a>
   <a href="home/bos.html" class="nav-card">
     <h3>Book of Shadows</h3>
     <p>UNDER CONSTRUCTION!</p>
   </a>
 </nav>
+<h2 class="section">Personal Shit</h2>
+<nav class="nav-grid">
+  <a href="personal/bucket.html" class="nav-card">
+    <h3>Bucket List</h3>
+  </a>
+  <a href="personal/stufties.html" class="nav-card">
+    <h3>Iri's Stufties</h3>
+  </a>
+  </a>
+</nav>
 <div class="footer-note">
-  <span id="who">Signed in</span>
+  <span class="foot-who" id="who">Signed in</span>
   <button onclick="signOut()">Sign out</button>
 </div>
 <div class="today-overlay" id="today-overlay">
