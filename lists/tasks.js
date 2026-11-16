@@ -377,8 +377,9 @@ function openTaskMenu(e, item, rerender) {
     }
     if (act === "edit") { openEditor(t); }
     if (act === "delete") {
-      if (confirm("Delete the whole series \"" + t.title +
-          "\"?\nThis removes every occurrence, past overrides included.")) {
+      const okDel = await confirmBox("Delete this task series?",
+        "\"" + t.title + "\" will be removed — every occurrence, past overrides included. This cannot be undone.");
+      if (okDel) {
         try { await deleteRow("tasks", t.id); }
         catch (err) { flash("delete failed: " + err.message); return; }
         await loadAll();
@@ -624,9 +625,9 @@ async function saveEditor() {
 }
 async function deleteSeries() {
   if (!editingTask) return;
-  if (!confirm("Delete the whole series \"" + editingTask.title +
-      "\"?\nThis removes every occurrence, past overrides included."))
-    return;
+  const okDel = await confirmBox("Delete this task series?",
+    "\"" + editingTask.title + "\" will be removed — every occurrence, past overrides included. This cannot be undone.");
+  if (!okDel) return;
   try {
     await deleteRow("tasks", editingTask.id);
   } catch (err) {
@@ -789,5 +790,30 @@ async function initTaskPage({ pageTitle, filterFn, rerender }) {
   window.addEventListener("focus", async () => {
     await loadAll();
     rerender();
+  });
+}
+function confirmBox(title, body) {
+  return new Promise(res => {
+    const ov = document.createElement("div");
+    ov.className = "cbox-overlay";
+    ov.innerHTML =
+      '<div class="cbox">' +
+      '<div class="cbox-title">' + esc(title) + "</div>" +
+      '<div class="cbox-body">' + esc(body) + "</div>" +
+      '<div class="cbox-btns">' +
+      '<button type="button" class="cbox-no">NO</button>' +
+      '<button type="button" class="cbox-yes">YES, DELETE</button>' +
+      "</div></div>";
+    document.body.appendChild(ov);
+    const done = v => {
+      ov.remove();
+      document.removeEventListener("keydown", onKey);
+      res(v);
+    };
+    const onKey = k => { if (k.key === "Escape") done(false); };
+    ov.querySelector(".cbox-no").onclick = () => done(false);
+    ov.querySelector(".cbox-yes").onclick = () => done(true);
+    ov.onclick = ev => { if (ev.target === ov) done(false); };
+    document.addEventListener("keydown", onKey);
   });
 }

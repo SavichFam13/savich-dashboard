@@ -203,11 +203,13 @@ function renderListView() {
     html += '<div class="sec-block' + (collapsed.has(key) ? " closed" : "") +
       '" data-sec="' + key + '">' +
       '<div class="sec-head" data-sec="' + key + '"><span class="sec-arrow">▾</span> ' +
-      esc(label) + ' <span class="sec-count">· ' + groups[s].length + "</span></div>";
+      esc(label) + ' <span class="sec-count">· ' + groups[s].length +
+      '</span><span class="sec-move"><button type="button" class="sec-up" title="move section up">▲</button>' +
+      '<button type="button" class="sec-down" title="move section down">▼</button></span></div>';
     for (const t of groups[s]) html += rowFor(t, false);
     html += "</div>";
   }
-  if (notes.length) {
+    if (notes.length) {
     html += '<div class="sec-block' + (collapsed.has("__notes__") ? " closed" : "") +
       '" data-sec="__notes__">' +
       '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
@@ -268,16 +270,16 @@ async function initListPage(pageScope) {
     rerender: renderListView
   });
 }
-function moveSection(name, dir) {
+function moveSection(key, dir) {
   const cur = [];
   for (const h of document.querySelectorAll('.sec-head[data-sec]'))
     cur.push(h.getAttribute("data-sec"));
-  const pref = getSecOrder().filter(x => cur.includes(x));
-  for (const s of cur) if (!pref.includes(s)) pref.push(s);
-  const i = pref.indexOf(name);
+  const pinned = getSecOrder().filter(x => cur.includes(x));
+  for (const s of cur) if (!pinned.includes(s)) pinned.push(s);
+  const i = pinned.indexOf(key);
   const j = i + dir;
-  if (i < 0 || j < 0 || j >= pref.length) return;
-  pref.splice(j, 0, pref.splice(i, 1)[0]);
-  saveSecOrder(pref);
+  if (i < 0 || j < 0 || j >= pinned.length) return;
+  pinned.splice(j, 0, pinned.splice(i, 1)[0]);
+  saveSecOrder(pinned);
   renderListView();
 }

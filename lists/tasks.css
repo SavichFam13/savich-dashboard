@@ -296,3 +296,23 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   padding: 1px 5px; font-family: inherit;
 }
 .sec-move button:hover { color: var(--accent2); border-color: var(--accent2); }
+.cbox {
+  background: var(--panel); border: 1px solid var(--bad);
+  border-radius: 10px; padding: 20px; width: 340px; max-width: 92vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.cbox-title { color: var(--bad); font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; }
+.cbox-body { color: var(--text); font-size: 0.82rem; line-height: 1.5; margin-bottom: 16px; }
+.cbox-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.cbox-btns button {
+  font-family: inherit; font-size: 0.8rem; cursor: pointer;
+  border-radius: 6px; padding: 8px 16px;
+}
+.cbox-no { background: none; color: var(--dim); border: 1px solid var(--border); }
+.cbox-no:hover { color: var(--text); border-color: var(--accent); }
+.cbox-yes { background: var(--bad); color: #121016; border: 1px solid var(--bad); font-weight: 700; }
+.cbox-yes:hover { filter: brightness(1.15); }
+.cbox-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 450;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
