@@ -28,10 +28,12 @@ body {
   margin: 0 auto;
   padding: 32px 20px;
 }
-.top {
-  display: flex; justify-content: flex-end; align-items: center;
-  flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+.masthead {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
 }
+.masthead h1 { font-size: 1.4rem; }
+.masthead .sub { margin-top: 2px; }
 .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
 .sync-note.live { color: var(--good); }
@@ -91,7 +93,7 @@ label.f-label {
 }
 .check-row:hover { border-color: var(--accent2); }
 .check-row span { font-size: 0.82rem; }
-nav.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin: 22px 0 20px; flex-wrap: wrap; }
+nav.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin: 12px 0 16px; flex-wrap: wrap; }
 nav.tabs button {
   background: none; border: none; color: var(--dim);
   font-family: inherit; font-size: 0.78rem; font-weight: 700;
@@ -228,17 +230,17 @@ tr:hover td { background: #1d1926; }
 </style>
 </head>
 <body>
-<div class="top">
-<div class="top-right">
+<header class="masthead">
+  <div>
+    <h1>Media Collection</h1>
+    <p class="sub">Own it. Want it. Spin the wheel and watch it.</p>
+  </div>
+  <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
     <button class="btn" id="btnExport">Export Backup</button>
     <button class="btn" id="btnImport">Import Backup</button>
     <div id="nav"></div>
-</div>
-</div>
-<header>
-  <h1>Media Collection</h1>
-  <p class="sub">Own it. Want it. Spin the wheel and watch it.</p>
+  </div>
 </header>
 <nav class="tabs">
   <button data-tab="owned" class="active">Owned</button>
@@ -865,7 +867,7 @@ renderAll();
     }
     lastSyncedPrint = fingerprint();
     cloudReady = true;
-    setSync(true, "✓ live");
+    setSync(true, "✓");
     setupRealtime();
   } catch (error) {
     console.error("Media shared cloud init failed:", error && error.message);
