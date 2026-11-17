@@ -9,13 +9,10 @@
 <link rel="stylesheet" href="tasks.css">
 </head>
 <body>
-<div class="nav">
-  <a class="nav-btn" href="../index.html">Dashboard</a>
-  <a class="nav-btn active" href="today.html">Today</a>
-  <a class="nav-btn" href="household.html">Household</a>
-  <a class="nav-btn" href="personal.html">Personal</a>
-  <span class="sync-note" id="sync-note"></span>
-</div>
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+</nav>
 <h1>Today</h1>
 <div class="date-nav">
   <button id="prev-day">←</button>
@@ -95,6 +92,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script src="tasks.js"></script>
+<script src="../nav.js"></script>
 <script>
   window.VIEW_DATE = todayStr();
   function rerender() {

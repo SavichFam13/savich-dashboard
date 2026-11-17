@@ -155,13 +155,10 @@
 <body>
 <div class="top">
   <h1>Daily &amp; Weekly Tracker</h1>
-  <nav class="nav-bar">
-    <span class="sync-note" id="sync-note">connecting…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-    <a href="timer.html" class="nav-btn">Event Timers</a>
-    <a href="misc.html" class="nav-btn">Misc</a>  
-    <a href="#" class="nav-btn active">Trackers</a>
-  </nav>
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+</nav>
 </div>
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log &middot; shift-click = unlog/remove last &middot; right-click = schedule</span></div>
 <div class="section-title">Dailies</div>
@@ -183,6 +180,7 @@
 <p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC. </p>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const WEEKLY_RESET_MIN_UTC = 450; 
 const EVS = {

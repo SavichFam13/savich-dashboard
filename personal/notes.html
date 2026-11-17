@@ -30,10 +30,23 @@
     margin: 0 auto;
   }
   .top {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: flex-end; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
-  h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
+  h1.wall-title {
+    display: flex; align-items: flex-end; gap: 14px;
+    justify-content: center;
+    font-size: 2rem; letter-spacing: 0.5px;
+    margin: -34px auto 10px auto;
+  }
+  .wt { display: inline-block; font-weight: 400; }
+  .w1 { color: #e8c27a; transform: rotate(-7deg); }
+  .w2 {
+    color: #ff5ec4; transform: rotate(4deg);
+    font-size: 1.55rem; margin-bottom: 6px;
+  }
+  .w3 { color: #5fd3c4; transform: rotate(-3deg); }
+  .w4 { color: #c9a0ff; transform: rotate(6deg); margin-bottom: 3px; }
   .top-right {
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   }
@@ -54,6 +67,7 @@
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
+
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
@@ -145,23 +159,29 @@
     z-index: 5;
   }
   .note-del:hover { border-color: var(--bad); color: var(--bad); }
-  .note textarea {
-    width: 100%; background: transparent; border: none; resize: none;
+  .note-body {
     color: var(--text); font-family: inherit; font-size: 0.82rem;
     line-height: 1.55; padding: 10px 12px 14px;
-    min-height: 130px; outline: none; display: block;
-    overflow: hidden;
+    min-height: 130px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
     cursor: pointer;
   }
-  .note textarea::placeholder { color: var(--dim); opacity: 0.6; }
+  .note-body:empty::before {
+    content: "click to type\2026";
+    color: var(--dim); opacity: 0.6;
+  }
   .note-meta {
     font-size: 0.62rem; color: var(--dim); opacity: 0.65;
     padding: 0 12px 8px; text-align: right;
   }
+  .hl.c1 { background: #ffd93d; color: #121016; border-radius: 2px; }
+  .hl.c2 { background: #3ddb84; color: #0d1a12; border-radius: 2px; }
+  .hl.c3 { background: #ff5ec4; color: #1a0d16; border-radius: 2px; }
+  .hl.c4 { background: #38b6ff; color: #0d1420; border-radius: 2px; }
   .expand-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
-    z-index: 120; padding: 20px;
+    z-index: 4000; padding: 20px;
   }
   .expand-overlay.open { display: flex; }
   .expand-box {
@@ -201,18 +221,43 @@
     font-family: inherit;
   }
   .expand-close:hover { border-color: var(--bad); color: var(--bad); }
+  .pen-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 2px;
+  }
+  .pen-title { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.5px; }
+  .pen-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5);
+    cursor: pointer; padding: 0;
+    transition: transform 0.1s ease;
+  }
+  .pen-dot:hover { transform: scale(1.2); }
+  .pen-dot.k1 { background: #ffd93d; }
+  .pen-dot.k2 { background: #3ddb84; }
+  .pen-dot.k3 { background: #ff5ec4; }
+  .pen-dot.k4 { background: #38b6ff; }
+  .pen-x {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 1px 7px;
+    font-size: 0.7rem; font-family: inherit; line-height: 1.4;
+  }
+  .pen-x:hover { border-color: var(--bad); color: var(--bad); }
   #expand-ta {
-    width: 100%; background: transparent; border: none; resize: none;
     color: var(--text); font-family: inherit; font-size: 0.95rem;
-    line-height: 1.6; padding: 14px 16px;
-    min-height: 230px; outline: none; display: block;
+    line-height: 1.6; padding: 12px 16px 16px;
+    min-height: 230px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
     overflow: hidden;
   }
-  #expand-ta::placeholder { color: var(--dim); opacity: 0.6; }
+  #expand-ta:empty::before {
+    content: "type here\2026";
+    color: var(--dim); opacity: 0.6;
+  }
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
-    z-index: 100; padding: 20px;
+    z-index: 5000; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal-box {
@@ -232,6 +277,7 @@
   .modal-yes:hover { filter: brightness(1.1); }
   .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
+
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -239,7 +285,7 @@
     color: var(--good); border-radius: 8px; padding: 12px 22px;
     font-size: 0.81rem; opacity: 0; pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
-    z-index: 130; max-width: 90vw; text-align: center;
+    z-index: 6000; max-width: 90vw; text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   @media (max-width: 640px) {
@@ -249,14 +295,20 @@
 </style>
 </head>
 <body>
+
 <div class="top">
-  <h1>Sticky Notes</h1>
-  <div class="top-right">
+<nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-  </div>
+    <div id="nav"></div>
+</nav>
 </div>
-<p class="sub">Your personal wall of stickies. Have fun, GO WILD!</p>
+<p class="sub">Wall O' stickies. </p>
+<h1 class="wall-title">
+  <span class="wt w1">Wall</span>
+  <span class="wt w2">O'</span>
+  <span class="wt w3">Sticky</span>
+  <span class="wt w4">Notes</span>
+</h1>
 <div class="toolbar">
   <div class="toolbar-left">
     <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
@@ -264,7 +316,6 @@
   </div>
   <input type="search" id="search-box" placeholder="Search your notes&hellip;">
 </div>
-
 <div class="board" id="board">
   <div class="board-hint" id="board-hint">
     A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
@@ -277,7 +328,15 @@
       <span class="expand-age" id="expand-age"></span>
       <button class="expand-close" id="expand-close" title="close">&#10005;</button>
     </div>
-    <textarea id="expand-ta" placeholder="type here&hellip;" spellcheck="false"></textarea>
+    <div class="pen-bar">
+      <span class="pen-title">HIGHLIGHTER:</span>
+      <button class="pen-dot k1" data-c="c1" title="yellow"></button>
+      <button class="pen-dot k2" data-c="c2" title="bright green"></button>
+      <button class="pen-dot k3" data-c="c3" title="bright pink"></button>
+      <button class="pen-dot k4" data-c="c4" title="bright blue"></button>
+      <button class="pen-x" id="pen-clear" title="erase highlight from selected text">&#9003;</button>
+    </div>
+    <div id="expand-ta" contenteditable="true" spellcheck="false"></div>
   </div>
 </div>
 <div class="modal-overlay" id="modal-overlay">
@@ -293,8 +352,9 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
-let notes = []; 
+let notes = [];
 let uid = null;
 let zTop = 10;
 let draggingId = null;
@@ -304,11 +364,88 @@ const PALETTE_COUNT = 8;
 const expandOverlay = document.getElementById("expand-overlay");
 const expandBox = document.getElementById("expand-box");
 const expandTa = document.getElementById("expand-ta");
+
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+function markedToHtml(txt) {
+  let s = esc(txt);
+  s = s.replace(/\[\[(c[1-4]):([\s\S]*?)\]\]/g,
+    (m, c, inner) => '<span class="hl ' + c + '">' + inner + "</span>");
+  return s;
+}
+function htmlToMarked(el) {
+  let h = el.innerHTML;
+  h = h.replace(/<br\s*\/?>/gi, "\n");
+  h = h.replace(/<span class="hl (c[1-4])">([\s\S]*?)<\/span>/gi,
+    (m, c, inner) => "[[" + c + ":" + inner + "]]");
+  h = h.replace(/<\/(div|p)>/gi, "\n");
+  h = h.replace(/<[^>]+>/g, "");
+  const d = document.createElement("textarea");
+  d.innerHTML = h;
+  let out = d.value;
+  return out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n");
+}
+function stripMarked(t) {
+  return String(t == null ? "" : t)
+    .replace(/\[\[c[1-4]:/g, "").replace(/\]\]/g, "");
+}
+function applyHighlight(cls) {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) {
+    showToast("Select some text first, then tap a color.");
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  if (!expandTa.contains(range.commonAncestorContainer.nodeType === 1
+        ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode)) {
+    showToast("Select text inside the note.");
+    return;
+  }
+  const parent = sel.anchorNode && sel.anchorNode.parentElement
+    ? sel.anchorNode.parentElement.closest("span.hl")
+    : null;
+  if (parent) {
+    showToast("Already highlighted \u2014 erase it first (\u232b).");
+    return;
+  }
+  const span = document.createElement("span");
+  span.className = "hl " + cls;
+  try {
+    range.surroundContents(span);
+  } catch (e) {
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  onExpandInput();
+}
+function clearHighlights() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) {
+    showToast("Select the highlighted text first.");
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  const hits = Array.from(expandTa.querySelectorAll("span.hl"))
+    .filter(sp => {
+      const r = document.createRange();
+      r.selectNodeContents(sp);
+      return range.intersectsRange(r);
+    });
+  if (!hits.length) {
+    showToast("No highlight in that selection.");
+    return;
+  }
+  hits.forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent)));
+  onExpandInput();
+}
+document.querySelectorAll(".pen-dot").forEach(btn => {
+  btn.addEventListener("click", () => applyHighlight(btn.dataset.c));
+});
+document.getElementById("pen-clear").addEventListener("click", clearHighlights);
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -355,7 +492,6 @@ function queueTextSave(note, text) {
   }, 700);
 }
 function flushTextSave(note) {
-  // close popup / leave a note = save immediately, don't wait for the debounce
   if (textTimers[note.id]) {
     clearTimeout(textTimers[note.id]);
     delete textTimers[note.id];
@@ -390,7 +526,7 @@ async function deleteNote(id) {
   const n = notes.find(r => r.id === id);
   if (!n) return;
   if (popupOpenId === id) closeExpand();
-  const preview = (n.text || "").split("\n")[0].slice(0, 60);
+  const preview = stripMarked(n.text || "").split("\n")[0].slice(0, 60);
   const ok = await askConfirm(
     "Throw this sticky away?",
     (preview ? '"' + preview + '"\n\n' : "") +
@@ -409,18 +545,24 @@ async function deleteNote(id) {
     showToast("Could not delete the note.");
   }
 }
-function autosize(ta, min) {
-  ta.style.height = "auto";
-  ta.style.height = Math.max(min, ta.scrollHeight) + "px";
+function autosizeCe() {
+  expandTa.style.height = "auto";
+  expandTa.style.height = Math.max(230, expandTa.scrollHeight) + "px";
 }
 function openExpand(n) {
   popupOpenId = n.id;
   expandBox.className = "expand-box c" + (n.color || 0);
-  expandTa.value = n.text || "";
+  expandTa.innerHTML = markedToHtml(n.text || "");
   document.getElementById("expand-age").textContent = "saved " + fmtAge(n.updated_at);
   expandOverlay.classList.add("open");
-  autosize(expandTa, 230);
+  autosizeCe();
   expandTa.focus();
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.selectNodeContents(expandTa);
+  r.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(r);
 }
 function closeExpand() {
   if (popupOpenId === null) return;
@@ -433,19 +575,18 @@ function closeExpand() {
   }
 }
 function updateTileText(n) {
-  const tile = document.querySelector('.note[data-id="' + n.id + '"] textarea');
-  if (tile) {
-    tile.value = n.text || "";
-    autosize(tile, 130);
-  }
+  const tile = document.querySelector('.note[data-id="' + n.id + '"] .note-body');
+  if (tile) tile.innerHTML = markedToHtml(n.text || "");
 }
-expandTa.addEventListener("input", () => {
+
+function onExpandInput() {
   const n = notes.find(r => r.id === popupOpenId);
   if (!n) return;
-  autosize(expandTa, 230);
-  queueTextSave(n, expandTa.value);
+  autosizeCe();
+  queueTextSave(n, htmlToMarked(expandTa));
   updateTileText(n);
-});
+}
+expandTa.addEventListener("input", onExpandInput);
 document.getElementById("expand-close").onclick = closeExpand;
 expandOverlay.addEventListener("click", e => {
   if (e.target === expandOverlay) closeExpand();
@@ -471,7 +612,7 @@ function renderNotes() {
     const note = document.createElement("article");
     note.className = "note c" + (n.color || 0) + (draggingId === n.id ? " dragging" : "");
     note.dataset.id = n.id;
-    const rot = ((n.id * 37) % 9) - 4; 
+    const rot = ((n.id * 37) % 9) - 4;
     note.style.left = n.x + "px";
     note.style.top = n.y + "px";
     note.style.setProperty("--rot", rot + "deg");
@@ -483,17 +624,15 @@ function renderNotes() {
     del.title = "delete note";
     del.innerHTML = "&#10005;";
     del.onclick = (e) => { e.stopPropagation(); deleteNote(n.id); };
-    const ta = document.createElement("textarea");
-    ta.readOnly = true;
-    ta.placeholder = "click to type\u2026";
-    ta.spellcheck = false;
-    ta.value = n.text || "";
+    const body = document.createElement("div");
+    body.className = "note-body";
+    body.innerHTML = markedToHtml(n.text || "");
     const meta = document.createElement("div");
     meta.className = "note-meta";
     meta.textContent = "saved " + fmtAge(n.updated_at);
     note.appendChild(grab);
     note.appendChild(del);
-    note.appendChild(ta);
+    note.appendChild(body);
     note.appendChild(meta);
     attachDrag(note, grab, n);
     note.addEventListener("click", (e) => {
@@ -501,11 +640,16 @@ function renderNotes() {
       openExpand(n);
     });
     board.appendChild(note);
-    autosize(ta, 130);
-    if (q && !(n.text || "").toLowerCase().includes(q)) note.classList.add("dimmed");
+    if (q && !stripMarked(n.text).toLowerCase().includes(q)) note.classList.add("dimmed");
   }
 }
 function bringToFront(el) {
+  if (zTop > 500) {
+    const sorted = [...document.querySelectorAll(".note")]
+      .sort((a, b) => ((+a.style.zIndex) || 0) - ((+b.style.zIndex) || 0));
+    sorted.forEach((nn, i) => { nn.style.zIndex = 10 + i; });
+    zTop = 10 + sorted.length;
+  }
   el.style.zIndex = ++zTop;
 }
 function attachDrag(noteEl, grabEl, n) {
@@ -600,7 +744,6 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
-
 document.getElementById("search-box").addEventListener("input", renderNotes);
 (async function init() {
   try { await ensureAuth(); } catch (e) { return; }

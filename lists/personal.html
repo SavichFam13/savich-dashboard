@@ -9,13 +9,10 @@
 <link rel="stylesheet" href="listview.css">
 </head>
 <body>
-<div class="nav">
-  <a class="nav-btn" href="../index.html">Dashboard</a>
-  <a class="nav-btn" href="today.html">Today</a>
-  <a class="nav-btn" href="household.html">Household</a>
-  <a class="nav-btn active" href="personal.html">Personal</a>
-  <span class="sync-note" id="sync-note"></span>
-</div>
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+</nav>
 <h1>Personal</h1>
 <div class="layout">
   <div>
@@ -95,6 +92,7 @@
 <script src="../db.js"></script>
 <script src="tasks.js"></script>
 <script src="listpage.js"></script>
+<script src="../nav.js"></script>
 <script>
   document.getElementById("add-btn").onclick = () => openEditor(null);
   initListPage("personal");

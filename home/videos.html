@@ -229,13 +229,10 @@ tr:hover td { background: #1d1926; }
 </head>
 <body>
 <div class="top">
-  <div class="top-right">
-    <span class="sync-note" id="sync-note">checking the cloud…</span>
-    <button class="btn" id="btnExport">Export</button>
-    <button class="btn" id="btnImport">Import</button>
-    <a href="../index.html" class="btn" id="backBtn">Dashboard</a>
-    <input type="file" id="importFile" accept=".json" style="display:none;">
-  </div>
+<div class="top-right">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+</div>
 </div>
 <header>
   <h1>Media Collection</h1>
@@ -361,6 +358,7 @@ tr:hover td { background: #1d1926; }
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 "use strict";
 var CLOUD_KEY = "savich-media";

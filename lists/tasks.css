@@ -316,3 +316,22 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 450;
   display: flex; align-items: center; justify-content: center; padding: 20px;
 }
+@media (max-width: 700px) {
+  body { padding: 12px 10px 40px 10px; }
+  .to-panel { max-height: 92vh; }
+  .to-head, .to-hint, .to-body { padding-left: 14px; padding-right: 14px; }
+  .task-row { padding: 9px 10px; gap: 8px; }
+  .task-row .t-time { flex: 0 0 42px; font-size: 0.72rem; }
+  .task-row .t-title { padding-right: 0; }
+  .task-row .t-next {
+    position: static;
+    flex: 1 1 100%;
+    order: 9;
+    white-space: normal;
+    text-align: right;
+  }
+  .t-icon { min-width: 20px; font-size: 0.9rem; }
+  .t-list { max-width: 90px; }
+  .panel { width: 100%; max-width: 100vw; }
+  .hint { font-size: 0.62rem; }
+}

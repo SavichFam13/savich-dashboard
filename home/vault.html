@@ -190,9 +190,10 @@
 <div class="top">
   <h1>Vault Distribution</h1>
   <div class="top-right">
+  <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-  </div>
+    <div id="nav"></div>
+</div>
 </div>
 <p class="sub">Save baby, save baby, save baby save!</p>
 <nav>
@@ -265,6 +266,7 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const DEFAULT_VAULTS = [
   { name: "420", weight: 2 },

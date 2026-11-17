@@ -161,13 +161,10 @@
 <body>
 <div class="top">
   <h1>Legendary Workshop</h1>
-  <nav class="nav-bar">
+<nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-    <a href="timer.html" class="nav-btn">Event Timers</a>
-    <a href="trackers.html" class="nav-btn">Trackers</a>
-    <a href="misc.html" class="nav-btn">Misc</a>
-  </nav>
+    <div id="nav"></div>
+</nav>
 </div>
 <div class="add-card">
   <h2>Start a new legendary</h2>
@@ -193,6 +190,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },

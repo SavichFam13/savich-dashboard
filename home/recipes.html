@@ -219,10 +219,10 @@
 
 <div class="top">
   <h1>Recipe Book</h1>
-  <div class="top-right">
-    <span class="sync-note" id="sync-note">syncing&hellip;</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-  </div>
+<div class="top-right">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+</div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
 <div class="view visible" id="view-index">
@@ -312,6 +312,7 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const OWNER_EMAIL = "ALYSAVICH@PM.ME";
 const STORAGE_KEY = "savich-recipes-v1";

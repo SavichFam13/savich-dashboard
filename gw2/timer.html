@@ -168,12 +168,10 @@
 <div class="top">
   <h1>Event Timers!</h1>
   <nav class="nav-bar">
+<nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-    <a href="trackers.html" class="nav-btn">Event Trackers</a>
-    <a href="misc.html" class="nav-btn">Misc</a>
-    <a href="#" class="nav-btn active">Timers</a>
-  </nav>
+    <div id="nav"></div>
+</nav>
 </div>
 <div class="clock">Your time: <b id="clock-now"></b> &middot; <span style="color:var(--dim)">left-click = log &middot; shift-click = unlog/remove last &middot; right-click = schedule</span></div>
 <div class="section-title">World Bosses</div>
@@ -199,6 +197,7 @@
 <div class="flash-msg" id="flash-msg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const WORLD_BOSSES = [
   { name: "Svanir Shaman Chief",     short: "Svanir Shaman Chief", interval: 120, offset: 15,  color: "#959393", tid: "wb_svanir", zone: "Wayfarer Foothills"},
