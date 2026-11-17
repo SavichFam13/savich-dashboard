@@ -203,6 +203,14 @@ function renderListView() {
     return pa - pb;
   });
   let html = "";
+    if (notes.length) {
+    html += '<div class="sec-block' + (collapsed.has("__notes__") ? " closed" : "") +
+      '" data-sec="__notes__">' +
+      '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
+      '<span class="sec-count">· ' + notes.length + "</span></div>";
+    for (const t of notes) html += rowFor(t, true);
+    html += "</div>";
+  }
   for (const s of order) {
     const label = s || "No Section";
     const key = s || "__loose__";
@@ -214,14 +222,6 @@ function renderListView() {
       '</span><span class="sec-move"><button type="button" class="sec-up" title="move section up">▲</button>' +
       '<button type="button" class="sec-down" title="move section down">▼</button></span></div>';
     for (const t of groups[s]) html += rowFor(t, false);
-    html += "</div>";
-  }
-    if (notes.length) {
-    html += '<div class="sec-block' + (collapsed.has("__notes__") ? " closed" : "") +
-      '" data-sec="__notes__">' +
-      '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
-      '<span class="sec-count">· ' + notes.length + "</span></div>";
-    for (const t of notes) html += rowFor(t, true);
     html += "</div>";
   }
     const handled = [];
