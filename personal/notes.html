@@ -305,7 +305,6 @@
     <div id="nav"></div>
 </nav>
 </div>
-<p class="sub">Wall O' stickies. </p>
 <h1 class="wall-title">
   <span class="wt w1">Wall</span>
   <span class="wt w2">O'</span>
@@ -640,6 +639,7 @@ function renderNotes() {
     attachDrag(note, grab, n);
     note.addEventListener("click", (e) => {
       if (e.target.closest(".note-del")) return;
+      if (note.__justDragged) { note.__justDragged = false; return; }
       openExpand(n);
     });
     board.appendChild(note);
@@ -680,7 +680,14 @@ function attachDrag(noteEl, grabEl, n) {
       grabEl.removeEventListener("pointerup", onUp);
       draggingId = null;
       noteEl.classList.remove("dragging");
-      if (moved) savePatch(n, { x: n.x, y: n.y });
+      if (moved) {
+        noteEl.__justDragged = true;
+        n.x = Math.round(n.x);
+        n.y = Math.round(n.y);
+        noteEl.style.left = n.x + "px";
+        noteEl.style.top = n.y + "px";
+        savePatch(n, { x: n.x, y: n.y });
+      }
     };
     grabEl.addEventListener("pointermove", onMove);
     grabEl.addEventListener("pointerup", onUp);

@@ -231,6 +231,8 @@ tr:hover td { background: #1d1926; }
 <div class="top">
 <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="btn" id="btnExport">Export Backup</button>
+    <button class="btn" id="btnImport">Import Backup</button>
     <div id="nav"></div>
 </div>
 </div>
@@ -355,6 +357,7 @@ tr:hover td { background: #1d1926; }
     </div>
   </div>
 </div>
+<input type="file" id="importFile" accept=".json" style="display:none;">
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
@@ -363,7 +366,7 @@ tr:hover td { background: #1d1926; }
 "use strict";
 var CLOUD_KEY = "savich-media";
 var CACHE_KEY = "savich-media-cache";
-var LEGACY_ITEMS_KEY = "savich-media-v1";     
+var LEGACY_ITEMS_KEY = "savich-media-v1";
 var LEGACY_CATS_KEY = "savich-media-cats-v1";
 var DEFAULT_CATS = ["Sci-Fi", "Horror", "Fantasy", "Action", "Comedy", "Drama", "Animation", "Documentary", "Thriller", "Other"];
 var items = [];
@@ -373,6 +376,11 @@ var lastSyncedPrint = null;
 var saveQueued = false;
 var saveTimer = null;
 var rtReloadTimer = null;
+function on(id, evt, fn) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener(evt, fn);
+  else console.warn("Media page: element #" + id + " not found — handler skipped");
+}
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -404,7 +412,7 @@ function loadLegacy() {
 function setSync(ok, message) {
   var el = document.getElementById("sync-note");
   if (!el) return;
-  el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
+  el.textContent = ok ? (message || "✓ live") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 function save(immediate) {
@@ -547,11 +555,11 @@ function closeAddItem() {
   document.getElementById("addItemOverlay").classList.remove("show");
   addItemCtx = null;
 }
-document.getElementById("aiCancel").addEventListener("click", closeAddItem);
-document.getElementById("addItemOverlay").addEventListener("click", function (e) {
+on("aiCancel", "click", closeAddItem);
+on("addItemOverlay", "click", function (e) {
   if (e.target === this) closeAddItem();
 });
-document.getElementById("aiSave").addEventListener("click", function () {
+on("aiSave", "click", function () {
   if (!addItemCtx) return;
   var title = document.getElementById("aiTitle").value.trim();
   var type = document.getElementById("aiType").value;
@@ -576,7 +584,7 @@ function fillCatSelect(sel, chosen) {
     return '<option value="' + esc(c) + '"' + (c === chosen ? " selected" : "") + '>' + esc(c) + '</option>';
   }).join("");
 }
-document.getElementById("btnAddWish").addEventListener("click", function () { openAddItem("wishlist"); });
+on("btnAddWish", "click", function () { openAddItem("wishlist"); });
 var collapsedCats = {};
 function filteredOwned() {
   var q = document.getElementById("ownedSearch").value.trim().toLowerCase();
@@ -696,7 +704,6 @@ function renderWish() {
         '<button class="mini-btn del" data-wdel="' + i.id + '">✕</button>' +
       '</td></tr>';
   }).join("");
-
   body.querySelectorAll("[data-got]").forEach(function (b) {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.got; });
@@ -753,8 +760,8 @@ function doRandom(type) {
     }
   }, 90);
 }
-document.getElementById("btnRandMovie").addEventListener("click", function () { doRandom("movie"); });
-document.getElementById("btnRandTV").addEventListener("click", function () { doRandom("tv"); });
+on("btnRandMovie", "click", function () { doRandom("movie"); });
+on("btnRandTV", "click", function () { doRandom("tv"); });
 function renderCats() {
   var el = document.getElementById("catList");
   el.innerHTML = cats.map(function (c) {
@@ -775,7 +782,7 @@ function renderCats() {
     });
   });
 }
-document.getElementById("btnAddCat").addEventListener("click", function () {
+on("btnAddCat", "click", function () {
   var inp = document.getElementById("newCatInput");
   var v = inp.value.trim();
   if (!v) return;
@@ -793,12 +800,12 @@ function refreshFilters() {
   oc.value = cur;
 }
 ["ownedSearch", "ownedTypeFilter", "ownedCatFilter", "ownedSubsFilter"].forEach(function (id) {
-  document.getElementById(id).addEventListener("input", renderOwned);
+  on(id, "input", renderOwned);
 });
 ["wishSearch", "wishTypeFilter"].forEach(function (id) {
-  document.getElementById(id).addEventListener("input", renderWish);
+  on(id, "input", renderWish);
 });
-document.getElementById("btnExport").addEventListener("click", function () {
+on("btnExport", "click", function () {
   var d = new Date().toISOString().slice(0, 10);
   var blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type: "application/json" });
   var a = document.createElement("a");
@@ -808,10 +815,11 @@ document.getElementById("btnExport").addEventListener("click", function () {
   URL.revokeObjectURL(a.href);
   toast("Backup exported.");
 });
-document.getElementById("btnImport").addEventListener("click", function () {
-  document.getElementById("importFile").click();
+on("btnImport", "click", function () {
+  var imp = document.getElementById("importFile");
+  if (imp) imp.click();
 });
-document.getElementById("importFile").addEventListener("change", function (e) {
+on("importFile", "change", function (e) {
   var f = e.target.files[0];
   if (!f) return;
   var reader = new FileReader();
@@ -842,8 +850,11 @@ function renderAll() {
 renderAll();
 (async function initSharedCloud() {
   try {
+    if (typeof requireAuth !== "function" || typeof loadBlob !== "function" || typeof saveBlob !== "function") {
+      throw new Error("db.js did not load (check the ../db.js path)");
+    }
     var session = await requireAuth();
-    if (!session) return; 
+    if (!session) return; // bounced to login
     var cloud = await loadBlob(CLOUD_KEY);
     if (cloud && cloud.items) {
       adoptState(cloud);
@@ -854,11 +865,11 @@ renderAll();
     }
     lastSyncedPrint = fingerprint();
     cloudReady = true;
-    setSync(true, "✓");
+    setSync(true, "✓ live");
     setupRealtime();
   } catch (error) {
     console.error("Media shared cloud init failed:", error && error.message);
-    setSync(false);
+    setSync(false, "⚠ " + (error && error.message ? error.message : "cloud init failed"));
   }
 })();
 </script>
