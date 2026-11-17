@@ -86,7 +86,7 @@
   }
   .wrap { position: relative; z-index: 1; }
   .top {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: flex-end; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
   }
   .top-right {
@@ -535,7 +535,7 @@
 <div class="wrap">
   <div class="top">
     <div class="top-right">
-      <span class="sync-note" id="sync-note">checking the cloud…</span>    <span class="sync-note" id="sync-note">checking the cloud…</span>
+      <span class="sync-note" id="sync-note">checking the cloud…</span>
       <button class="backup-btn" onclick="exportData()">Restuffing</button>
       <button class="backup-btn" onclick="document.getElementById('import-file').click()">Fill up the Fluff</button>
       <div id="nav"></div>
