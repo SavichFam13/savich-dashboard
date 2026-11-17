@@ -54,7 +54,6 @@
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
@@ -75,8 +74,6 @@
     font-size: 0.82rem; width: 240px;
   }
   #search-box:focus { outline: none; border-color: var(--accent2); }
-
-  /* ---- the board ---- */
   .board {
     position: relative;
     min-height: 72vh;
@@ -92,8 +89,6 @@
     color: var(--dim); font-size: 0.85rem; text-align: center;
     pointer-events: none; line-height: 2;
   }
-
-  /* ---- sticky notes ---- */
   .note {
     --nb: #2b2240;
     --nbord: #c9a0ff;
@@ -121,7 +116,6 @@
   .note.c5 { --nb: #352c1e; --nbord: #e8c27a; }
   .note.c6 { --nb: #1c3328; --nbord: #7ddba3; }
   .note.c7 { --nb: #22304a; --nbord: #8ab4ff; }
-  /* tape strip */
   .note::before {
     content: "";
     position: absolute; top: -9px; left: 50%;
@@ -164,8 +158,6 @@
     font-size: 0.62rem; color: var(--dim); opacity: 0.65;
     padding: 0 12px 8px; text-align: right;
   }
-
-  /* ---- expanded note popup (mini "today at a glance") ---- */
   .expand-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -217,8 +209,6 @@
     overflow: hidden;
   }
   #expand-ta::placeholder { color: var(--dim); opacity: 0.6; }
-
-  /* ---- modal + toast (same as inventory page) ---- */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
     display: none; align-items: center; justify-content: center;
@@ -242,7 +232,6 @@
   .modal-yes:hover { filter: brightness(1.1); }
   .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
   .modal-no:hover { border-color: var(--accent); color: var(--text); }
-
   .toast {
     position: fixed; bottom: 26px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -253,7 +242,6 @@
     z-index: 130; max-width: 90vw; text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   @media (max-width: 640px) {
     .note { width: 210px; }
     #search-box { width: 100%; }
@@ -261,7 +249,6 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Sticky Notes</h1>
   <div class="top-right">
@@ -269,8 +256,7 @@
     <a href="../index.html" class="nav-btn">Dashboard</a>
   </div>
 </div>
-<p class="sub">Your personal wall of stickies &mdash; private to your account, saved to the cloud as you type. Grab a note by its top strip to move it; click a note to pop it open big for easy reading and editing.</p>
-
+<p class="sub">Your personal wall of stickies. Have fun, GO WILD!</p>
 <div class="toolbar">
   <div class="toolbar-left">
     <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
@@ -284,7 +270,6 @@
     A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
   </div>
 </div>
-
 <div class="expand-overlay" id="expand-overlay">
   <div class="expand-box" id="expand-box">
     <div class="expand-head">
@@ -295,7 +280,6 @@
     <textarea id="expand-ta" placeholder="type here&hellip;" spellcheck="false"></textarea>
   </div>
 </div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -307,28 +291,24 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
 <script>
-let notes = [];          // the rows from the cloud
+let notes = []; 
 let uid = null;
 let zTop = 10;
-let draggingId = null;    // note currently being dragged
-let popupOpenId = null;   // note currently open in the expanded popup
-const textTimers = {};    // per-note debounced text saves
-const PALETTE_COUNT = 8;  // 0 lavender, 1 teal, 2 pink, 3 salmon, 4 grey, 5 gold, 6 mint, 7 sky
-
+let draggingId = null;
+let popupOpenId = null;
+const textTimers = {};
+const PALETTE_COUNT = 8;
 const expandOverlay = document.getElementById("expand-overlay");
 const expandBox = document.getElementById("expand-box");
 const expandTa = document.getElementById("expand-ta");
-
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -337,15 +317,11 @@ async function ensureAuth() {
     throw new Error("not signed in");
   }
 }
-
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "\u2713 live") : "offline \u2014 changes NOT saved";
+  el.textContent = ok ? (msg || "\u2713") : "offline \u2014 changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-
-/* ---------- load / save ---------- */
-
 async function loadNotes() {
   const { data, error } = await sb()
     .from("sticky_notes").select("*")
@@ -354,9 +330,7 @@ async function loadNotes() {
   if (error) throw error;
   notes = data || [];
 }
-
 function stampNow() { return new Date().toISOString(); }
-
 async function savePatch(note, patch) {
   note.updated_at = stampNow();
   try {
@@ -372,7 +346,6 @@ async function savePatch(note, patch) {
     setSync(false);
   }
 }
-
 function queueTextSave(note, text) {
   note.text = text;
   clearTimeout(textTimers[note.id]);
@@ -381,7 +354,6 @@ function queueTextSave(note, text) {
     savePatch(note, { text: note.text, updated_at: stampNow() });
   }, 700);
 }
-
 function flushTextSave(note) {
   // close popup / leave a note = save immediately, don't wait for the debounce
   if (textTimers[note.id]) {
@@ -390,9 +362,6 @@ function flushTextSave(note) {
     savePatch(note, { text: note.text, updated_at: stampNow() });
   }
 }
-
-/* ---------- create / delete ---------- */
-
 async function createNote() {
   const idx = notes.length;
   const board = document.getElementById("board");
@@ -402,7 +371,6 @@ async function createNote() {
   );
   const y = 40 + Math.floor(idx / 6) * 270 + (Math.random() * 40 - 20);
   const color = Math.floor(Math.random() * PALETTE_COUNT);
-
   try {
     const { data, error } = await sb().from("sticky_notes")
       .insert([{ user_id: uid, text: "", color: color, x: Math.round(x), y: Math.round(y) }])
@@ -411,14 +379,13 @@ async function createNote() {
     notes.push(data);
     renderNotes();
     setSync(true);
-    openExpand(data);   // brand-new note pops straight open, ready to type
+    openExpand(data);
   } catch (e) {
     console.error(e);
     setSync(false);
     showToast("Could not create the note.");
   }
 }
-
 async function deleteNote(id) {
   const n = notes.find(r => r.id === id);
   if (!n) return;
@@ -442,14 +409,10 @@ async function deleteNote(id) {
     showToast("Could not delete the note.");
   }
 }
-
-/* ---------- expanded note popup ---------- */
-
 function autosize(ta, min) {
   ta.style.height = "auto";
   ta.style.height = Math.max(min, ta.scrollHeight) + "px";
 }
-
 function openExpand(n) {
   popupOpenId = n.id;
   expandBox.className = "expand-box c" + (n.color || 0);
@@ -459,7 +422,6 @@ function openExpand(n) {
   autosize(expandTa, 230);
   expandTa.focus();
 }
-
 function closeExpand() {
   if (popupOpenId === null) return;
   const n = notes.find(r => r.id === popupOpenId);
@@ -470,7 +432,6 @@ function closeExpand() {
     updateTileText(n);
   }
 }
-
 function updateTileText(n) {
   const tile = document.querySelector('.note[data-id="' + n.id + '"] textarea');
   if (tile) {
@@ -478,7 +439,6 @@ function updateTileText(n) {
     autosize(tile, 130);
   }
 }
-
 expandTa.addEventListener("input", () => {
   const n = notes.find(r => r.id === popupOpenId);
   if (!n) return;
@@ -490,9 +450,6 @@ document.getElementById("expand-close").onclick = closeExpand;
 expandOverlay.addEventListener("click", e => {
   if (e.target === expandOverlay) closeExpand();
 });
-
-/* ---------- render ---------- */
-
 function fmtAge(iso) {
   if (!iso) return "";
   const mins = Math.floor((Date.now() - Date.parse(iso)) / 60000);
@@ -502,7 +459,6 @@ function fmtAge(iso) {
   if (hrs < 24) return hrs + "h ago";
   return Math.floor(hrs / 24) + "d ago";
 }
-
 function renderNotes() {
   const board = document.getElementById("board");
   board.querySelectorAll(".note").forEach(el => el.remove());
@@ -510,66 +466,50 @@ function renderNotes() {
     notes.length ? "none" : "block";
   document.getElementById("note-count").textContent =
     notes.length + " note" + (notes.length === 1 ? "" : "s");
-
   const q = document.getElementById("search-box").value.trim().toLowerCase();
-
   for (const n of notes) {
     const note = document.createElement("article");
     note.className = "note c" + (n.color || 0) + (draggingId === n.id ? " dragging" : "");
     note.dataset.id = n.id;
-    const rot = ((n.id * 37) % 9) - 4;   // same tilt everywhere, from the id alone
+    const rot = ((n.id * 37) % 9) - 4; 
     note.style.left = n.x + "px";
     note.style.top = n.y + "px";
     note.style.setProperty("--rot", rot + "deg");
-
     const grab = document.createElement("div");
     grab.className = "note-grab";
     grab.innerHTML = '<span class="grab-handle">&#9776;</span>';
-
     const del = document.createElement("button");
     del.className = "note-del";
     del.title = "delete note";
     del.innerHTML = "&#10005;";
     del.onclick = (e) => { e.stopPropagation(); deleteNote(n.id); };
-
-    // read-only preview on the wall — editing happens in the expanded popup
     const ta = document.createElement("textarea");
     ta.readOnly = true;
     ta.placeholder = "click to type\u2026";
     ta.spellcheck = false;
     ta.value = n.text || "";
-
     const meta = document.createElement("div");
     meta.className = "note-meta";
     meta.textContent = "saved " + fmtAge(n.updated_at);
-
     note.appendChild(grab);
     note.appendChild(del);
     note.appendChild(ta);
     note.appendChild(meta);
     attachDrag(note, grab, n);
-
     note.addEventListener("click", (e) => {
       if (e.target.closest(".note-del")) return;
       openExpand(n);
     });
-
     board.appendChild(note);
     autosize(ta, 130);
-
     if (q && !(n.text || "").toLowerCase().includes(q)) note.classList.add("dimmed");
   }
 }
-
 function bringToFront(el) {
   el.style.zIndex = ++zTop;
 }
-
-/* ---------- dragging ---------- */
-
 function attachDrag(noteEl, grabEl, n) {
   let startX = 0, startY = 0, origX = 0, origY = 0, moved = false;
-
   grabEl.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     grabEl.setPointerCapture(e.pointerId);
@@ -579,7 +519,6 @@ function attachDrag(noteEl, grabEl, n) {
     draggingId = n.id;
     noteEl.classList.add("dragging");
     bringToFront(noteEl);
-
     const onMove = (ev) => {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
@@ -599,15 +538,9 @@ function attachDrag(noteEl, grabEl, n) {
     grabEl.addEventListener("pointermove", onMove);
     grabEl.addEventListener("pointerup", onUp);
   });
-
-  // hover lifts a note above its neighbours, so overlapping notes can
-  // never hide its delete button (or anything else you're reaching for)
-  noteEl.addEventListener("pointerenter", () => bringToFront(noteEl));
+  noteEl.addEventListener("mouseenter", () => bringToFront(noteEl));
   noteEl.addEventListener("pointerdown", () => bringToFront(noteEl));
 }
-
-/* ---------- live sync ---------- */
-
 let rtTimer = null;
 function setupRealtime() {
   sb()
@@ -618,9 +551,7 @@ function setupRealtime() {
       () => scheduleRemoteReload())
     .subscribe();
 }
-
 function scheduleRemoteReload() {
-  // don't yank the wall out from under someone mid-edit / mid-drag
   if (popupOpenId !== null || draggingId !== null) {
     clearTimeout(rtTimer);
     rtTimer = setTimeout(scheduleRemoteReload, 800);
@@ -636,9 +567,6 @@ function scheduleRemoteReload() {
     }
   }, 250);
 }
-
-/* ---------- modal + toast (same pattern as inventory) ---------- */
-
 let modalResolve = null;
 function askConfirm(title, message, destructive) {
   return new Promise(resolve => {
@@ -664,7 +592,6 @@ document.addEventListener("keydown", e => {
     closeModal(false);
   }
 });
-
 let toastTimer = null;
 function showToast(message) {
   const t = document.getElementById("toast");
@@ -675,15 +602,11 @@ function showToast(message) {
 }
 
 document.getElementById("search-box").addEventListener("input", renderNotes);
-
-/* ---------- boot ---------- */
-
 (async function init() {
   try { await ensureAuth(); } catch (e) { return; }
   const session = await sb().auth.getSession();
   uid = session.data && session.data.session && session.data.session.user.id;
   if (!uid) return;
-
   try {
     await loadNotes();
     setupRealtime();
@@ -696,6 +619,5 @@ document.getElementById("search-box").addEventListener("input", renderNotes);
   renderNotes();
 })();
 </script>
-
 </body>
 </html>

@@ -370,7 +370,6 @@ const sync = createUserSync({
   loadLocal: () => {
     const cached = Store.get("gw2-tracker-daily:" + USER_ID);
     if (cached) return cached;
-    // legacy fallback: pre-sync data on this device
     return { daily: Store.get(LOCAL_DAILY), carry: Store.get(LOCAL_CARRY) };
   },
   saveLocal: s => Store.set("gw2-tracker-daily:" + USER_ID, s),
