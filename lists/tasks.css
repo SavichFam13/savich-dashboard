@@ -367,3 +367,4 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 @media (hover: none) {
   .row-move { display: inline-flex; opacity: 0.4; }
 }
+.mday-cal { z-index: 450; }
