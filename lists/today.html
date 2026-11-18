@@ -19,9 +19,11 @@
   <span class="date-line" id="date-line"></span>
   <button id="next-day">→</button>
   <span class="spacer"></span>
-  <button id="jump-today">back to today</button>
-  <button onclick="location.href='household.html'" title="go to the Household lists">household</button>
-  <button onclick="location.href='personal.html'" title="go to your Personal lists">personal</button>
+  <button id="jump-today">Back to Today</button>
+  <button id="backup-exp" title="download a backup file of ALL lists, tasks, and history">Export</button>
+  <button id="backup-imp" title="restore from a backup file">Import</button>
+  <button onclick="location.href='household.html'" title="go to the Household lists">Household</button>
+  <button onclick="location.href='personal.html'" title="go to your Personal lists">Personal</button>
 </div>
 <div class="progress-outer"><div class="progress-inner" id="prog"></div></div>
 <div class="progress-label" id="prog-label"></div>
@@ -137,6 +139,58 @@
   };
   document.getElementById("jump-today").onclick = () => {
     window.VIEW_DATE = todayStr(); rerender();
+  };
+    document.getElementById("backup-exp").onclick = async function () {
+    try {
+      var d = new Date().toISOString().slice(0, 10);
+      var data = {
+        exported_on: d,
+        lists: listsCache,
+        tasks: tasksCache,
+        occurrences: occCache
+      };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "tasks-backup-" + d + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      flash("backup exported — keep it somewhere safe");
+    } catch (e) {
+      flash("export failed: " + e.message);
+    }
+  };
+  document.getElementById("backup-imp").onclick = function () {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json";
+    inp.onchange = function () {
+      var f = inp.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = async function () {
+        try {
+          var parsed = JSON.parse(rd.result);
+          if (!Array.isArray(parsed.lists) || !Array.isArray(parsed.tasks))
+            throw new Error("not a task backup file");
+          if (!(await confirmBox("Import task backup?",
+            "Restores " + parsed.lists.length + " lists and " + parsed.tasks.length +
+            " tasks from \"" + f.name + "\". Existing matching rows get overwritten. Continue?"))) return;
+          var sbc = sb();
+          await sbc.from("task_lists").upsert(parsed.lists, { onConflict: "id" });
+          await sbc.from("tasks").upsert(parsed.tasks, { onConflict: "id" });
+          if (Array.isArray(parsed.occurrences))
+            await sbc.from("task_occurrences").upsert(parsed.occurrences, { onConflict: "id" });
+          await loadAll();
+          rerender();
+          flash("backup imported");
+        } catch (e) {
+          flash("import failed: " + (e.message || e));
+        }
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
   };
   document.getElementById("add-btn").onclick = () => openEditor(null);
   initTaskPage({

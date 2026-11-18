@@ -302,6 +302,9 @@
 <div class="top">
 <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="nav-btn" id="export-btn" title="download all notes as a backup file">Export</button>
+    <button class="nav-btn" id="import-btn" title="restore notes from a backup file">Import</button>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none">
     <div id="nav"></div>
 </nav>
 </div>
@@ -755,6 +758,81 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 document.getElementById("search-box").addEventListener("input", renderNotes);
+function exportNotes() {
+  if (!notes.length) { showToast("Nothing to export yet."); return; }
+  const payload = {
+    exported_at: new Date().toISOString(),
+    app: "wall-o-sticky-notes",
+    count: notes.length,
+    notes: notes.map(n => ({
+      text: n.text || "",
+      color: n.color || 0,
+      x: n.x, y: n.y
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = d.getFullYear() + "-" +
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
+  a.href = url;
+  a.download = "sticky-notes-" + stamp + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded " + notes.length + " note" +
+    (notes.length === 1 ? "" : "s") + ".");
+}
+async function importNotes(file) {
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch (e) {
+    showToast("That file isn't a valid backup.");
+    return;
+  }
+  const incoming = Array.isArray(payload) ? payload : payload.notes;
+  if (!Array.isArray(incoming) || !incoming.length) {
+    showToast("No notes found in that file.");
+    return;
+  }
+  const rows = incoming
+    .filter(n => n && typeof n.text === "string")
+    .map(n => ({
+      user_id: uid,
+      text: n.text,
+      color: Number.isInteger(n.color) ? n.color : 0,
+      x: Math.max(0, Math.round(Number(n.x) || 0)),
+      y: Math.max(0, Math.round(Number(n.y) || 0))
+    }));
+  if (!rows.length) { showToast("No usable notes in that file."); return; }
+  rows.forEach((r, i) => { r.x += 16 + (i % 4) * 8; r.y += 16; });
+  try {
+    const { error } = await sb().from("sticky_notes").insert(rows);
+    if (error) throw error;
+    await loadNotes();
+    renderNotes();
+    setSync(true);
+    showToast("Imported " + rows.length + " note" +
+      (rows.length === 1 ? "" : "s") + ".");
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Import failed \u2014 open console (F12) for details.");
+  }
+}
+document.getElementById("export-btn").addEventListener("click", exportNotes);
+document.getElementById("import-btn").addEventListener("click", () =>
+  document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (f) importNotes(f);
+});
 (async function init() {
   try { await ensureAuth(); } catch (e) { return; }
   const session = await sb().auth.getSession();

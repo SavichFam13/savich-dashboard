@@ -39,6 +39,20 @@ body {
 .sync-note.live { color: var(--good); }
 header h1 { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
 header .sub { color: var(--dim); font-size: 0.8rem; margin-top: 4px; }
+.btn-topbar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-topbar:hover { border-color: #ff9ecf; color: #ff9ecf; }
+
 .btn {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -237,8 +251,8 @@ tr:hover td { background: #1d1926; }
   </div>
   <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <button class="btn" id="btnExport">Export Backup</button>
-    <button class="btn" id="btnImport">Import Backup</button>
+    <button class="btn-topbar" id="btnExport">Export</button>
+    <button class="btn-topbar" id="btnImport">Import</button>
     <div id="nav"></div>
   </div>
 </header>
@@ -378,11 +392,15 @@ var lastSyncedPrint = null;
 var saveQueued = false;
 var saveTimer = null;
 var rtReloadTimer = null;
+
+// safe helper: wire a handler only if the element exists, so a missing
+// button can never crash the rest of the script
 function on(id, evt, fn) {
   var el = document.getElementById(id);
   if (el) el.addEventListener(evt, fn);
   else console.warn("Media page: element #" + id + " not found — handler skipped");
 }
+
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -706,6 +724,7 @@ function renderWish() {
         '<button class="mini-btn del" data-wdel="' + i.id + '">✕</button>' +
       '</td></tr>';
   }).join("");
+
   body.querySelectorAll("[data-got]").forEach(function (b) {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.got; });
@@ -867,7 +886,7 @@ renderAll();
     }
     lastSyncedPrint = fingerprint();
     cloudReady = true;
-    setSync(true, "✓");
+    setSync(true, "✓ live");
     setupRealtime();
   } catch (error) {
     console.error("Media shared cloud init failed:", error && error.message);
