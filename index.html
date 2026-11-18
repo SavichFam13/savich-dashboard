@@ -615,7 +615,7 @@
   <input id="ed-section" list="ed-section-list" placeholder="e.g. To Buy, Deliveries">
   <datalist id="ed-section-list"></datalist>
   <label for="ed-date">Starts on (blank = parked in list only)</label>
-  <input id="ed-date" type="date">
+  <input id="ed-date" type="text" placeholder="mm/dd/yyyy — click for calendar" autocomplete="off">
   <label for="ed-time">Time of day (blank = anytime)</label>
   <input id="ed-time" type="time">
   <label for="ed-repeat">Repeat</label>
@@ -626,10 +626,17 @@
     <option value="weekly">Weekly</option>
     <option value="biweekly">Every N weeks</option>
     <option value="monthly">Monthly</option>
-    <option value="nthmonth">Every N months on the Nth weekday</option>
+     <option value="yearly">Yearly</option>
+    <option value="nthmonth">Every N months on the Nth day (12 = year)</option>
     <option value="afterdone">Every N days after completion</option>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
+    <div id="ed-ends-row" style="display:none">
+    <label for="ed-count">Ends — after … times (blank = forever)</label>
+    <input id="ed-count" type="number" min="1" max="999">
+    <label for="ed-until">… or on date (blank = no end date)</label>
+    <input id="ed-until" type="text" placeholder="mm/dd/yyyy — click for calendar" autocomplete="off">
+  </div>
   <div id="ed-mday-row" style="display:none">
     <label for="ed-mday">Day of month</label>
     <input id="ed-mday" type="number" min="1" max="31" readonly

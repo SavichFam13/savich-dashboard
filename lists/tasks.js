@@ -538,26 +538,51 @@ function openDateCal() {
   }), 0);
 }
 function openMiniDate(anchorEvent, cb) {
-  closeMenus(); openMiniCancel();
+  closeMenus(); openMiniCancel(); closeDateCal(); closeMdayCal();
   const el = document.createElement("div");
-  el.className = "item-menu";
-  el.innerHTML =
-    '<button class="menu-x">✕</button>' +
-    '<label style="color:var(--dim);font-size:0.7rem;margin-bottom:6px;display:block">MOVE TO</label>' +
-    '<input type="date" id="mini-date-input">';
+  el.className = "item-menu mday-cal";
   document.body.appendChild(el);
   miniDateEl = el;
-  const rect = { x: anchorEvent.clientX, y: anchorEvent.clientY };
-  el.style.left = Math.min(rect.x, window.innerWidth - 240) + "px";
-  el.style.top = Math.min(rect.y, window.innerHeight - 110) + "px";
-  const inp = el.querySelector("#mini-date-input");
-  inp.value = todayStr();
-  inp.focus();
-  el.querySelector(".menu-x").onclick = () => { openMiniCancel(); };
-  inp.addEventListener("change", () => {
-    const v = inp.value; openMiniCancel();
-    if (v) cb(v);
-  });
+  const t0 = todayStr().split("-").map(Number);
+  let y = t0[0], m = t0[1];
+  function draw() {
+    const first = new Date(y, m - 1, 1);
+    const days = new Date(y, m, 0).getDate();
+    let cells = "";
+    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
+      cells += '<div class="mc-dow">' + n + "</div>";
+    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+    for (let d = 1; d <= days; d++) {
+      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      cells += '<button type="button" class="mc-day" data-iso="' + iso + '">' + d + "</button>";
+    }
+    el.innerHTML =
+      '<button class="menu-x">✕</button>' +
+      '<div class="mc-nav">' +
+        '<button type="button" class="dc-prev">‹</button>' +
+        '<span class="mc-title">MOVE TO</span>' +
+        '<button type="button" class="dc-next">›</button>' +
+      '</div>' +
+      '<div style="text-align:center;font-size:0.78rem;margin:0 0 6px;color:var(--dim)">' +
+        first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
+      '</div>' +
+      '<div class="mc-grid">' + cells + "</div>" +
+      '<button type="button" class="dc-today">today</button>';
+    el.querySelector(".menu-x").onclick = openMiniCancel;
+    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
+    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
+    el.querySelector(".dc-today").onclick = () => { openMiniCancel(); cb(todayStr()); };
+    el.querySelectorAll(".mc-day").forEach(b => {
+      b.onclick = () => { const iso = b.getAttribute("data-iso"); openMiniCancel(); cb(iso); };
+    });
+  }
+  draw();
+  el.style.left = Math.min(anchorEvent.clientX, window.innerWidth - 290) + "px";
+  el.style.top = Math.min(anchorEvent.clientY, window.innerHeight - 400) + "px";
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
+    if (miniDateEl && !miniDateEl.contains(ev.target)) openMiniCancel();
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
 }
 let editingTask = null;
 let selectedDows = [];
@@ -761,6 +786,13 @@ function initEditorUI() {
     document.getElementById("ed-ends-row").style.display =
       (v === "none") ? "none" : "block";
   });
+    for (const fid of ["ed-date", "ed-until"]) {
+    const fi = document.getElementById(fid);
+    if (!fi) continue;
+    fi.addEventListener("click", () => openDateCalFor(fid));
+    fi.addEventListener("keydown", () => closeDateCal());
+    fi.addEventListener("blur", () => { closeDateCal(); normDateField(fi); });
+  }
   const md = document.getElementById("ed-mday");
 
   if (md) md.addEventListener("click", openMdayCal);
@@ -898,4 +930,70 @@ function confirmBox(title, body) {
     ov.onclick = ev => { if (ev.target === ov) done(false); };
     document.addEventListener("keydown", onKey);
   });
+}
+let dateCalEl = null;
+function closeDateCal() { if (dateCalEl) { dateCalEl.remove(); dateCalEl = null; } }
+function openDateCalFor(inpId) {
+  closeMenus(); openMiniCancel(); closeMdayCal(); closeDateCal();
+  const inp = document.getElementById(inpId);
+  if (!inp) return;
+  const el = document.createElement("div");
+  el.className = "item-menu mday-cal date-cal";
+  document.body.appendChild(el);
+  dateCalEl = el;
+  const v = (inp.value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const base = v ? inp.value.split("-").map(Number) : todayStr().split("-").map(Number);
+  let y = base[0], m = base[1];
+  function draw() {
+    const first = new Date(y, m - 1, 1);
+    const days = new Date(y, m, 0).getDate();
+    let cells = "";
+    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
+      cells += '<div class="mc-dow">' + n + "</div>";
+    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+    for (let d = 1; d <= days; d++) {
+      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
+        '" data-iso="' + iso + '">' + d + "</button>";
+    }
+    el.innerHTML =
+      '<button class="menu-x">✕</button>' +
+      '<div class="mc-nav">' +
+        '<button type="button" class="dc-prev">‹</button>' +
+        '<span class="mc-title">' +
+          first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
+        '</span>' +
+        '<button type="button" class="dc-next">›</button>' +
+      '</div>' +
+      '<div class="mc-grid">' + cells + "</div>" +
+      '<button type="button" class="dc-today">today</button>';
+    el.querySelector(".menu-x").onclick = closeDateCal;
+    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
+    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
+    el.querySelector(".dc-today").onclick = () => {
+      inp.value = todayStr(); closeDateCal(); flash("set to today");
+    };
+    el.querySelectorAll(".mc-day").forEach(b => {
+      b.onclick = () => { inp.value = b.getAttribute("data-iso"); closeDateCal(); };
+    });
+  }
+  draw();
+  const r = inp.getBoundingClientRect();
+  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
+  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 380) + "px";
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
+    if (dateCalEl && !dateCalEl.contains(ev.target) && ev.target !== inp) closeDateCal();
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+}
+function normDateField(inp) {
+  const v = (inp.value || "").trim();
+  if (!v) return;
+  const s = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const i = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (s) inp.value = s[3] + "-" +
+    String(s[1]).padStart(2, "0") + "-" + String(s[2]).padStart(2, "0");
+  else if (i) inp.value = i[1] + "-" +
+    String(i[2]).padStart(2, "0") + "-" + String(i[3]).padStart(2, "0");
+  else { inp.value = ""; flash("date didn't look right — cleared, use the calendar"); }
 }
