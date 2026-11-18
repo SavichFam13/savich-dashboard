@@ -371,22 +371,52 @@ function esc(str) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+/* marker -> html: stack-based scanner, tolerates corrupt/nested leftovers */
 function markedToHtml(txt) {
-  let s = esc(txt);
-  s = s.replace(/\[\[(c[1-4]):([\s\S]*?)\]\]/g,
-    (m, c, inner) => '<span class="hl ' + c + '">' + inner + "</span>");
-  return s;
+  const s = esc(String(txt == null ? "" : txt));
+  let out = "";
+  const openStack = [];
+  let i = 0;
+  const OPEN_RE = /\[\[(c[1-4]):/g;
+  while (i < s.length) {
+    OPEN_RE.lastIndex = i;
+    const m = OPEN_RE.exec(s);
+    const nj = s.indexOf("]]", i);
+    if (m && (nj === -1 || m.index < nj)) {
+      out += s.slice(i, m.index);
+      out += '<span class="hl ' + m[1] + '">';
+      openStack.push(m[1]);
+      i = m.index + m[0].length;
+    } else if (nj !== -1) {
+      out += s.slice(i, nj);
+      if (openStack.length) { out += "</span>"; openStack.pop(); }
+      else { out += "]]"; }
+      i = nj + 2;
+    } else {
+      out += s.slice(i);
+      i = s.length;
+    }
+  }
+  while (openStack.length) { out += "</span>"; openStack.pop(); }
+  return out;
 }
+/* html -> markers: walks the real DOM, immune to tag spelling/order/style noise */
 function htmlToMarked(el) {
-  let h = el.innerHTML;
-  h = h.replace(/<br\s*\/?>/gi, "\n");
-  h = h.replace(/<span class="hl (c[1-4])">([\s\S]*?)<\/span>/gi,
-    (m, c, inner) => "[[" + c + ":" + inner + "]]");
-  h = h.replace(/<\/(div|p)>/gi, "\n");
-  h = h.replace(/<[^>]+>/g, "");
-  const d = document.createElement("textarea");
-  d.innerHTML = h;
-  let out = d.value;
+  let out = "";
+  const BLOCKS = { DIV: 1, P: 1 };
+  (function walk(node, insideHl) {
+    node.childNodes.forEach(child => {
+      if (child.nodeType === 3) { out += child.nodeValue; return; }
+      if (child.nodeType !== 1) return;
+      if (child.tagName === "BR") { out += "\n"; return; }
+      if (BLOCKS[child.tagName]) out += "\n";
+      const cls = child.getAttribute("class") || "";
+      const m = cls.match(/(?:^|\s)hl\s(c[1-4])(?:\s|$)/);
+      if (m && !insideHl) out += "[[" + m[1] + ":";
+      walk(child, insideHl || !!m);
+      if (m && !insideHl) out += "]]";
+    });
+  })(el, false);
   return out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n");
 }
 function stripMarked(t) {
@@ -480,7 +510,6 @@ document.querySelectorAll(".pen-dot").forEach(btn => {
 });
 document.getElementById("pen-clear").addEventListener("mousedown", e => e.preventDefault());
 document.getElementById("pen-clear").addEventListener("click", clearHighlights);
-/* ---- end highlighter core ---- */
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();

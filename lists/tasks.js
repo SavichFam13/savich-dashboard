@@ -104,9 +104,14 @@ function ruleFiresOn(task, dateStr) {
     }
     case "monthly": {
       const md = task.repeat_mday || Number(start.split("-")[2]);
-      if (Number(dateStr.split("-")[2]) !== md) return false;
-      const every = task.repeat_every || 1;
       const [y, m] = dateStr.split("-").map(Number);
+      const dayNum = Number(dateStr.split("-")[2]);
+      if (md === 99) {
+        if (dayNum !== new Date(y, m, 0).getDate()) return false;
+      } else {
+        if (dayNum !== md) return false;
+      }
+      const every = task.repeat_every || 1;
       const [sy, sm] = start.split("-").map(Number);
       const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
       return mdiff >= 0 && mdiff % every === 0;
@@ -438,7 +443,8 @@ function drawMdayCal() {
       '</span>' +
       '<button type="button" id="mc-next">›</button>' +
     '</div>' +
-    '<div class="mc-grid">' + cells + "</div>";
+        '<div class="mc-grid">' + cells + "</div>" +
+    '<button type="button" class="mc-last">last day of month</button>';
   el.querySelector(".menu-x").onclick = closeMdayCal;
   el.querySelector("#mc-prev").onclick = () => {
     mdayCalM--; if (mdayCalM < 1) { mdayCalM = 12; mdayCalY--; } drawMdayCal();
@@ -449,6 +455,9 @@ function drawMdayCal() {
   el.querySelectorAll(".mc-day").forEach(b => {
     b.onclick = () => { inp.value = b.getAttribute("data-d"); closeMdayCal(); };
   });
+    el.querySelector(".mc-last").onclick = () => {
+    inp.value = "99"; closeMdayCal();
+  };
 }
 function openMdayCal() {
   closeMenus(); openMiniCancel(); closeMdayCal();

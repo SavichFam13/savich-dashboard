@@ -348,3 +348,10 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   cursor: pointer;
 }
 .tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+.item-menu .mc-last {
+  display: block; width: 100%; margin-top: 6px;
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--dim); font-family: inherit; font-size: 0.72rem;
+  padding: 6px 8px; cursor: pointer; text-align: center;
+}
+.item-menu .mc-last:hover { border-color: var(--accent2); color: var(--accent2); }

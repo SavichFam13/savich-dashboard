@@ -19,12 +19,17 @@ function repeatDescr(t) {
     case "weekly":   return "Weekly on " + dowsText(t) + tm;
     case "biweekly": return "Every " + (t.repeat_every || 2) +
                       " weeks on " + dowsText(t) + tm;
-    case "monthly":  return ((t.repeat_every || 1) === 12
-                      ? "Yearly on day "
-                      : (t.repeat_every || 1) > 1
-                      ? "Every " + t.repeat_every + " mo. on day "
-                      : "Monthly on day ") +
-                      (t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2])) + tm;
+    case "monthly": {
+      const fb = Number((t.start_date || todayStr()).split("-")[2]);
+      const md = t.repeat_mday || fb;
+      const last = md === 99;
+      return ((t.repeat_every || 1) === 12
+        ? last ? "Yearly on the last day" : "Yearly on day " + fb
+        : (t.repeat_every || 1) > 1
+        ? last ? "Every " + t.repeat_every + " mo. on the last day"
+               : "Every " + t.repeat_every + " mo. on day " + md
+        : last ? "Monthly on the last day" : "Monthly on day " + md) + tm;
+    }
     case "nthmonth": return "Every " + (t.repeat_every || 1) + " mo. on the " +
                       nthName(t.repeat_nth || 1) + " " + dowsText(t) + tm;
     case "afterdone":return "Every " + (t.repeat_every || 3) +
