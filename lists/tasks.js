@@ -500,6 +500,16 @@ function openDateCal() {
     });
   }
   draw();
+  function wireDateCalRedirect() {
+  const inp = document.getElementById("ed-date");
+  if (!inp) return;
+  inp.addEventListener("mousedown", ev => {
+    if (ev.offsetX > inp.clientWidth - 30) {
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      openDateCal();
+    }
+  }, true);
+}
   const r = inp.getBoundingClientRect();
   el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
   el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
@@ -711,6 +721,7 @@ async function deleteSeries() {
   flash("series deleted");
 }
 function initEditorUI() {
+    wireDateCalRedirect();
   document.getElementById("ed-save").onclick = saveEditor;
   document.getElementById("ed-close").onclick = closeEditor;
   const del = document.getElementById("ed-delete");
@@ -751,8 +762,7 @@ function initEditorUI() {
       (v === "none") ? "none" : "block";
   });
   const md = document.getElementById("ed-mday");
-    const dcBtn = document.getElementById("ed-date-cal");
-  if (dcBtn) dcBtn.addEventListener("click", openDateCal);
+
   if (md) md.addEventListener("click", openMdayCal);
 }
 function renderDay({ filterFn, rerender, containerId = "task-area" }) {

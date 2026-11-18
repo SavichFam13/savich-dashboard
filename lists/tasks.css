@@ -374,19 +374,4 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   background-position: right 8px center;
   padding-right: 30px;
 }
-/* custom date-picker button beside Starts-on */
-input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
-.dc-open {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
-  font-family: inherit; font-size: 0.85rem; padding: 7px 10px;
-  cursor: pointer; margin-left: 6px;
-}
-.dc-open:hover { border-color: var(--accent2); }
-.date-cal { z-index: 450; padding: 12px; }
-.item-menu .dc-today {
-  display: block; width: 100%; margin-top: 6px;
-  background: none; border: 1px solid var(--border); border-radius: 4px;
-  color: var(--dim); font-family: inherit; font-size: 0.72rem;
-  padding: 6px 8px; cursor: pointer; text-align: center;
-}
 .item-menu .dc-today:hover { border-color: var(--accent2); color: var(--accent2); }
