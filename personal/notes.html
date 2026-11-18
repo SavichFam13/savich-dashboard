@@ -221,6 +221,7 @@
     color: var(--dim); border-radius: 4px; cursor: pointer;
     font-size: 0.95rem; padding: 2px 8px; line-height: 1;
     font-family: inherit;
+    margin-left: auto;
   }
   .expand-close:hover { border-color: var(--bad); color: var(--bad); }
   .pen-bar {
@@ -371,7 +372,6 @@ function esc(str) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-/* marker -> html: stack-based scanner, tolerates corrupt/nested leftovers */
 function markedToHtml(txt) {
   const s = esc(String(txt == null ? "" : txt));
   let out = "";
@@ -400,7 +400,6 @@ function markedToHtml(txt) {
   while (openStack.length) { out += "</span>"; openStack.pop(); }
   return out;
 }
-/* html -> markers: walks the real DOM, immune to tag spelling/order/style noise */
 function htmlToMarked(el) {
   let out = "";
   const BLOCKS = { DIV: 1, P: 1 };
@@ -423,17 +422,47 @@ function stripMarked(t) {
   return String(t == null ? "" : t)
     .replace(/\[\[c[1-4]:/g, "").replace(/\]\]/g, "");
 }
+/* ---- highlighter core: continuous selection tracking + armed re-taps ---- */
+let savedRange = null;
+function stashSelection() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+  const node = sel.getRangeAt(0).commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentNode;
+  if (expandTa.contains(el)) savedRange = sel.getRangeAt(0).cloneRange();
+}
+document.addEventListener("selectionchange", () => {
+  requestAnimationFrame(stashSelection);
+});
+expandTa.addEventListener("mouseup", stashSelection);
+expandTa.addEventListener("keyup", stashSelection);
+function penRange() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount && !sel.isCollapsed) {
+    const node = sel.getRangeAt(0).commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentNode;
+    if (expandTa.contains(el)) return sel.getRangeAt(0);
+  }
+  if (savedRange && savedRange.startContainer.isConnected) {
+    const node = savedRange.commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentNode;
+    if (expandTa.contains(el)) return savedRange;
+  }
+  return null;
+}
 function applyHighlight(cls) {
   const range = penRange();
   if (!range) {
+    console.debug("[pen] no usable selection for highlight");
     showToast("Drag across a word inside the note, then tap a color.");
     return;
   }
+  let span = null;
   try {
     const frag = range.extractContents();
     frag.querySelectorAll("span.hl").forEach(sp =>
       sp.replaceWith(document.createTextNode(sp.textContent)));
-    const span = document.createElement("span");
+    span = document.createElement("span");
     span.className = "hl " + cls;
     span.appendChild(frag);
     range.insertNode(span);
@@ -449,12 +478,14 @@ function applyHighlight(cls) {
   }
   const sel = window.getSelection();
   if (sel) sel.removeAllRanges();
-  savedRange = null;
+  savedRange = document.createRange();
+  savedRange.selectNodeContents(span);
   onExpandInput();
 }
 function clearHighlights() {
   const range = penRange();
   if (!range) {
+    console.debug("[pen] no usable selection for eraser");
     showToast("Drag across the highlighted text, then tap \u232b.");
     return;
   }
@@ -480,36 +511,13 @@ function clearHighlights() {
   onExpandInput();
   if (!hadHl) showToast("No highlight in that selection.");
 }
-let savedRange = null;
-function stashSelection() {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-  const node = sel.getRangeAt(0).commonAncestorContainer;
-  const el = node.nodeType === 1 ? node : node.parentNode;
-  if (expandTa.contains(el)) savedRange = sel.getRangeAt(0).cloneRange();
-}
-expandTa.addEventListener("mouseup", stashSelection);
-expandTa.addEventListener("keyup", stashSelection);
-function penRange() {
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount && !sel.isCollapsed) {
-    const node = sel.getRangeAt(0).commonAncestorContainer;
-    const el = node.nodeType === 1 ? node : node.parentNode;
-    if (expandTa.contains(el)) return sel.getRangeAt(0);
-  }
-  if (savedRange && savedRange.startContainer.isConnected) {
-    const node = savedRange.commonAncestorContainer;
-    const el = node.nodeType === 1 ? node : node.parentNode;
-    if (expandTa.contains(el)) return savedRange;
-  }
-  return null;
-}
 document.querySelectorAll(".pen-dot").forEach(btn => {
   btn.addEventListener("mousedown", e => e.preventDefault());
   btn.addEventListener("click", () => applyHighlight(btn.dataset.c));
 });
 document.getElementById("pen-clear").addEventListener("mousedown", e => e.preventDefault());
 document.getElementById("pen-clear").addEventListener("click", clearHighlights);
+/* ---- end highlighter core ---- */
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();

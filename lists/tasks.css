@@ -355,3 +355,15 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   padding: 6px 8px; cursor: pointer; text-align: center;
 }
 .item-menu .mc-last:hover { border-color: var(--accent2); color: var(--accent2); }
+.row-move { position: absolute; right: 12px; top: 8px; display: none; gap: 3px; z-index: 2; }
+.task-row:hover .row-move { display: inline-flex; }
+.task-row:hover .t-next { visibility: hidden; }
+.row-move button {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--dim); cursor: pointer; font-family: inherit;
+  font-size: 0.55rem; padding: 1px 4px; line-height: 1.3;
+}
+.row-move button:hover { color: var(--accent2); border-color: var(--accent2); }
+@media (hover: none) {
+  .row-move { display: inline-flex; opacity: 0.4; }
+}

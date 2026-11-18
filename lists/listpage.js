@@ -101,6 +101,36 @@ function saveCollapsed(set) {
   try { localStorage.setItem(collapsedStoreKey(), JSON.stringify(Array.from(set))); }
   catch (e) { /* private mode etc. — just don't remember it */ }
 }
+function taskOrderKey(section) {
+  return "lp-task-order-" + (LP_SEL || "none") + "::" + (section || "__loose__");
+}
+function getTaskOrder(section) {
+  try { return JSON.parse(localStorage.getItem(taskOrderKey(section)) || "[]"); }
+  catch (e) { return []; }
+}
+function saveTaskOrder(section, arr) {
+  try { localStorage.setItem(taskOrderKey(section), JSON.stringify(arr)); }
+  catch (e) { /* ignore */ }
+}
+function applyTaskOrder(arr, section) {
+  const saved = getTaskOrder(section);
+  if (!saved.length) return;
+  const rank = new Map(saved.map((id, i) => [id, i]));
+  arr.sort((a, b) => {
+    const ra = rank.has(a.id) ? rank.get(a.id) : Infinity;
+    const rb = rank.has(b.id) ? rank.get(b.id) : Infinity;
+    if (ra !== rb) return ra < rb ? -1 : 1;
+    return 0;
+  });
+}
+function nudgeTask(section, ids, taskId, dir) {
+  const i = ids.indexOf(taskId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(j, 0, ids.splice(i, 1)[0]);
+  saveTaskOrder(section, ids);
+  renderListView();
+}
 function secOrderKey() {
   return "lp-sec-order-" + (LP_SEL || "none");
 }
@@ -182,7 +212,8 @@ function renderListView() {
       handledToday.add(o.task_id);
   for (const s of order)
     groups[s] = groups[s].filter(t => !handledToday.has(t.id));  
-  const rowFor = (t, note) => {
+  for (const s of order) applyTaskOrder(groups[s], s);
+    const rowFor = (t, note) => {
     const occToday = occCache.find(o => o.task_id === t.id && o.orig_date === today);
     const doneToday = occToday && occToday.status === "done";
     const nf = note ? "" : (t.start_date
@@ -190,12 +221,16 @@ function renderListView() {
         ? (t.start_date < today ? "past" : "next: " + t.start_date.slice(5))
         : "next: " + (nextFireDate(t, today) || "—").slice(5))
       : "unscheduled");
+    const mv = (!note && !handledToday.has(t.id))
+      ? '<span class="row-move"><button type="button" class="row-up" title="move up">▲</button>' +
+        '<button type="button" class="row-down" title="move down">▼</button></span>'
+      : "";
     return '<div class="task-row' + (note ? " note" : "") + (doneToday ? " done" : "") +
       '" data-task="' + t.id + '" data-date="' + today + '">' +
       '<span class="cb" title="click = done"></span>' +
       '<span class="t-title">' + esc(t.title) + "</span>" +
       '<span class="t-meta">' + esc(repeatDescr(t)) + "</span>" +
-      '<span class="t-next">' + nf + "</span>" +
+      '<span class="t-next">' + nf + "</span>" + mv +
       "</div>";
   };
   const collapsed = getCollapsed();
@@ -271,6 +306,13 @@ function renderListView() {
         openDetailPopup(ev, t);
       }
     });
+    const gkey = t.section || "";
+    const rowIds = (groups[gkey] || []).map(x => x.id);
+    const rUp = row.querySelector(".row-up");
+    const rDn = row.querySelector(".row-down");
+    if (rUp) rUp.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); nudgeTask(gkey, rowIds, t.id, -1); };
+    if (rDn) rDn.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); nudgeTask(gkey, rowIds, t.id, 1); };
+
     row.oncontextmenu = t.is_note
       ? ev => { ev.preventDefault(); openDetailPopup(ev, t); }
       : ev => openTaskMenu(ev, {
