@@ -32,6 +32,7 @@
   .top {
     display: flex; justify-content: flex-end; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+    position: relative; z-index: 4500;
   }
   h1.wall-title {
     display: flex; align-items: flex-end; gap: 14px;
@@ -72,7 +73,7 @@
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
   }
-  .toolbar-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .toolbar-left { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
   .btn {
     background: var(--panel); border: 1px solid var(--border);
     color: var(--text); padding: 7px 14px; border-radius: 5px;
@@ -308,10 +309,10 @@
 </h1>
 <div class="toolbar">
   <div class="toolbar-left">
-    <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
+    <input type="search" id="search-box" placeholder="Search your notes&hellip;">
     <span id="note-count">0 notes</span>
   </div>
-  <input type="search" id="search-box" placeholder="Search your notes&hellip;">
+  <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
 </div>
 <div class="board" id="board">
   <div class="board-hint" id="board-hint">
