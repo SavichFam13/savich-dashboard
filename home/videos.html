@@ -432,7 +432,7 @@ function loadLegacy() {
 function setSync(ok, message) {
   var el = document.getElementById("sync-note");
   if (!el) return;
-  el.textContent = ok ? (message || "✓ live") : "offline — changes NOT saved";
+  el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
 function save(immediate) {

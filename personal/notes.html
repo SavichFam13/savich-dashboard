@@ -397,24 +397,25 @@ function stripMarked(t) {
     .replace(/\[\[c[1-4]:/g, "").replace(/\]\]/g, "");
 }
 function applyHighlight(cls) {
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) {
-    showToast("Select some text first, then tap a color.");
+  const range = penRange();
+  if (!range) {
+    showToast("Drag across a word inside the note, then tap a color.");
     return;
   }
-  const range = sel.getRangeAt(0);
-  if (!expandTa.contains(range.commonAncestorContainer.nodeType === 1
-        ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode)) {
-    showToast("Select text inside the note.");
+  const hits = Array.from(expandTa.querySelectorAll("span.hl")).filter(sp => {
+    const r = document.createRange();
+    r.selectNodeContents(sp);
+    return range.intersectsRange(r);
+  });
+  if (hits.length === 1 &&
+      hits[0].contains(range.startContainer) &&
+      hits[0].contains(range.endContainer)) {
+    hits[0].className = "hl " + cls;
+    savedRange = null;
+    onExpandInput();
     return;
   }
-  const parent = sel.anchorNode && sel.anchorNode.parentElement
-    ? sel.anchorNode.parentElement.closest("span.hl")
-    : null;
-  if (parent) {
-    showToast("Already highlighted \u2014 erase it first (\u232b).");
-    return;
-  }
+  hits.forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent)));
   const span = document.createElement("span");
   span.className = "hl " + cls;
   try {
@@ -423,16 +424,17 @@ function applyHighlight(cls) {
     span.appendChild(range.extractContents());
     range.insertNode(span);
   }
-  sel.removeAllRanges();
+  const sel = window.getSelection();
+  if (sel) sel.removeAllRanges();
+  savedRange = null;
   onExpandInput();
 }
 function clearHighlights() {
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed || !sel.rangeCount) {
-    showToast("Click and drag across the highlighted text, then tap \u232b while holding it.");
+  const range = penRange();
+  if (!range) {
+    showToast("Drag across the highlighted text, then tap \u232b.");
     return;
   }
-  const range = sel.getRangeAt(0);
   const hits = Array.from(expandTa.querySelectorAll("span.hl"))
     .filter(sp => {
       const r = document.createRange();
@@ -444,7 +446,27 @@ function clearHighlights() {
     return;
   }
   hits.forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent)));
+  savedRange = null;
   onExpandInput();
+}
+let savedRange = null;
+function stashSelection() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+  const node = sel.getRangeAt(0).commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentNode;
+  if (expandTa.contains(el)) savedRange = sel.getRangeAt(0).cloneRange();
+}
+expandTa.addEventListener("mouseup", stashSelection);
+expandTa.addEventListener("keyup", stashSelection);
+function penRange() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount && !sel.isCollapsed) {
+    const node = sel.getRangeAt(0).commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentNode;
+    if (expandTa.contains(el)) return sel.getRangeAt(0);
+  }
+  return savedRange;
 }
 document.querySelectorAll(".pen-dot").forEach(btn => {
   btn.addEventListener("mousedown", e => e.preventDefault());
@@ -481,9 +503,6 @@ async function savePatch(note, patch) {
       .update(patch).eq("id", note.id);
     if (error) throw error;
     setSync(true);
-    if (popupOpenId === note.id)
-      document.getElementById("expand-age").textContent =
-        "saved " + fmtAge(note.updated_at);
   } catch (e) {
     console.error("sticky save failed:", e.message);
     setSync(false);
