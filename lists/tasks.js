@@ -65,15 +65,13 @@ function nthWeekdayOfMonth(y, m, weekday, nth) {
 }
 function rollingDueDate(task) {
   const n = task.repeat_every || 3;
-  let d = task.start_date;
-  const map = {};
-  for (const o of occCache) if (o.task_id === task.id) map[o.orig_date] = o;
-  for (let guard = 0; guard < 1000; guard++) {
-    const o = map[d];
-    if (o && (o.status === "done" || o.status === "skipped")) d = addDaysStr(d, n);
-    else return d;
+  let last = null;
+  for (const o of occCache) {
+    if (o.task_id !== task.id) continue;
+    if (o.status !== "done" && o.status !== "skipped") continue;
+    if (!last || o.orig_date > last) last = o.orig_date;
   }
-  return d;
+  return last ? addDaysStr(last, n) : task.start_date;
 }
 function ruleFiresOn(task, dateStr) {
   const start = task.start_date;
@@ -612,6 +610,8 @@ function openEditor(task) {
   }
   document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
   document.getElementById("ed-repeat").value = rt;
+  document.getElementById("ed-dow-row").style.display =
+    (rt === "weekly" || rt === "biweekly" || rt === "nthmonth") ? "flex" : "none";
   document.getElementById("ed-mday").value =
     t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
   document.getElementById("ed-mday").dataset.own = t.repeat_mday || "";

@@ -186,6 +186,8 @@
     border: 1px solid var(--nbord);
     border-radius: 6px;
     width: 480px; max-width: 94vw;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
     box-shadow: 0 16px 48px rgba(0,0,0,0.55);
     transform: rotate(-1deg);
   }
@@ -201,6 +203,7 @@
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px;
     border-bottom: 1px solid rgba(242,238,247,0.08);
+    flex: 0 0 auto;
   }
   .expand-title {
     font-size: 0.78rem; font-weight: 700;
@@ -217,6 +220,7 @@
   .pen-bar {
     display: flex; align-items: center; gap: 8px;
     padding: 8px 16px 2px;
+    flex: 0 0 auto;
   }
   .pen-title { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.5px; }
   .pen-dot {
@@ -241,7 +245,7 @@
     line-height: 1.6; padding: 12px 16px 16px;
     min-height: 230px; outline: none;
     white-space: pre-wrap; word-wrap: break-word;
-    overflow: hidden;
+    overflow-y: auto; flex: 1 1 auto; min-height: 0;
   }
   #expand-ta:empty::before {
     content: "type here\2026";
