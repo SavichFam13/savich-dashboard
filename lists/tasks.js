@@ -500,6 +500,15 @@ function openDateCal() {
     });
   }
   draw();
+  const r = inp.getBoundingClientRect();
+  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
+  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
+    if (!el.isConnected || (!el.contains(ev.target) &&
+        ev.target !== document.getElementById("ed-date-cal"))) { el.remove(); }
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+}
   function wireDateCalRedirect() {
   const inp = document.getElementById("ed-date");
   if (!inp) return;
@@ -509,15 +518,6 @@ function openDateCal() {
       openDateCal();
     }
   }, true);
-}
-  const r = inp.getBoundingClientRect();
-  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (!el.isConnected || (!el.contains(ev.target) &&
-        ev.target !== document.getElementById("ed-date-cal"))) { el.remove(); }
-    document.removeEventListener("mousedown", onDoc);
-  }), 0);
 }
   function openMdayCal() {
   closeMenus(); openMiniCancel(); closeMdayCal();
