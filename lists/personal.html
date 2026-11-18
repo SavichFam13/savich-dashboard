@@ -40,7 +40,8 @@
   <input id="ed-section" list="ed-section-list" placeholder="e.g. To Buy, Deliveries">
   <datalist id="ed-section-list"></datalist>
   <label for="ed-date">Starts on (blank = parked in list only)</label>
-  <input id="ed-date" type="date">
+    <input id="ed-date" type="date">
+  <button type="button" id="ed-date-cal" class="dc-open" title="pick from calendar">📅</button>
   <label for="ed-time">Time of day (blank = anytime)</label>
   <input id="ed-time" type="time">
   <label for="ed-repeat">Repeat</label>
@@ -52,7 +53,7 @@
     <option value="biweekly">Every N weeks</option>
     <option value="monthly">Monthly</option>
     <option value="yearly">Yearly</option>
-    <option value="nthmonth">Every N months on the Nth day</option>
+    <option value="nthmonth">Every N months on the Nth day (12 = yearly)</option>
     <option value="afterdone">Every N days after completion</option>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>

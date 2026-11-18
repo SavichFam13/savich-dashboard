@@ -459,7 +459,57 @@ function drawMdayCal() {
     inp.value = "99"; closeMdayCal();
   };
 }
-function openMdayCal() {
+function openDateCal() {
+  closeMenus(); openMiniCancel(); closeMdayCal();
+  const inp = document.getElementById("ed-date");
+  const el = document.createElement("div");
+  el.className = "item-menu mday-cal date-cal";
+  document.body.appendChild(el);
+  let y, m;
+  const cur = inp.value ? inp.value.split("-").map(Number) : todayStr().split("-").map(Number);
+  y = cur[0]; m = cur[1];
+  function draw() {
+    const first = new Date(y, m - 1, 1);
+    const days = new Date(y, m, 0).getDate();
+    let cells = "";
+    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
+      cells += '<div class="mc-dow">' + n + "</div>";
+    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+    for (let d = 1; d <= days; d++) {
+      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
+        '" data-iso="' + iso + '">' + d + "</button>";
+    }
+    el.innerHTML =
+      '<button class="menu-x">✕</button>' +
+      '<div class="mc-nav">' +
+        '<button type="button" class="dc-prev">‹</button>' +
+        '<span class="mc-title">' +
+          first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
+        '</span>' +
+        '<button type="button" class="dc-next">›</button>' +
+      '</div>' +
+      '<div class="mc-grid">' + cells + "</div>" +
+      '<button type="button" class="dc-today">today</button>';
+    el.querySelector(".menu-x").onclick = () => { el.remove(); };
+    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
+    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
+    el.querySelector(".dc-today").onclick = () => { inp.value = todayStr(); el.remove(); };
+    el.querySelectorAll(".mc-day").forEach(b => {
+      b.onclick = () => { inp.value = b.getAttribute("data-iso"); el.remove(); };
+    });
+  }
+  draw();
+  const r = inp.getBoundingClientRect();
+  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
+  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
+    if (!el.isConnected || (!el.contains(ev.target) &&
+        ev.target !== document.getElementById("ed-date-cal"))) { el.remove(); }
+    document.removeEventListener("mousedown", onDoc);
+  }), 0);
+}
+  function openMdayCal() {
   closeMenus(); openMiniCancel(); closeMdayCal();
   const inp = document.getElementById("ed-mday");
   const base = (document.getElementById("ed-date").value || todayStr()).split("-");
@@ -701,6 +751,8 @@ function initEditorUI() {
       (v === "none") ? "none" : "block";
   });
   const md = document.getElementById("ed-mday");
+    const dcBtn = document.getElementById("ed-date-cal");
+  if (dcBtn) dcBtn.addEventListener("click", openDateCal);
   if (md) md.addEventListener("click", openMdayCal);
 }
 function renderDay({ filterFn, rerender, containerId = "task-area" }) {

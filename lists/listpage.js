@@ -30,7 +30,8 @@ function repeatDescr(t) {
                : "Every " + t.repeat_every + " mo. on day " + md
         : last ? "Monthly on the last day" : "Monthly on day " + md) + tm;
     }
-    case "nthmonth": return "Every " + (t.repeat_every || 1) + " mo. on the " +
+    case "nthmonth": return ((t.repeat_every || 1) === 12
+                      ? "Yearly on the " : "Every " + t.repeat_every + " mo. on the ") +
                       nthName(t.repeat_nth || 1) + " " + dowsText(t) + tm;
     case "afterdone":return "Every " + (t.repeat_every || 3) +
                       " days after completion" + tm;
