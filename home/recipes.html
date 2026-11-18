@@ -33,6 +33,7 @@
   .top-right {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;
   }
+  .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -216,25 +217,26 @@
 </style>
 </head>
 <body>
-
 <div class="top">
   <h1>Recipe Book</h1>
-<div class="top-right">
-    <span class="sync-note" id="sync-note">syncing…</span>
+  <div class="top-right">
     <div id="nav"></div>
-</div>
+    <div class="top-actions owner-only">
+      <label class="btn" style="cursor:pointer;">
+        Import<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+      </label>
+      <button class="btn" onclick="exportData()">Export</button>
+    </div>
+    <span class="sync-note" id="sync-note">syncing…</span>
+  </div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
 <div class="view visible" id="view-index">
   <div class="toolbar">
-    <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
-           oninput="setSearch(this.value)">
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input type="text" class="search" id="search" placeholder="Search recipes or ingredients..."
+             oninput="setSearch(this.value)">
       <button class="btn btn-primary owner-only" onclick="newRecipe()">+ New Recipe</button>
-      <button class="btn" onclick="exportData()">Export Data</button>
-      <label class="btn owner-only" style="cursor:pointer;">
-        Import Data<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
-      </label>
     </div>
   </div>
   <div class="toc-heading">Table of Contents</div>

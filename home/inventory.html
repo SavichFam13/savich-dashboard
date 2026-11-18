@@ -37,6 +37,7 @@
   .top-right {
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   }
+  .top-btns { display: flex; gap: 10px; align-items: center; }
   .nav-btn {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -228,10 +229,16 @@
 <body>
 <div class="top">
   <h1>Household Inventory</h1>
-<div class="top-right">
+  <div class="top-right">
     <span class="sync-note" id="sync-note">syncing…</span>
+    <div class="top-btns" id="admin-tools">
+      <label class="btn" style="cursor:pointer;">
+        Import<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+      </label>
+      <button class="btn" onclick="exportData()">Export</button>
+    </div>
     <div id="nav"></div>
-</div>
+  </div>
 </div>
 <p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</p>
 <nav>
@@ -241,11 +248,6 @@
 <div class="page visible" id="page-inventory">
   <div class="toolbar">
     <span style="font-size:0.79rem; color:var(--dim);" id="item-count">0 items</span>
-    <div style="display:flex; gap:10px;" id="admin-tools">
-      <label class="btn" style="cursor:pointer;">
-        Import Data<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
-      </label>
-    </div>
   </div>
   <div class="add-form">
     <div>
