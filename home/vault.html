@@ -614,7 +614,6 @@ async function importHistory(input) {
   const file = input.files && input.files[0];
   input.value = "";
   if (!file) return;
-
   let parsed;
   try {
     parsed = JSON.parse(await file.text());

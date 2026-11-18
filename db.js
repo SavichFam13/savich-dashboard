@@ -268,7 +268,6 @@ async function insertRow(table, obj) {
   return data;
 }
 async function insertRows(table, objs) {
-  // bulk insert — handy for importing a year of dailies or a pile of inventory
   const { data, error } = await sb().from(table).insert(objs).select();
   if (error) throw error;
   return data;

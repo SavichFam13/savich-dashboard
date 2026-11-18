@@ -572,7 +572,6 @@ async function buyAll(id) {
   try { await updateRow(id, { qty: 0 }); setSync(true); }
   catch (e) { console.error(e); setSync(false); }
 }
-
 async function zeroAll() {
   const count = inventory.filter(i => i.qty > 0).length;
   if (count === 0) { showToast("Nothing to clear."); return; }

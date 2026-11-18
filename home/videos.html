@@ -52,7 +52,6 @@ header .sub { color: var(--dim); font-size: 0.8rem; margin-top: 4px; }
   transition: all 0.2s ease;
 }
 .btn-topbar:hover { border-color: #ff9ecf; color: #ff9ecf; }
-
 .btn {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -392,15 +391,11 @@ var lastSyncedPrint = null;
 var saveQueued = false;
 var saveTimer = null;
 var rtReloadTimer = null;
-
-// safe helper: wire a handler only if the element exists, so a missing
-// button can never crash the rest of the script
 function on(id, evt, fn) {
   var el = document.getElementById(id);
   if (el) el.addEventListener(evt, fn);
   else console.warn("Media page: element #" + id + " not found — handler skipped");
 }
-
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -724,7 +719,6 @@ function renderWish() {
         '<button class="mini-btn del" data-wdel="' + i.id + '">✕</button>' +
       '</td></tr>';
   }).join("");
-
   body.querySelectorAll("[data-got]").forEach(function (b) {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.got; });

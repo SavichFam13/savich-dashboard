@@ -518,7 +518,7 @@ function openInfo(node, evt) {
       if (v) state.locs[node.name] = v;
       else delete state.locs[node.name];
       save();
-      openInfo(node, evt); // redraw popup with the new value
+      openInfo(node, evt);
     });
     locDiv.appendChild(saveBtn);
     const cancelBtn = smallBtn("cancel", "plain", function () {
@@ -615,7 +615,6 @@ function render() {
       } else {
         b.title = "Right-click for details";
       }
-
       b.onclick = () => toggle(n.name);
       b.oncontextmenu = (e) => { e.preventDefault(); openInfo(n, e); };
       roster.appendChild(b);

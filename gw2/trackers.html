@@ -690,7 +690,6 @@ function openInfo(task, evt, isWeekly) {
   const tsRaw = loggedStamp(task.id, now, isWeekly);
   const logs  = Array.isArray(tsRaw) ? tsRaw.slice().sort((a, b) => a - b)
                : (typeof tsRaw === "number" && !isNaN(tsRaw) ? [tsRaw] : []);
-
   if (logs.length) {
     if (!isWeekly && isMulti(task.id)) {
       line('<span class="lab">Status:</span> <b style="color:var(--good)">' +
