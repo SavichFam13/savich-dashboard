@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dailies History</title>
+<title>Misc GW2 Stuff</title>
 <style>
   :root {
     --bg: #121016; --panel: #1c1922; --text: #f2eef7; --accent: #c9a0ff;
@@ -15,23 +15,46 @@
   body {
     background: var(--bg); color: var(--text);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 15px; line-height: 1.5;
-    padding: 32px 20px; max-width: 1180px; margin: 0 auto;
+    font-size: 15px; line-height: 1.6;
+    padding: 40px 20px; max-width: 1180px; margin: 0 auto;
   }
-  .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
-  h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
+  .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  h1 { font-size: 1.5rem; color: var(--accent); margin-bottom: 10px; letter-spacing: 0.5px; }
   .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
   .nav-btn {
-    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
-    text-decoration: none; padding: 6px 14px; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;
-  }
+  background: var(--panel); border: 1px solid var(--border); color: var(--dim);
+  text-decoration: none; padding: 6px 22px; border-radius: 8px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; line-height: 1.2;
+  transition: all 0.2s ease; cursor: pointer;
+}
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
+  p.sub { color: var(--dim); margin-bottom: 34px; font-size: 0.9rem; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
+  h2.section {
+    font-size: 0.75rem; letter-spacing: 2px; color: var(--accent2);
+    text-transform: uppercase; margin: 0 0 16px 0; font-weight: 700;
+  }
+  .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(295px, 1fr));
+    gap: 20px;
+    margin-bottom: 46px;
+  }
+  .nav-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 24px; text-decoration: none; color: var(--text);
+    transition: transform 0.15s ease, border-color 0.15s ease; display: block;
+  }
+  .nav-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .nav-card h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: 9px; }
+  .nav-card p { font-size: 0.83rem; color: var(--dim); margin: 0; line-height: 1.55; }
 
+  /* ---- Dailies History ---- */
   .year-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
   .year-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
@@ -39,18 +62,18 @@
     font-weight: 700; cursor: pointer;
   }
   .year-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-.backup-btn {
-  background: none; border: 1px solid var(--border); color: var(--dim);
-  border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 0.78rem;
-  cursor: pointer; font-weight: 600; margin-left: auto;
-}
-.backup-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-.backup-btn.import {
-  margin-left: 0;
-  color: var(--dim); border-color: var(--border);
-}
-.backup-btn.import:hover { color: var(--accent2); border-color: var(--accent2); background: none; }
-.backup-btn input[type="file"] { display: none; }
+  .backup-btn {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 8px; padding: 6px 14px; font-family: inherit; font-size: 0.78rem;
+    cursor: pointer; font-weight: 600; margin-left: auto;
+  }
+  .backup-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .backup-btn.import {
+    margin-left: 0;
+    color: var(--dim); border-color: var(--border);
+  }
+  .backup-btn.import:hover { color: var(--accent2); border-color: var(--accent2); background: none; }
+  .backup-btn input[type="file"] { display: none; }
 
   .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
   .stat-box {
@@ -81,11 +104,10 @@
   .bar-track { flex: 1; background: #16131c; border-radius: 999px; height: 16px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
   .bar-num { color: var(--dim); width: 34px; flex-shrink: 0; }
-    #task-bars {
+  #task-bars {
     max-height: 336px;
     overflow-y: auto;
   }
-
   .section-title {
     font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
     letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
@@ -138,18 +160,18 @@
 </style>
 </head>
 <body>
-
 <div class="top">
-  <h1>Dailies History</h1>
-  <nav class="nav-bar">
+  <h1>Misc. GW2 Stuff</h1>
+<nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a href="../index.html" class="nav-btn">Dashboard</a>
-    <a href="timer.html" class="nav-btn">Event Timers</a>
-    <a href="trackers.html" class="nav-btn">Trackers</a>
-    <a href="misc.html" class="nav-btn">Misc</a>
+    <label class="nav-btn" style="cursor:pointer;">
+      Import<input type="file" accept=".json" style="display:none;" onchange="importYear(event)">
+    </label>
+    <button class="nav-btn" onclick="exportYear()">Export</button>
+    <div id="nav"></div>
   </nav>
 </div>
-<p class="sub">Your archived daily completions, by year.</span></p>
+<p class="sub">The receipts for how you actually spend your playtime.</p>
 <div class="year-row" id="year-row"></div>
 <div class="stat-row" id="stat-row"></div>
 <div class="charts-row">
@@ -167,6 +189,7 @@
 </div>
 <div class="section-title">Days on record</div>
 <div id="day-list"></div>
+
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -177,6 +200,7 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
@@ -205,7 +229,6 @@ const sync = createUserSync({
   onRender: () => render(),
   setOnline: (ok, msg) => setSync(ok, msg)
 });
-
 function save(immediate) { sync.save(immediate); }
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
@@ -220,7 +243,6 @@ const TASK_NAMES = {
   bear: "Cum Stained Bear", twatwaffle: "Twatwaffle the Spineless",
   peasants: "Rob my Peasants", princess: "Princess",
   purple: "Daily Purple Shiny", frecs: "Daily Frecs",
-  raids: "Raids", refa: "REFA (Retard Fractals)",
   fmlife: "Fuck My Life for Eternity!", family: "Family Time",
   furby: "Bondage Furby", vault: "Daily Wizards Vault",
   // world bosses
@@ -240,13 +262,13 @@ const TASK_NAMES = {
   path: "Path to Ascension", deaddoggies: "Dead Doggies",
   maws: "Maws of Torment", skywatch: "Skywatch",
   octopussy: "Octopussy", titanic: "Dick'tacles",
-  turtlepower: "Turtle Power",
+  turtlepower: "Turtle Power", joras: "Jora's Keep",
   // adhoc / seasonal
-  wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
+    raids: "Raids", refa: "REFA", wvw: "WvW", warkeys: "War Supply Keys", kodankeys: "Kodan Cache Keys",
   fractalkeys: "Discount Fractal Keys", banditkeys: "Bandit Skeleton Keys",
   madking: "Mad King", wintersday: "Wintersday", lny: "Lunar New Year",
   sab: "Super Adventure Box", dragonbash: "Dragon Bash",
-  fourwinds: "Four Winds"
+  fourwinds: "Four Winds", fractalincursion: "Fractal Incursion"
 };
 const CATEGORIES = {
   "World Bosses": ["wb_mega","wb_fire","wb_shatterer","wb_wurm","wb_ulgoth",
@@ -261,7 +283,7 @@ const CATEGORIES = {
   "Vault & Misc": ["wvw","talent","princess","purple","vault"],
   "Seasonal": ["madking","wintersday","lny","sab","dragonbash","fourwinds"],
   "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
-  "Fractals & Raids": ["frecs", "raids", "refa"]
+  "Fractals & Raids": ["frecs", "raids", "refa", "fractalincursion"]
 };
 const CAT_COLORS = {
   "World Bosses": "#ff8a8a",
@@ -300,15 +322,6 @@ function render() {
     exp.textContent = "\u2913 Export Data";
     exp.onclick = exportYear;
     yrRow.appendChild(exp);
-    const impLabel = document.createElement("label");
-    impLabel.className = "backup-btn import";
-    impLabel.textContent = "\u2913 Import Data";
-    const impInput = document.createElement("input");
-    impInput.type = "file";
-    impInput.accept = ".json";
-    impInput.onchange = importYear;
-    impLabel.appendChild(impInput);
-    yrRow.appendChild(impLabel);
   }
   if (!years.length) {
     document.getElementById("stat-row").innerHTML = "";
@@ -317,7 +330,6 @@ function render() {
       "<div class='empty-msg'>No archived days yet. Do today's dailies, come back tomorrow.</div>";
     document.getElementById("day-list").innerHTML = "";
     clearDonut();
-    const yrRow = document.getElementById("year-row");
     const impLabel = document.createElement("label");
     impLabel.className = "backup-btn import";
     impLabel.style.marginLeft = "auto";
@@ -337,12 +349,13 @@ function render() {
   days.forEach(d => {
     const done = log[d] || {};
     const ids = Object.keys(done);
-    totalPerDay += ids.length;
     ids.forEach(t => {
-      taskCounts[t] = (taskCounts[t] || 0) + 1;
+      const n = Array.isArray(done[t]) ? done[t].length : 1;
+      totalPerDay += n;
+      taskCounts[t] = (taskCounts[t] || 0) + n;
       const c = TASK_CAT[t] || "Vault & Misc";
-      catCounts[c] = (catCounts[c] || 0) + 1;
-      totalCompletions++;
+      catCounts[c] = (catCounts[c] || 0) + n;
+      totalCompletions += n;
     });
   });
   const avg = days.length ? (totalPerDay / days.length).toFixed(1) : "0";
@@ -374,13 +387,18 @@ function render() {
   const dl = document.getElementById("day-list");
   dl.innerHTML = "";
   days.slice(-7).reverse().forEach(d => {
-    const ids = Object.keys(log[d] || {});
+    const done = log[d] || {};
+    const ids = Object.keys(done);
+    let n = 0;
+    ids.forEach(t => { n += Array.isArray(done[t]) ? done[t].length : 1; });
     const row = document.createElement("div");
     row.className = "bar-row";
     row.innerHTML =
       "<div class='bar-label'>" + d + "</div>" +
       "<div style='flex:1; color:var(--dim); font-size:0.78rem;'>" +
-      (ids.length ? ids.length + " done: " + ids.map(nameOf).join(", ") : "nothing logged") +
+      (n ? n + " done: " +
+        ids.map(t => nameOf(t) + (Array.isArray(done[t]) ? " \u00D7" + done[t].length : "")).join(", ")
+        : "nothing logged") +
       "</div>";
     dl.appendChild(row);
   });
@@ -392,7 +410,7 @@ function topCategory(cc) {
   const e = Object.entries(cc).sort((a, b) => b[1] - a[1]);
   return e.length ? e[0][0] : "\u2014";
 }
-function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/'/g, "&#39;"); }
 function drawDonut(catCounts, total) {
   const cv = document.getElementById("donut");
   const ctx = cv.getContext("2d");
@@ -584,7 +602,7 @@ function showToast(message) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 (async function init() {
-  const session = await requireAuth();   // bounces to login if needed
+  const session = await requireAuth();
   if (!session) return;
   USER_ID = session.user && session.user.id;
   await sync.init();

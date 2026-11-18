@@ -232,16 +232,16 @@
 <body>
 <div class="top">
   <h1>Household Inventory</h1>
-  <div class="top-right">
-    <span class="sync-note" id="sync-note">syncing…</span>
-    <div class="top-btns" id="admin-tools">
-      <label class="btn" style="cursor:pointer;">
-        Import<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
-      </label>
-      <button class="btn" onclick="exportData()">Export</button>
-    </div>
-    <div id="nav"></div>
+<div class="top-right">
+  <span class="sync-note" id="sync-note">syncing…</span>
+  <div class="top-btns" id="admin-tools">
+    <label class="nav-btn" style="cursor:pointer;">
+      Import<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+    </label>
+    <button class="nav-btn" onclick="exportData()">Export</button>
   </div>
+  <div id="nav"></div>
+</div>
 </div>
 <p class="sub">Monthly household inventory. Remember to track which store has the lowest prices before shopping!</p>
 <nav>

@@ -21,11 +21,12 @@
   .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
-  .nav-btn {
-    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
-    text-decoration: none; padding: 6px 14px; border-radius: 8px;
-    font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;
-  }
+.nav-btn {
+  background: var(--panel); border: 1px solid var(--border); color: var(--dim);
+  text-decoration: none; padding: 6px 22px; border-radius: 8px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; line-height: 1.2;
+  transition: all 0.2s ease; cursor: pointer;
+}
   .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .nav-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
   .backup-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; align-items: center; justify-content: flex-end; }
@@ -47,12 +48,11 @@
   }
   .progress-inner { background: var(--good); height: 100%; width: 0%; border-radius: 999px; transition: width 0.3s ease; }
   .progress-inner.full { background: var(--accent2); }
-  .section-title {
-    font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
-    letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
-    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
-  }
-  .section-count { color: var(--dim); font-size: 0.75rem; letter-spacing: 0; text-transform: none; }
+.section-title {
+  font-size: 0.9rem; color: var(--accent2); text-transform: uppercase;
+  letter-spacing: 1.5px; font-weight: 700; margin: 24px 0 10px;
+}
+.section-count { color: var(--dim); font-size: 0.75rem; letter-spacing: 0; text-transform: none; margin-left: 10px; }
   .roster { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip {
     display: inline-flex; align-items: center; gap: 8px;
@@ -173,17 +173,13 @@
 <div class="top">
   <h1>Home Instance Nodes</h1>
 <nav class="nav-bar">
-    <span class="sync-note" id="sync-note">syncing…</span>
-    <div id="nav"></div>
-</nav>
-</div>
-<div class="backup-row">
-  <button class="backup-btn" onclick="exportState()">Export Data</button>
-  <label class="backup-btn" style="cursor:pointer;">
-    Import Data
-    <input type="file" accept=".json" onchange="importState(event)">
+  <span class="sync-note" id="sync-note">syncing…</span>
+  <label class="nav-btn" style="cursor:pointer;">
+    Import<input type="file" accept=".json" style="display:none;" onchange="importState(event)">
   </label>
-</div>
+  <button class="nav-btn" onclick="exportState()">Export</button>
+  <div id="nav"></div>
+</nav>
 <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
 <div class="stats-line" id="stats"></div>
 <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
