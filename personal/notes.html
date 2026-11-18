@@ -70,6 +70,7 @@
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
+  .sync-note.save-fail { color: var(--bad); }
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
@@ -211,10 +212,6 @@
   .expand-title {
     font-size: 0.78rem; font-weight: 700;
     color: var(--nbord); letter-spacing: 1px;
-  }
-  .expand-age {
-    font-size: 0.66rem; color: var(--dim);
-    margin-left: auto;
   }
   .expand-close {
     background: none; border: 1px solid transparent;
@@ -367,11 +364,13 @@ const PALETTE_COUNT = 8;
 const expandOverlay = document.getElementById("expand-overlay");
 const expandBox = document.getElementById("expand-box");
 const expandTa = document.getElementById("expand-ta");
+
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+/* marker -> html: stack-based scanner, tolerates corrupt/nested leftovers */
 function markedToHtml(txt) {
   const s = esc(String(txt == null ? "" : txt));
   let out = "";
@@ -400,124 +399,198 @@ function markedToHtml(txt) {
   while (openStack.length) { out += "</span>"; openStack.pop(); }
   return out;
 }
-function htmlToMarked(el) {
-  let out = "";
-  const BLOCKS = { DIV: 1, P: 1 };
-  (function walk(node, insideHl) {
-    node.childNodes.forEach(child => {
-      if (child.nodeType === 3) { out += child.nodeValue; return; }
-      if (child.nodeType !== 1) return;
-      if (child.tagName === "BR") { out += "\n"; return; }
-      if (BLOCKS[child.tagName]) out += "\n";
-      const cls = child.getAttribute("class") || "";
-      const m = cls.match(/(?:^|\s)hl\s(c[1-4])(?:\s|$)/);
-      if (m && !insideHl) out += "[[" + m[1] + ":";
-      walk(child, insideHl || !!m);
-      if (m && !insideHl) out += "]]";
-    });
-  })(el, false);
-  return out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n");
-}
 function stripMarked(t) {
   return String(t == null ? "" : t)
     .replace(/\[\[c[1-4]:/g, "").replace(/\]\]/g, "");
 }
-/* ---- highlighter core: continuous selection tracking + armed re-taps ---- */
-let savedRange = null;
-function stashSelection() {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-  const node = sel.getRangeAt(0).commonAncestorContainer;
-  const el = node.nodeType === 1 ? node : node.parentNode;
-  if (expandTa.contains(el)) savedRange = sel.getRangeAt(0).cloneRange();
+/* =====================================================================
+   HIGHLIGHT ENGINE v2 — character offsets, never live selections.
+   Editor DOM -> model { plain, spans, nodes } -> pens edit the model ->
+   rebuild editor from text. Armed range is invalidated by any real
+   edit so a stale selection can never paint moved text.
+   ===================================================================== */
+function readModel(root) {
+  const plainParts = [];
+  const nodes = [];
+  const spans = [];
+  function pushBoundary() {
+    if (plainParts.length && !plainParts[plainParts.length - 1].endsWith("\n"))
+      plainParts.push("\n");
+  }
+  function walk(node, color) {
+    node.childNodes.forEach(ch => {
+      if (ch.nodeType === 3) {
+        nodes.push({ node: ch, start: plainParts.join("").length });
+        plainParts.push(ch.nodeValue);
+      } else if (ch.nodeType !== 1) {
+        return;
+      } else if (ch.tagName === "BR") {
+        plainParts.push("\n");
+      } else if (ch.tagName === "DIV" || ch.tagName === "P") {
+        pushBoundary();
+        walk(ch, color);
+      } else {
+        const cls = ch.getAttribute("class") || "";
+        const m = cls.match(/(?:^|\s)hl\s(c[1-4])(?:\s|$)/);
+        if (m) {
+          const st = plainParts.join("").length;
+          walk(ch, color || m[1]);
+          const en = plainParts.join("").length;
+          if (en > st && !color) spans.push({ start: st, end: en, color: m[1] });
+        } else {
+          walk(ch, color);
+        }
+      }
+    });
+  }
+  walk(root, null);
+  const plain = plainParts.join("");
+  spans.sort((a, b) => a.start - b.start);
+  return { plain, spans, nodes };
 }
+function nodeLen(k) {
+  if (k.nodeType === 3) return k.nodeValue.length;
+  if (k.nodeType !== 1) return 0;
+  if (k.tagName === "BR") return 1;
+  /* nested element: recurse so nested highlights are counted correctly */
+  let n = 0;
+  k.childNodes.forEach(c => { n += nodeLen(c); });
+  return n;
+}
+function charOffset(container, offsetIn, model) {
+  for (const ent of model.nodes) {
+    if (ent.node === container) return ent.start + offsetIn;
+  }
+  let acc = 0;
+  const kids = container.childNodes;
+  for (let i = 0; i < offsetIn && i < kids.length; i++) acc += nodeLen(kids[i]);
+  for (const ent of model.nodes) {
+    if (ent.start >= acc) return ent.start;
+  }
+  return acc;
+}
+function offsetsFromSelection(model) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+  const rng = sel.getRangeAt(0);
+  const sn = rng.startContainer.nodeType === 1
+    ? rng.startContainer : rng.startContainer.parentNode;
+  const en = rng.endContainer.nodeType === 1
+    ? rng.endContainer : rng.endContainer.parentNode;
+  if (!expandTa.contains(sn) || !expandTa.contains(en)) return null;
+  let s = charOffset(rng.startContainer, rng.startOffset, model);
+  let e = charOffset(rng.endContainer, rng.endOffset, model);
+  if (s > e) { const t = s; s = e; e = t; }
+  if (s === e) return null;
+  return { s, e };
+}
+function setSelectionByOffsets(model, s, e) {
+  try {
+    let sn = null, so = 0, en = null, eo = 0;
+    for (const ent of model.nodes) {
+      const len = ent.node.nodeValue.length;
+      if (!sn && s >= ent.start && s <= ent.start + len) {
+        sn = ent.node; so = s - ent.start;
+      }
+      if (e >= ent.start && e <= ent.start + len) {
+        en = ent.node; eo = e - ent.start;
+      }
+      if (sn && en) break;
+    }
+    if (sn && en) {
+      const sel = window.getSelection();
+      const r = document.createRange();
+      r.setStart(sn, Math.min(so, sn.nodeValue.length));
+      r.setEnd(en, Math.min(eo, en.nodeValue.length));
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  } catch (err) { /* selection restore is cosmetic; never fatal */ }
+}
+let armed = null;
+function penOffsets(model) {
+  const live = offsetsFromSelection(model);
+  if (live) { armed = live; return live; }
+  if (armed && armed.s < model.plain.length && armed.e <= model.plain.length)
+    return armed;
+  return null;
+}
+function commitModel(model, keep) {
+  const n = notes.find(r => r.id === popupOpenId);
+  if (!n) return;
+  let out = "";
+  let last = 0;
+  for (const sp of model.spans) {
+    if (sp.start < last) continue;
+    out += model.plain.slice(last, sp.start);
+    out += "[[" + sp.color + ":" + model.plain.slice(sp.start, sp.end) + "]]";
+    last = sp.end;
+  }
+  out += model.plain.slice(last);
+  n.text = out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n");
+  expandTa.innerHTML = markedToHtml(n.text);
+  const fresh = readModel(expandTa);
+  if (keep) setSelectionByOffsets(fresh, keep.s, keep.e);
+  armed = keep || null;
+  autosizeCe();
+  /* pen actions save IMMEDIATELY — no debounce window to lose them in */
+  savePatch(n, { text: n.text, updated_at: stampNow() });
+  updateTileText(n);
+}
+function applyHighlight(cls) {
+  if (popupOpenId === null) return;
+  const model = readModel(expandTa);
+  const r = penOffsets(model);
+  if (!r) {
+    console.debug("[pen] no usable selection for highlight");
+    showToast("Select a word inside the note, then tap a color.");
+    return;
+  }
+  model.spans = model.spans.filter(sp => sp.end <= r.s || sp.start >= r.e);
+  if (r.e > r.s) model.spans.push({ start: r.s, end: r.e, color: cls });
+  commitModel(model, r);
+}
+function clearHighlights() {
+  if (popupOpenId === null) return;
+  const model = readModel(expandTa);
+  const r = penOffsets(model);
+  if (!r) {
+    console.debug("[pen] no usable selection for eraser");
+    showToast("Select the highlighted text, then tap \u232b.");
+    return;
+  }
+  const before = model.spans.length;
+  model.spans = model.spans.filter(sp => sp.end <= r.s || sp.start >= r.e);
+  if (model.spans.length === before) {
+    showToast("No highlight in that selection.");
+    return;
+  }
+  commitModel(model, r);
+}
+function stashSelection() {
+  if (popupOpenId === null) return;
+  const model = readModel(expandTa);
+  const off = offsetsFromSelection(model);
+  if (off) armed = off;
+}
+expandTa.addEventListener("mouseup", stashSelection);
+expandTa.addEventListener("keyup", stashSelection);
 document.addEventListener("selectionchange", () => {
   requestAnimationFrame(stashSelection);
 });
-expandTa.addEventListener("mouseup", stashSelection);
-expandTa.addEventListener("keyup", stashSelection);
-function penRange() {
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount && !sel.isCollapsed) {
-    const node = sel.getRangeAt(0).commonAncestorContainer;
-    const el = node.nodeType === 1 ? node : node.parentNode;
-    if (expandTa.contains(el)) return sel.getRangeAt(0);
-  }
-  if (savedRange && savedRange.startContainer.isConnected) {
-    const node = savedRange.commonAncestorContainer;
-    const el = node.nodeType === 1 ? node : node.parentNode;
-    if (expandTa.contains(el)) return savedRange;
-  }
-  return null;
-}
-function applyHighlight(cls) {
-  const range = penRange();
-  if (!range) {
-    console.debug("[pen] no usable selection for highlight");
-    showToast("Drag across a word inside the note, then tap a color.");
-    return;
-  }
-  let span = null;
-  try {
-    const frag = range.extractContents();
-    frag.querySelectorAll("span.hl").forEach(sp =>
-      sp.replaceWith(document.createTextNode(sp.textContent)));
-    span = document.createElement("span");
-    span.className = "hl " + cls;
-    span.appendChild(frag);
-    range.insertNode(span);
-    expandTa.querySelectorAll("span.hl").forEach(sp => {
-      if (!sp.textContent.trim()) sp.remove();
-    });
-    expandTa.normalize();
-  } catch (e) {
-    console.error(e);
-    savedRange = null;
-    showToast("Couldn't highlight \u2014 reselect the text and try again.");
-    return;
-  }
-  const sel = window.getSelection();
-  if (sel) sel.removeAllRanges();
-  savedRange = document.createRange();
-  savedRange.selectNodeContents(span);
-  onExpandInput();
-}
-function clearHighlights() {
-  const range = penRange();
-  if (!range) {
-    console.debug("[pen] no usable selection for eraser");
-    showToast("Drag across the highlighted text, then tap \u232b.");
-    return;
-  }
-  let hadHl = false;
-  try {
-    const frag = range.extractContents();
-    const spans = frag.querySelectorAll("span.hl");
-    hadHl = spans.length > 0;
-    spans.forEach(sp =>
-      sp.replaceWith(document.createTextNode(sp.textContent)));
-    range.insertNode(frag);
-    expandTa.querySelectorAll("span.hl").forEach(sp => {
-      if (!sp.textContent.trim()) sp.remove();
-    });
-    expandTa.normalize();
-  } catch (e) {
-    console.error(e);
-    savedRange = null;
-    showToast("Couldn't erase \u2014 reselect the text and try again.");
-    return;
-  }
-  savedRange = null;
-  onExpandInput();
-  if (!hadHl) showToast("No highlight in that selection.");
-}
 document.querySelectorAll(".pen-dot").forEach(btn => {
   btn.addEventListener("mousedown", e => e.preventDefault());
   btn.addEventListener("click", () => applyHighlight(btn.dataset.c));
 });
 document.getElementById("pen-clear").addEventListener("mousedown", e => e.preventDefault());
 document.getElementById("pen-clear").addEventListener("click", clearHighlights);
-/* ---- end highlighter core ---- */
+/* force pastes to plain text so Firefox markup never enters the editor */
+expandTa.addEventListener("paste", e => {
+  e.preventDefault();
+  const t = e.clipboardData.getData("text/plain");
+  document.execCommand("insertText", false, t);
+});
+/* ---- end highlight engine v2 ---- */
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -530,6 +603,13 @@ function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "\u2713") : "offline \u2014 changes NOT saved";
   el.classList.toggle("live", !!ok);
+  el.classList.toggle("save-fail", !ok);
+}
+function setSaving() {
+  const el = document.getElementById("sync-note");
+  el.textContent = "saving\u2026";
+  el.classList.remove("live");
+  el.classList.remove("save-fail");
 }
 async function loadNotes() {
   const { data, error } = await sb()
@@ -540,17 +620,29 @@ async function loadNotes() {
   notes = data || [];
 }
 function stampNow() { return new Date().toISOString(); }
-async function savePatch(note, patch) {
+/* serialized save queue: submission order, row-verified, retried once,
+   with a live saving/saved/failed indicator */
+let saveChain = Promise.resolve();
+function savePatch(note, patch) {
   note.updated_at = stampNow();
-  try {
-    const { error } = await sb().from("sticky_notes")
-      .update(patch).eq("id", note.id);
-    if (error) throw error;
-    setSync(true);
-  } catch (e) {
-    console.error("sticky save failed:", e.message);
+  const job = saveChain.then(async () => {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      setSaving();
+      try {
+        const { data, error } = await sb().from("sticky_notes")
+          .update(patch).eq("id", note.id).select("id");
+        if (!error && data && data.length) { setSync(true); return; }
+        if (error) console.error("sticky save failed:", error.message);
+        else console.error("sticky save affected 0 rows for note", note.id);
+      } catch (e) {
+        console.error("sticky save threw:", e.message);
+      }
+      if (attempt === 1) await new Promise(r => setTimeout(r, 800));
+    }
     setSync(false);
-  }
+  });
+  saveChain = job.catch(() => {});
+  return job;
 }
 function queueTextSave(note, text) {
   note.text = text;
@@ -567,6 +659,18 @@ function flushTextSave(note) {
     savePatch(note, { text: note.text, updated_at: stampNow() });
   }
 }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && popupOpenId !== null) {
+    const n = notes.find(r => r.id === popupOpenId);
+    if (n) flushTextSave(n);
+  }
+});
+window.addEventListener("pagehide", () => {
+  if (popupOpenId !== null) {
+    const n = notes.find(r => r.id === popupOpenId);
+    if (n) flushTextSave(n);
+  }
+});
 async function createNote() {
   const idx = notes.length;
   const board = document.getElementById("board");
@@ -619,7 +723,7 @@ function autosizeCe() {
   expandTa.style.height = Math.max(230, expandTa.scrollHeight) + "px";
 }
 function openExpand(n) {
-  savedRange = null;
+  armed = null;
   popupOpenId = n.id;
   expandBox.className = "expand-box c" + (n.color || 0);
   expandTa.innerHTML = markedToHtml(n.text || "");
@@ -637,7 +741,7 @@ function closeExpand() {
   if (popupOpenId === null) return;
   const n = notes.find(r => r.id === popupOpenId);
   popupOpenId = null;
-  savedRange = null;
+  armed = null;
   expandOverlay.classList.remove("open");
   if (n) {
     flushTextSave(n);
@@ -651,8 +755,20 @@ function updateTileText(n) {
 function onExpandInput() {
   const n = notes.find(r => r.id === popupOpenId);
   if (!n) return;
+  /* a REAL edit (typing/paste/delete) invalidates the armed pen range */
+  armed = null;
   autosizeCe();
-  queueTextSave(n, htmlToMarked(expandTa));
+  const model = readModel(expandTa);
+  let out = "";
+  let last = 0;
+  for (const sp of model.spans) {
+    if (sp.start < last) continue;
+    out += model.plain.slice(last, sp.start);
+    out += "[[" + sp.color + ":" + model.plain.slice(sp.start, sp.end) + "]]";
+    last = sp.end;
+  }
+  out += model.plain.slice(last);
+  queueTextSave(n, out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n"));
   updateTileText(n);
 }
 expandTa.addEventListener("input", onExpandInput);
