@@ -38,17 +38,20 @@
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
   }
   .top-btns { display: flex; gap: 10px; align-items: center; }
-  .nav-btn {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--dim);
-    text-decoration: none;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-  }
+.nav-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  text-decoration: none;
+  padding: 6px 22px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
   .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
