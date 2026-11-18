@@ -41,7 +41,7 @@
     border: 1px solid var(--border);
     color: var(--dim);
     text-decoration: none;
-    padding: 6px 14px;
+    padding: 6px 22px;
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
@@ -187,11 +187,11 @@
 </style>
 </head>
 <body>
-<div class="top">
-  <h1>Vault Distribution</h1>
-  <div class="top-right">
-    <span class="sync-note" id="sync-note">syncing…</span>
-    <div id="nav"></div>
+<div class="top-right">
+  <span class="sync-note" id="sync-note">syncing…</span>
+  <button class="nav-btn" onclick="document.getElementById('import-file').click()">Import</button>
+  <button class="nav-btn" onclick="exportHistory()">Export</button>
+  <div id="nav"></div>
 </div>
 </div>
 <p class="sub">Save baby, save baby, save baby save!</p>
@@ -233,9 +233,6 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
     <span style="font-size:0.8rem; color:var(--dim);" id="hist-count">0 pay cycles</span>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="quiet" onclick="document.getElementById('import-file').click()">Import</button>
-        <button class="quiet" onclick="exportHistory()">Export</button>
-      <button class="quiet" id="btn-clear-history" onclick="clearHistory()">Clear History</button>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none;" onchange="importHistory(this)">
     </div>
   </div>
@@ -695,9 +692,6 @@ function switchTab(name) {
     const { data, error } = await sb().rpc("is_admin");
     IS_ADMIN = !error && data === true;
   } catch { IS_ADMIN = false; }
-  if (!IS_ADMIN) {
-    document.getElementById("btn-clear-history").style.display = "none";
-  }
   try {
     const cfg = await getBlob(CFG_KEY);
     if (cfg && Array.isArray(cfg.vaults) && cfg.vaults.length) {

@@ -39,7 +39,7 @@
     border: 1px solid var(--border);
     color: var(--dim);
     text-decoration: none;
-    padding: 6px 14px;
+    padding: 6px 22px;
     border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
@@ -219,16 +219,16 @@
 <body>
 <div class="top">
   <h1>Recipe Book</h1>
-  <div class="top-right">
-    <div id="nav"></div>
+<div class="top-right">
+    <span class="sync-note" id="sync-note">syncing…</span>
     <div class="top-actions owner-only">
-      <label class="btn" style="cursor:pointer;">
+      <label class="nav-btn" style="cursor:pointer;">
         Import<input type="file" accept=".json" style="display:none;" onchange="importData(event)">
       </label>
-      <button class="btn" onclick="exportData()">Export</button>
+      <button class="nav-btn" onclick="exportData()">Export</button>
     </div>
-    <span class="sync-note" id="sync-note">syncing…</span>
-  </div>
+    <div id="nav"></div>
+</div>
 </div>
 <p class="sub">Homemade Alytastic recipes that are gluten free &amp; nightshade free</p>
 <div class="view visible" id="view-index">
