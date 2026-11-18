@@ -70,7 +70,6 @@
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
@@ -367,7 +366,6 @@ const PALETTE_COUNT = 8;
 const expandOverlay = document.getElementById("expand-overlay");
 const expandBox = document.getElementById("expand-box");
 const expandTa = document.getElementById("expand-ta");
-
 function esc(str) {
   return String(str == null ? "" : str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -401,27 +399,23 @@ function applyHighlight(cls) {
     showToast("Drag across a word inside the note, then tap a color.");
     return;
   }
-  const hits = Array.from(expandTa.querySelectorAll("span.hl")).filter(sp => {
-    const r = document.createRange();
-    r.selectNodeContents(sp);
-    return range.intersectsRange(r);
-  });
-  if (hits.length === 1 &&
-      hits[0].contains(range.startContainer) &&
-      hits[0].contains(range.endContainer)) {
-    hits[0].className = "hl " + cls;
-    savedRange = null;
-    onExpandInput();
-    return;
-  }
-  hits.forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent)));
-  const span = document.createElement("span");
-  span.className = "hl " + cls;
   try {
-    range.surroundContents(span);
-  } catch (e) {
-    span.appendChild(range.extractContents());
+    const frag = range.extractContents();
+    frag.querySelectorAll("span.hl").forEach(sp =>
+      sp.replaceWith(document.createTextNode(sp.textContent)));
+    const span = document.createElement("span");
+    span.className = "hl " + cls;
+    span.appendChild(frag);
     range.insertNode(span);
+    expandTa.querySelectorAll("span.hl").forEach(sp => {
+      if (!sp.textContent.trim()) sp.remove();
+    });
+    expandTa.normalize();
+  } catch (e) {
+    console.error(e);
+    savedRange = null;
+    showToast("Couldn't highlight \u2014 reselect the text and try again.");
+    return;
   }
   const sel = window.getSelection();
   if (sel) sel.removeAllRanges();
@@ -434,19 +428,27 @@ function clearHighlights() {
     showToast("Drag across the highlighted text, then tap \u232b.");
     return;
   }
-  const hits = Array.from(expandTa.querySelectorAll("span.hl"))
-    .filter(sp => {
-      const r = document.createRange();
-      r.selectNodeContents(sp);
-      return range.intersectsRange(r);
+  let hadHl = false;
+  try {
+    const frag = range.extractContents();
+    const spans = frag.querySelectorAll("span.hl");
+    hadHl = spans.length > 0;
+    spans.forEach(sp =>
+      sp.replaceWith(document.createTextNode(sp.textContent)));
+    range.insertNode(frag);
+    expandTa.querySelectorAll("span.hl").forEach(sp => {
+      if (!sp.textContent.trim()) sp.remove();
     });
-  if (!hits.length) {
-    showToast("No highlight in that selection.");
+    expandTa.normalize();
+  } catch (e) {
+    console.error(e);
+    savedRange = null;
+    showToast("Couldn't erase \u2014 reselect the text and try again.");
     return;
   }
-  hits.forEach(sp => sp.replaceWith(document.createTextNode(sp.textContent)));
   savedRange = null;
   onExpandInput();
+  if (!hadHl) showToast("No highlight in that selection.");
 }
 let savedRange = null;
 function stashSelection() {
@@ -465,7 +467,12 @@ function penRange() {
     const el = node.nodeType === 1 ? node : node.parentNode;
     if (expandTa.contains(el)) return sel.getRangeAt(0);
   }
-  return savedRange;
+  if (savedRange && savedRange.startContainer.isConnected) {
+    const node = savedRange.commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentNode;
+    if (expandTa.contains(el)) return savedRange;
+  }
+  return null;
 }
 document.querySelectorAll(".pen-dot").forEach(btn => {
   btn.addEventListener("mousedown", e => e.preventDefault());
@@ -473,6 +480,7 @@ document.querySelectorAll(".pen-dot").forEach(btn => {
 });
 document.getElementById("pen-clear").addEventListener("mousedown", e => e.preventDefault());
 document.getElementById("pen-clear").addEventListener("click", clearHighlights);
+/* ---- end highlighter core ---- */
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
   const { data } = await sb().auth.getSession();
@@ -574,6 +582,7 @@ function autosizeCe() {
   expandTa.style.height = Math.max(230, expandTa.scrollHeight) + "px";
 }
 function openExpand(n) {
+  savedRange = null;
   popupOpenId = n.id;
   expandBox.className = "expand-box c" + (n.color || 0);
   expandTa.innerHTML = markedToHtml(n.text || "");
@@ -591,6 +600,7 @@ function closeExpand() {
   if (popupOpenId === null) return;
   const n = notes.find(r => r.id === popupOpenId);
   popupOpenId = null;
+  savedRange = null;
   expandOverlay.classList.remove("open");
   if (n) {
     flushTextSave(n);
@@ -601,7 +611,6 @@ function updateTileText(n) {
   const tile = document.querySelector('.note[data-id="' + n.id + '"] .note-body');
   if (tile) tile.innerHTML = markedToHtml(n.text || "");
 }
-
 function onExpandInput() {
   const n = notes.find(r => r.id === popupOpenId);
   if (!n) return;
