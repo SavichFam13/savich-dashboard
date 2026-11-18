@@ -330,7 +330,6 @@
   <div class="expand-box" id="expand-box">
     <div class="expand-head">
       <span class="expand-title">STICKY NOTE</span>
-      <span class="expand-age" id="expand-age"></span>
       <button class="expand-close" id="expand-close" title="close">&#10005;</button>
     </div>
     <div class="pen-bar">
@@ -429,8 +428,8 @@ function applyHighlight(cls) {
 }
 function clearHighlights() {
   const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) {
-    showToast("Select the highlighted text first.");
+  if (!sel || sel.isCollapsed || !sel.rangeCount) {
+    showToast("Click and drag across the highlighted text, then tap \u232b while holding it.");
     return;
   }
   const range = sel.getRangeAt(0);
@@ -448,8 +447,10 @@ function clearHighlights() {
   onExpandInput();
 }
 document.querySelectorAll(".pen-dot").forEach(btn => {
+  btn.addEventListener("mousedown", e => e.preventDefault());
   btn.addEventListener("click", () => applyHighlight(btn.dataset.c));
 });
+document.getElementById("pen-clear").addEventListener("mousedown", e => e.preventDefault());
 document.getElementById("pen-clear").addEventListener("click", clearHighlights);
 async function ensureAuth() {
   if (typeof requireAuth === "function") return await requireAuth();
@@ -558,7 +559,6 @@ function openExpand(n) {
   popupOpenId = n.id;
   expandBox.className = "expand-box c" + (n.color || 0);
   expandTa.innerHTML = markedToHtml(n.text || "");
-  document.getElementById("expand-age").textContent = "saved " + fmtAge(n.updated_at);
   expandOverlay.classList.add("open");
   autosizeCe();
   expandTa.focus();
@@ -632,13 +632,9 @@ function renderNotes() {
     const body = document.createElement("div");
     body.className = "note-body";
     body.innerHTML = markedToHtml(n.text || "");
-    const meta = document.createElement("div");
-    meta.className = "note-meta";
-    meta.textContent = "saved " + fmtAge(n.updated_at);
     note.appendChild(grab);
     note.appendChild(del);
     note.appendChild(body);
-    note.appendChild(meta);
     attachDrag(note, grab, n);
     note.addEventListener("click", (e) => {
       if (e.target.closest(".note-del")) return;
