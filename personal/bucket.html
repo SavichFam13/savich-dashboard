@@ -295,8 +295,8 @@
   <div class="top">
     <div class="top-right">
         <span class="sync-note" id="sync-note">checking account…</span>
-      <button class="backup-btn" onclick="exportData()">Back dat data up</button>
       <button class="backup-btn" onclick="document.getElementById('import-file').click()">Bring it on back</button>
+      <button class="backup-btn" onclick="exportData()">Back dat data up</button>      
       <div id="nav"></div>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
