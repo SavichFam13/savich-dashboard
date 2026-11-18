@@ -1,3 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sticky Notes</title>
+<style>
+  :root {
+    --bg: #121016;
+    --panel: #1c1922;
+    --text: #f2eef7;
+    --accent: #c9a0ff;
+    --accent2: #5fd3c4;
+    --hot-pink: #e10ab2;
+    --dim: #a89bbd;
+    --border: #332c3e;
+    --good: #7ddba3;
+    --bad: #ff8a8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 32px 20px;
+    max-width: 1340px;
+    margin: 0 auto;
+  }
+  .top {
+    display: flex; justify-content: flex-end; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  h1.wall-title {
+    display: flex; align-items: flex-end; gap: 14px;
+    justify-content: center;
+    font-size: 2rem; letter-spacing: 0.5px;
+    margin: -34px auto 10px auto;
+  }
+  .wt { display: inline-block; font-weight: 400; }
+  .w1 { color: #e8c27a; transform: rotate(-7deg); }
+  .w2 {
+    color: #ff5ec4; transform: rotate(4deg);
+    font-size: 1.55rem; margin-bottom: 6px;
+  }
+  .w3 { color: #5fd3c4; transform: rotate(-3deg); }
+  .w4 { color: #c9a0ff; transform: rotate(6deg); margin-bottom: 3px; }
+  .nav-bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
+  .sync-note.live { color: var(--good); }
+  .sync-note.save-fail { color: var(--bad); }
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  .toolbar-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 14px; border-radius: 5px;
+    font-family: inherit; font-size: 0.78rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent2); }
+  .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  #note-count { font-size: 0.79rem; color: var(--dim); }
+  #search-box {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 8px 12px; font-family: inherit;
+    font-size: 0.82rem; width: 240px;
+  }
+  #search-box:focus { outline: none; border-color: var(--accent2); }
+  .board {
+    position: relative;
+    min-height: 72vh;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(201,160,255,0.03), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(95,211,196,0.03), transparent 40%);
+  }
+  .board-hint {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--dim); font-size: 0.85rem; text-align: center;
+    pointer-events: none; line-height: 2;
+  }
+  .note {
+    --nb: #2b2240;
+    --nbord: #c9a0ff;
+    position: absolute;
+    width: 245px;
+    background: var(--nb);
+    border: 1px solid var(--nbord);
+    border-radius: 4px 4px 16px 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    transform: rotate(var(--rot, -2deg));
+    transition: box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+  .note.dragging {
+    box-shadow: 0 16px 34px rgba(0,0,0,0.6);
+    transition: none;
+    z-index: 9999 !important;
+  }
+  .note.dimmed { opacity: 0.18; }
+  .note.c0 { --nb: #2b2240; --nbord: #c9a0ff; }
+  .note.c1 { --nb: #163a35; --nbord: #5fd3c4; }
+  .note.c2 { --nb: #3a1733; --nbord: #e10ab2; }
+  .note.c3 { --nb: #3a2222; --nbord: #ff8a8a; }
+  .note.c4 { --nb: #211d2b; --nbord: #a89bbd; }
+  .note.c5 { --nb: #352c1e; --nbord: #e8c27a; }
+  .note.c6 { --nb: #1c3328; --nbord: #7ddba3; }
+  .note.c7 { --nb: #22304a; --nbord: #8ab4ff; }
+  .note::before {
+    content: "";
+    position: absolute; top: -9px; left: 50%;
+    width: 64px; height: 18px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: rgba(242,238,247,0.13);
+    border: 1px solid rgba(242,238,247,0.06);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .note-grab {
+    height: 30px;
+    cursor: grab;
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 40px 0 10px;
+    border-bottom: 1px solid rgba(242,238,247,0.07);
+    touch-action: none;
+  }
+  .note-grab:active { cursor: grabbing; }
+  .grab-handle { color: var(--nbord); font-size: 0.75rem; opacity: 0.5; }
+  .note-del {
+    position: absolute; top: 5px; right: 6px;
+    background: none; border: 1px solid transparent; color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 2px 6px;
+    font-size: 0.72rem; font-family: inherit;
+    line-height: 1;
+    z-index: 5;
+  }
+  .note-del:hover { border-color: var(--bad); color: var(--bad); }
+  .note-body {
+    color: var(--text); font-family: inherit; font-size: 0.82rem;
+    line-height: 1.55; padding: 10px 12px 14px;
+    min-height: 130px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
+    cursor: pointer;
+  }
+  .note-body:empty::before {
+    content: "click to type\2026";
+    color: var(--dim); opacity: 0.6;
+  }
+  .hl.c1 { background: #ffd93d; color: #121016; border-radius: 2px; }
+  .hl.c2 { background: #3ddb84; color: #0d1a12; border-radius: 2px; }
+  .hl.c3 { background: #ff5ec4; color: #1a0d16; border-radius: 2px; }
+  .hl.c4 { background: #38b6ff; color: #0d1420; border-radius: 2px; }
+  .expand-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 4000; padding: 20px;
+  }
+  .expand-overlay.open { display: flex; }
+  .expand-box {
+    --nbord: #c9a0ff;
+    background: var(--panel);
+    border: 1px solid var(--nbord);
+    border-radius: 6px;
+    width: 480px; max-width: 94vw;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    transform: rotate(-1deg);
+  }
+  .expand-box.c0 { --nbord: #c9a0ff; }
+  .expand-box.c1 { --nbord: #5fd3c4; }
+  .expand-box.c2 { --nbord: #e10ab2; }
+  .expand-box.c3 { --nbord: #ff8a8a; }
+  .expand-box.c4 { --nbord: #a89bbd; }
+  .expand-box.c5 { --nbord: #e8c27a; }
+  .expand-box.c6 { --nbord: #7ddba3; }
+  .expand-box.c7 { --nbord: #8ab4ff; }
+  .expand-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(242,238,247,0.08);
+  }
+  .expand-title {
+    font-size: 0.78rem; font-weight: 700;
+    color: var(--nbord); letter-spacing: 1px;
+  }
+  .expand-close {
+    background: none; border: 1px solid transparent;
+    color: var(--dim); border-radius: 4px; cursor: pointer;
+    font-size: 0.95rem; padding: 2px 8px; line-height: 1;
+    font-family: inherit;
+    margin-left: auto;
+  }
+  .expand-close:hover { border-color: var(--bad); color: var(--bad); }
+  .pen-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 2px;
+  }
+  .pen-title { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.5px; }
+  .pen-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5);
+    cursor: pointer; padding: 0;
+    transition: transform 0.1s ease;
+  }
+  .pen-dot:hover { transform: scale(1.2); }
+  .pen-dot.k1 { background: #ffd93d; }
+  .pen-dot.k2 { background: #3ddb84; }
+  .pen-dot.k3 { background: #ff5ec4; }
+  .pen-dot.k4 { background: #38b6ff; }
+  .pen-x {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 1px 7px;
+    font-size: 0.7rem; font-family: inherit; line-height: 1.4;
+  }
+  .pen-x:hover { border-color: var(--bad); color: var(--bad); }
+  #expand-ta {
+    color: var(--text); font-family: inherit; font-size: 0.95rem;
+    line-height: 1.6; padding: 12px 16px 16px;
+    min-height: 230px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
+    overflow: hidden;
+  }
+  #expand-ta:empty::before {
+    content: "type here\2026";
+    color: var(--dim); opacity: 0.6;
+  }
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 5000; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 26px 28px 22px;
+    max-width: 410px; width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box h2 { font-size: 0.96rem; color: var(--hot-pink); margin-bottom: 12px; line-height: 1.4; }
+  .modal-box p { font-size: 0.81rem; color: var(--dim); line-height: 1.6; margin-bottom: 22px; white-space: pre-line; }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-buttons button {
+    font-family: inherit; font-size: 0.81rem; font-weight: 700;
+    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
+  }
+  .modal-yes { background: var(--bad); color: #121016; border: none; }
+  .modal-yes:hover { filter: brightness(1.1); }
+  .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
+  .modal-no:hover { border-color: var(--accent); color: var(--text); }
+  .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 6000; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 640px) {
+    .note { width: 210px; }
+    #search-box { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="top">
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="nav-btn" id="import-btn" title="restore notes from a backup file">Import</button>
+    <button class="nav-btn" id="export-btn" title="download all notes as a backup file">Export</button>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none">
+    <div id="nav"></div>
+</nav>
+</div>
+<h1 class="wall-title">
+  <span class="wt w1">Wall</span>
+  <span class="wt w2">O'</span>
+  <span class="wt w3">Sticky</span>
+  <span class="wt w4">Notes</span>
+</h1>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
+    <span id="note-count">0 notes</span>
+  </div>
+  <input type="search" id="search-box" placeholder="Search your notes&hellip;">
+</div>
+<div class="board" id="board">
+  <div class="board-hint" id="board-hint">
+    A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
+  </div>
+</div>
+<div class="expand-overlay" id="expand-overlay">
+  <div class="expand-box" id="expand-box">
+    <div class="expand-head">
+      <span class="expand-title">STICKY NOTE</span>
+      <button class="expand-close" id="expand-close" title="close">&#10005;</button>
+    </div>
+    <div class="pen-bar">
+      <span class="pen-title">HIGHLIGHTER:</span>
+      <button class="pen-dot k1" data-c="c1" title="yellow"></button>
+      <button class="pen-dot k2" data-c="c2" title="bright green"></button>
+      <button class="pen-dot k3" data-c="c3" title="bright pink"></button>
+      <button class="pen-dot k4" data-c="c4" title="bright blue"></button>
+      <button class="pen-x" id="pen-clear" title="erase highlight from selected text">&#9003;</button>
+    </div>
+    <div id="expand-ta" contenteditable="true" spellcheck="false"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons">
+      <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 let notes = [];
 let uid = null;
@@ -290,14 +637,14 @@ async function ensureAuth() {
 }
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
-  el.textContent = ok ? (msg || "✓") :
-    (msg || "offline — changes NOT saved");
+  el.textContent = ok ? (msg || "\u2713") :
+    (msg || "offline \u2014 changes NOT saved");
   el.classList.toggle("live", !!ok);
   el.classList.toggle("save-fail", !ok);
 }
 function setSaving() {
   const el = document.getElementById("sync-note");
-  el.textContent = "saving…";
+  el.textContent = "saving\u2026";
   el.classList.remove("live", "save-fail");
 }
 async function loadNotes() {
@@ -321,7 +668,7 @@ function updateSyncStatus() {
   if (pendingSaves > 0) {
     setSaving();
   } else if (dirtyNotes.size > 0) {
-    setSync(false, "unsaved — retrying every minute");
+    setSync(false, "unsaved \u2014 retrying every minute");
   } else {
     setSync(true);
   }
@@ -361,7 +708,6 @@ function savePatch(note, patch) {
   updateSyncStatus();
   const job = Promise.resolve().then(async () => {
     const delays = [800, 2000, 4000, 8000, 16000];
-
     while (dirtyNotes.has(id)) {
       if (!notes.some(n => n.id === id)) {
         dirtyNotes.delete(id);
@@ -589,15 +935,6 @@ document.getElementById("expand-close").onclick = closeExpand;
 expandOverlay.addEventListener("click", e => {
   if (e.target === expandOverlay) closeExpand();
 });
-function fmtAge(iso) {
-  if (!iso) return "";
-  const mins = Math.floor((Date.now() - Date.parse(iso)) / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return mins + "m ago";
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs + "h ago";
-  return Math.floor(hrs / 24) + "d ago";
-}
 function renderNotes() {
   const board = document.getElementById("board");
   board.querySelectorAll(".note").forEach(el => el.remove());
@@ -708,7 +1045,6 @@ function attachDrag(noteEl, grabEl, n) {
     grabEl.addEventListener("pointerup", onUp);
     grabEl.addEventListener("pointercancel", onUp);
   });
-
   noteEl.addEventListener("mouseenter", () => bringToFront(noteEl));
   noteEl.addEventListener("pointerdown", () => bringToFront(noteEl));
 }
@@ -750,7 +1086,6 @@ let modalResolve = null;
 function askConfirm(title, message, destructive) {
   return new Promise(resolve => {
     modalResolve = resolve;
-
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
     document.getElementById("modal-overlay").classList.add("open");
@@ -871,7 +1206,7 @@ async function importNotes(file) {
   } catch (e) {
     console.error(e);
     setSync(false);
-    showToast("Import failed — open console (F12) for details.");
+    showToast("Import failed \u2014 open console (F12) for details.");
   }
 }
 document.getElementById("export-btn")
@@ -908,3 +1243,5 @@ document.getElementById("import-file")
   renderNotes();
 })();
 </script>
+</body>
+</html>
