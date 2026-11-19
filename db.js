@@ -1,5 +1,5 @@
 const SUPABASE_URL  = "https://pgmlomrttcznxmoonkgl.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
+const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg";
 let _sb = null;
 function sb() {
   if (!_sb) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -101,6 +101,25 @@ function mergeEpochDone(lv, rv) {
   for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
   return { epoch: lv.epoch, done: done };
 }
+function isPlainObj(v) {
+  return v && typeof v === "object" && !Array.isArray(v);
+}
+function deepUnion(base, extra) {
+  if (Array.isArray(base) && Array.isArray(extra)) {
+    const out = base.slice();
+    for (const v of extra) if (!out.includes(v)) out.push(v);
+    return out;
+  }
+  if (isPlainObj(base) && isPlainObj(extra)) {
+    const out = { ...base };
+    for (const k in extra) {
+      if (!(k in out)) out[k] = extra[k];
+      else out[k] = deepUnion(out[k], extra[k]);
+    }
+    return out;
+  }
+  return base;
+}
 function createUserSync(opts) {
   const key = opts.key;
   const loadLocal = opts.loadLocal;
@@ -110,6 +129,7 @@ function createUserSync(opts) {
   const onRender = opts.onRender || function () {};
   const setOnline = opts.setOnline || function () {};
   const sections = opts.sections || null;
+  const growSections = opts.growSections || [];
   let uid = null;
   let cacheKey = null;
   let stamp = 0;
@@ -118,11 +138,27 @@ function createUserSync(opts) {
   let pushTimer = null;
   let pushInFlight = false;
   let pushPending = false;
+  let lastRemote = null;  
+  const prevSnap = {}; 
   function stampSections(obj) {
     obj.updatedAt = obj.updatedAt || {};
-    for (const s of (sections || Object.keys(obj))) {
-      if (typeof obj[s] === "object" || Array.isArray(obj[s]))
+    const fields = sections || Object.keys(obj);
+    for (const s of fields) {
+      if (s === "updatedAt") continue;
+      const ser = JSON.stringify(obj[s]);
+      if (obj.updatedAt[s] === undefined || prevSnap[s] !== ser) {
         obj.updatedAt[s] = Date.now();
+        prevSnap[s] = ser;
+      }
+    }
+  }
+  function primeStamps() {
+    const state = getState();
+    if (!state) return;
+    const fields = sections || Object.keys(state);
+    for (const s of fields) {
+      if (s === "updatedAt") continue;
+      prevSnap[s] = JSON.stringify(state[s]);
     }
   }
   function isEmpty(v) {
@@ -131,9 +167,10 @@ function createUserSync(opts) {
     if (typeof v === "object") return Object.keys(v).length === 0;
     return false;
   }
-function mergeSectionValue(f, lv, rv, lt, rt) {
-  return rt > lt ? rv : lv;
-}
+  function mergeSectionValue(f, lv, rv, lt, rt) {
+    if (growSections.includes(f)) return deepUnion(lv, rv);
+    return rt > lt ? rv : lv;
+  }
   function merge(local, remote) {
     const out = {};
     const fields = sections ||
@@ -151,6 +188,13 @@ function mergeSectionValue(f, lv, rv, lt, rt) {
       else if (isEmpty(rv)) out[f] = lv;
       else out[f] = mergeSectionValue(f, lv, rv, lt, rt);
     }
+    const upd = {};
+    const lu = (local && local.updatedAt) || {};
+    const ru = (remote && remote.updatedAt) || {};
+    for (const s of Array.from(new Set([...Object.keys(lu), ...Object.keys(ru)]))) {
+      upd[s] = Math.max(lu[s] || 0, ru[s] || 0);
+    }
+    out.updatedAt = upd;
     return out;
   }
   async function load() {
@@ -167,8 +211,27 @@ function mergeSectionValue(f, lv, rv, lt, rt) {
     if (!uid) return;
     pushInFlight = true;
     try {
+      const state = getState();
+      let rescued = false;
+      const fields = sections || Object.keys(state);
+      for (const s of fields) {
+        if (s === "updatedAt") continue;
+        const remoteVal = lastRemote ? lastRemote[s] : null;
+        const newVal = state[s];
+        if (!isEmpty(remoteVal) && isEmpty(newVal)) {
+          state[s] = remoteVal;
+          rescued = true;
+        } else if (growSections.includes(s) && !isEmpty(remoteVal) && !isEmpty(newVal)) {
+          const mergedVal = deepUnion(remoteVal, newVal);
+          if (JSON.stringify(mergedVal) !== JSON.stringify(newVal)) {
+            state[s] = mergedVal;
+            rescued = true;
+          }
+        }
+      }
+      if (rescued) stampSections(state);
       const now = Date.now();
-      await saveUserState(key, { savedAt: now, state: getState() });
+      await saveUserState(key, { savedAt: now, state: state });
       savedAt = now;
       const serverStamp = await peekUserStamp(key);
       stamp = serverStamp || stamp;
@@ -194,8 +257,10 @@ function mergeSectionValue(f, lv, rv, lt, rt) {
       if (serverStamp && serverStamp > stamp) {
         const remote = await load();
         if (remote && (remote.savedAt || 0) >= savedAt) {
-          setState(merge(getState(), remote.state));
+          lastRemote = remote;
+          setState(merge(getState(), remote));
           saveLocal(getState());
+          primeStamps();
           onRender();
           setOnline(true, "synced from cloud ✓");
         }
@@ -221,10 +286,17 @@ function mergeSectionValue(f, lv, rv, lt, rt) {
         online = false;
         setOnline(false);
         if (local) setState(local);
+        primeStamps();
         return true;
       }
       if (remoteState) {
-        setState(merge(local || {}, remoteState));
+        lastRemote = remoteState;
+        const merged = merge(local || {}, remoteState);
+        setState(merged);
+        saveLocal(getState());
+        if (JSON.stringify(merged) !== JSON.stringify(remoteState)) {
+          schedule(0);
+        }
       } else {
         const s = (local && Object.keys(local).length) ? local : {};
         stampSections(s);
@@ -239,6 +311,7 @@ function mergeSectionValue(f, lv, rv, lt, rt) {
         } catch (err) { setOnline(false); }
       }
       saveLocal(getState());
+      primeStamps();
       setOnline(true);
       return true;
     },
