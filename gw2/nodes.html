@@ -41,10 +41,11 @@
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 20px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
-  .stats-line { color: var(--accent2); font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+  .stats-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+  .stats-line { color: var(--accent2); font-size: 0.85rem; font-weight: 700; margin-bottom: 0; }
   .progress-outer {
     background: #16131c; border-radius: 999px; height: 14px;
-    margin: 0 0 22px; overflow: hidden; width: 100%; max-width: 420px;
+    margin: 0; overflow: hidden; width: 100%; max-width: 420px;
   }
   .progress-inner { background: var(--good); height: 100%; width: 0%; border-radius: 999px; transition: width 0.3s ease; }
   .progress-inner.full { background: var(--accent2); }
@@ -181,8 +182,10 @@
   <div id="nav"></div>
 </nav>
 <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
-<div class="stats-line" id="stats"></div>
-<div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
+<div class="stats-row">
+  <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
+  <div class="stats-line" id="stats"></div>
+</div>
 <div class="filter-row">
   <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
   <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
@@ -580,7 +583,7 @@ function render() {
   const ownedCount = nodes.filter(n => state.owned[n.name]).length;
   const pct = nodes.length ? Math.round(ownedCount / nodes.length * 100) : 0;
   document.getElementById("stats").textContent =
-    ownedCount + " of " + nodes.length + " nodes owned (" + pct + "%)";
+    ownedCount + " of " + nodes.length + " nodes owned";
   const bar = document.getElementById("bar");
   bar.style.width = pct + "%";
   bar.className = "progress-inner" + (pct === 100 ? " full" : "");

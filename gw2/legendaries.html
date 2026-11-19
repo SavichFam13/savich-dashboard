@@ -55,13 +55,17 @@
     font-weight: 700; cursor: pointer;
   }
   .form-row button:hover { background: var(--accent2); color: var(--bg); }
-  .template-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
   .leg-list { display: flex; flex-direction: column; gap: 16px; }
   .leg-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px;
   }
   .leg-card.complete { border-color: var(--good); box-shadow: 0 0 0 2px rgba(125,219,163,0.25); }
+  .leg-head { cursor: pointer; user-select: none; }
+  .leg-caret { color: var(--accent2); font-size: 0.7rem; margin-left: 8px; display: inline-block; transition: transform 0.2s ease; }
+  .leg-card.leg-collapsed .leg-caret { transform: rotate(-90deg); }
+  .leg-card.leg-collapsed .leg-body { display: none; }
+  .leg-card.leg-collapsed .leg-bar-outer { margin: 10px 0 0; }
   .leg-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .leg-name { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
   .leg-kind { color: var(--dim); font-size: 0.75rem; }
@@ -172,7 +176,6 @@
     <select id="leg-template"></select>
     <button onclick="addLegend()">+ Add</button>
   </div>
-  <p class="template-hint" id="tpl-hint"></p>
 </div>
 <div class="leg-list" id="leg-list"></div>
 <div class="confirm-overlay" id="modal-overlay">
@@ -220,6 +223,8 @@ function normalizeLegs(arr) {
     .map(l => {
       if (!l.phases) l.phases = [{ title: "Steps", sub: "", items: l.steps }];
       l.phases.forEach(p => { if (typeof p.open !== "boolean") p.open = false; });
+      if (typeof l.collapsed !== "boolean") l.collapsed = false;
+      l.kind = String(l.kind || "").replace(/\s*—\s*FULL RECIPE\s*$/i, "");
       return l;
     });
 }
@@ -271,7 +276,6 @@ document.addEventListener("keydown", e => {
 const TEMPLATES = {
   "Aurora": {
     label: "Aurora (accessory)",
-    hint: "Four achievements → Gleam of Sentience → Sentient Seed, the six Hero collections, 21 Electrum infusions, then Spark of Sentience via three big gifts.",
     phases: [
       { title: "Prerequisites", sub: "Achievements → Gleam of Sentience → Sentient Seed", items: [
         { label: "Complete Achievements", subs: [
@@ -397,7 +401,6 @@ const TEMPLATES = {
   },
   "dreamer": {
     label: "The Dreamer (Gen 1 short bow)",
-    hint: "Three collections (Experimental Short Bow → Perfected Short Bow → The Lover), then The Lover + three gifts in the Mystic Forge.",
     phases: [
       { title: "The Dreamer I: The Experimental Short Bow", sub: "Prereq: Revered Antiquarian — Unlock: The Dreamer Vol. 1 — Reward: Chest of Love", items: [
         { label: "Dessa's Sadness" },
@@ -530,7 +533,6 @@ const TEMPLATES = {
   },
      "eikasia": {
     label: "Eikasia (Armor)",
-    hint: "Fractalline Spark + Icy Runestones, then Gift of Magical Prosperity and Gift of Mighty Prosperity — buy the gloves from the vendor.",
     phases: [
       { title: "Craft Eikasia (Mists-Grasper)", sub: "Craft the two gifts in the Forge, then buy from vendor", items: [
         { label: "Fractalline Spark", subs: [
@@ -601,7 +603,6 @@ const TEMPLATES = {
   },
   "summer": {
     label: "Endless Summer (Accessory)",
-    hint: "Four specialty gifts: Gift of Rays, Gift of the Survivors, Gift of the People, and Gift of the Hylek.",
     phases: [
       { title: "Craft Endless Summer", sub: "The four specialty gifts", items: [
         { label: "Gift of Rays", subs: [
@@ -704,7 +705,6 @@ const TEMPLATES = {
   },
     "kotaki": {
     label: "Kamohoali'i Kotaki (Gen 1 underwater spear)",
-    hint: "Three collections (Experimental Spear → Perfected Spear → Carcharias), then Carcharias + three gifts in the Mystic Forge.",
     phases: [
       { title: "Kamohoali'i Kotaki I: The Experimental Spear", sub: "Prereq: Revered Antiquarian — Unlock: Kotaki Vol. 1 — Reward: Chest of Sharks", items: [
         { label: "Tropical Shark Tooth" },
@@ -830,7 +830,6 @@ const TEMPLATES = {
   },
     "orrax": {
     label: "Orrax (Armor)",
-    hint: "Manifested via Gift of the Mistburned Isles, Gift of Shadows, and Gift of the Feast; Contained via Binding of the Dragon, Draconic Tribute, and two mastery backpieces.",
     phases: [
       { title: "Orrax Manifested", sub: "Three gifts → Mystic Forge", items: [
         { label: "Gift of the Mistburned Isles", subs: [
@@ -985,7 +984,6 @@ const TEMPLATES = {
   },
   "Fang": {
     label: "Primordus Fang (Gen 3 sword)",
-    hint: "Dragon's Fang precursor, Gift of Jade Mastery, Draconic Tribute, Gift of Aurene's Fang, plus the Aurene's Facet of Fire collection for the empowered skin.",
     phases: [
       { title: "Dragon's Fang (Precursor)", sub: "Fortified components + Transcendent Crystal", items: [
         { label: "Dragon's Fang", subs: [
@@ -1109,7 +1107,6 @@ const TEMPLATES = {
   },
     "regalia": {
     label: "Prismatic Champion's Regalia (Accessory)",
-    hint: "Complete Seasons of the Dragons (all 24 Return-to collections plus End Conjecture).",
     phases: [
       { title: "Prismatic Champion's Regalia", sub: "Seasons of the Dragons achievement", items: [
         { label: "Complete Seasons of the Dragons", subs: [
@@ -1141,7 +1138,6 @@ const TEMPLATES = {
   },
   "selachimorpha": {
     label: "Selachimorpha (Armor)",
-    hint: "Gift of the Survivors + Gift of the People + Gift of Castoran Mastery, with Agaleus as the precursor.",
     phases: [
       { title: "Craft Selachimorpha", sub: "Vendor gifts, Castoran Mastery tree, and the Agaleus precursor", items: [
         { label: "Gift of the Survivors (buy from vendor)", subs: [
@@ -1226,7 +1222,6 @@ const TEMPLATES = {
   },
   "twilight": {
     label: "Twilight (Gen 1 greatsword)",
-    hint: "Three collections (Experimental Nightsword → Perfected Nightsword → Dusk), then Dusk + Gift of Twilight, Gift of Mastery, and Gift of Fortune in the Mystic Forge.",
     phases: [
       { title: "Twilight I: The Experimental Nightsword", sub: "Unlock: Twilight Vol. I — Reward: Chest of the End", items: [
         { label: "Final Sorrow" },
@@ -1372,7 +1367,6 @@ const TEMPLATES = {
   },
       "Vision": {
     label: "Vision (accessory)",
-    hint: "Vision I & II achievements, then Glimpse via Gift of Prescience, Gift of Arid Mastery, and Mystic Tribute.",
     phases: [
       { title: "Vision I: Awakening", sub: "Unlock: Trance Stone — Reward: Shattered Gift of Prescience", items: [
         { label: "Trance Stone" },
@@ -1496,12 +1490,6 @@ for (const k in TEMPLATES) {
   o.value = k; o.textContent = TEMPLATES[k].label;
   tplSel.appendChild(o);
 }
-function updHint() {
-  document.getElementById("tpl-hint").innerHTML =
-    "&#9432; " + TEMPLATES[tplSel.value].hint;
-}
-tplSel.onchange = updHint;
-updHint();
 function addLegend() {
   const tpl = TEMPLATES[tplSel.value];
   if (!tpl) return;
@@ -1569,12 +1557,14 @@ function render() {
     leg.phases.forEach(p => { const r = countLeaves(p.items); n += r.n; d += r.d; });
     const pct = n ? Math.round(d / n * 100) : 0;
     const card = document.createElement("div");
-    card.className = "leg-card" + (n && pct === 100 ? " complete" : "");
-    let html = "<div class='leg-head'><div><span class='leg-name'>" + esc(leg.name) +
+    card.className = "leg-card" + (n && pct === 100 ? " complete" : "") + (leg.collapsed ? " leg-collapsed" : "");
+    let html = "<div class='leg-head' data-li='" + li + "'><div><span class='leg-name'>" + esc(leg.name) +
       "</span> <span class='leg-kind'>" + esc(leg.kind) + "</span></div>" +
       "<div><span class='leg-pct'>" + pct + "%</span> <span class='leg-count'>(" + d + "/" + n + " steps)</span> " +
-      "<button class='leg-del' data-li='" + li + "' type='button'>delete</button></div></div>" +
-      "<div class='leg-bar-outer'><div class='leg-bar' style='width:" + pct + "%'></div></div>";
+      "<button class='leg-del' data-li='" + li + "' type='button'>delete</button>" +
+      "<span class='leg-caret'>&#9662;</span></div></div>" +
+      "<div class='leg-bar-outer'><div class='leg-bar' style='width:" + pct + "%'></div></div>" +
+      "<div class='leg-body'>";
     leg.phases.forEach((ph, pi) => {
       const t = countLeaves(ph.items);
       const phDone = t.n > 0 && t.d === t.n;
@@ -1586,11 +1576,21 @@ function render() {
         "<span class='phase-done'>" + (phDone ? "&#10003; complete" : t.d + "/" + t.n) + "</span></div>";
       html += "<div class='phase-body'><ul class='items'>";
       ph.items.forEach((it, ii) => { html += itemHtml(it, li, pi, String(ii)); });
-    html += "</ul></div></div>";
+      html += "</ul></div></div>";
     });
+      html += "</div>";
     card.innerHTML = html;
     wrap.appendChild(card);
   });
+  wrap.querySelectorAll(".leg-head").forEach(h => {
+    h.onclick = (e) => {
+      if (e.target.closest(".leg-del")) return;
+      const leg = legs[+h.dataset.li];
+      leg.collapsed = !leg.collapsed;
+      save();
+      h.parentElement.classList.toggle("leg-collapsed", leg.collapsed);
+    };
+  });  
   wrap.querySelectorAll(".phase-head").forEach(h => {
     h.onclick = () => {
       const ph = legs[h.dataset.li].phases[h.dataset.pi];
