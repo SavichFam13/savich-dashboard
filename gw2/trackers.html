@@ -8,6 +8,15 @@
 <link rel="stylesheet" href="../common.css">
 <style>
   :root { --now: #ff4d6d; --hot-pink: #e10ab2; }
+  .nav-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .nav-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--dim);
+    text-decoration: none; padding: 6px 14px; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease; cursor: pointer;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   body {
     background: var(--bg); color: var(--text);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -121,7 +130,7 @@
   <h1>Daily &amp; Weekly Tracker</h1>
 <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
-    <a class="nav-btn" href="timer.html">Timer</a>
+      <a class="nav-btn" href="timer.html">Timer</a>
     <div id="nav"></div>
 </nav>
 </div>
