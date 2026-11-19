@@ -5,20 +5,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sticky Notes</title>
+<link rel="stylesheet" href="../common.css">
 <style>
-  :root {
-    --bg: #121016;
-    --panel: #1c1922;
-    --text: #f2eef7;
-    --accent: #c9a0ff;
-    --accent2: #5fd3c4;
-    --hot-pink: #e10ab2;
-    --dim: #a89bbd;
-    --border: #332c3e;
-    --good: #7ddba3;
-    --bad: #ff8a8a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .sync-note.save-fail { color: var(--bad); }
+  .modal-overlay { z-index: 5000; }
+  .modal-yes { background: var(--bad); }
+  .toast { z-index: 6000; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -66,9 +58,6 @@
   }
   .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
   p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
-  .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
-  .sync-note.live { color: var(--good); }
-  .sync-note.save-fail { color: var(--bad); }
   .toolbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
@@ -252,39 +241,6 @@
     content: "type here\2026";
     color: var(--dim); opacity: 0.6;
   }
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
-    display: none; align-items: center; justify-content: center;
-    z-index: 5000; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal-box {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 10px; padding: 26px 28px 22px;
-    max-width: 410px; width: 100%;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  }
-  .modal-box h2 { font-size: 0.96rem; color: var(--hot-pink); margin-bottom: 12px; line-height: 1.4; }
-  .modal-box p { font-size: 0.81rem; color: var(--dim); line-height: 1.6; margin-bottom: 22px; white-space: pre-line; }
-  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
-  .modal-buttons button {
-    font-family: inherit; font-size: 0.81rem; font-weight: 700;
-    border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
-  }
-  .modal-yes { background: var(--bad); color: #121016; border: none; }
-  .modal-yes:hover { filter: brightness(1.1); }
-  .modal-no { background: none; color: var(--dim); border: 1px solid var(--border); font-weight: 400; }
-  .modal-no:hover { border-color: var(--accent); color: var(--text); }
-  .toast {
-    position: fixed; bottom: 26px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--panel); border: 1px solid var(--accent2);
-    color: var(--good); border-radius: 8px; padding: 12px 22px;
-    font-size: 0.81rem; opacity: 0; pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-    z-index: 6000; max-width: 90vw; text-align: center;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   @media (max-width: 640px) {
     .note { width: 210px; }
     #search-box { width: 100%; }
