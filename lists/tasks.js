@@ -532,7 +532,7 @@ function openDateCal() {
   drawMdayCal();
   setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
     if (mdayCalEl && !mdayCalEl.contains(ev.target) && ev.target !== inp) closeMdayCal();
-    document.removeEventListener("mousedown", onDoc);
+    if (!mdayCalEl) document.removeEventListener("mousedown", onDoc);
   }), 0);
 }
 function openMiniDate(anchorEvent, cb) {
@@ -579,7 +579,7 @@ function openMiniDate(anchorEvent, cb) {
   el.style.top = Math.min(anchorEvent.clientY, window.innerHeight - 400) + "px";
   setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
     if (miniDateEl && !miniDateEl.contains(ev.target)) openMiniCancel();
-    document.removeEventListener("mousedown", onDoc);
+    if (!miniDateEl) document.removeEventListener("mousedown", onDoc);
   }), 0);
 }
 let editingTask = null;
@@ -791,7 +791,7 @@ function initEditorUI() {
     if (!fi) continue;
     fi.addEventListener("click", () => openDateCalFor(fid));
     fi.addEventListener("keydown", () => closeDateCal());
-    fi.addEventListener("blur", () => { closeDateCal(); normDateField(fi); });
+    fi.addEventListener("blur", () => { normDateField(fi); });
   }
   const md = document.getElementById("ed-mday");
 
@@ -983,7 +983,7 @@ function openDateCalFor(inpId) {
   el.style.top = Math.min(r.bottom + 6, window.innerHeight - 380) + "px";
   setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
     if (dateCalEl && !dateCalEl.contains(ev.target) && ev.target !== inp) closeDateCal();
-    document.removeEventListener("mousedown", onDoc);
+    if (!dateCalEl) document.removeEventListener("mousedown", onDoc);
   }), 0);
 }
 function normDateField(inp) {
