@@ -5,20 +5,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily &amp; Weekly Tracker</title>
+<link rel="stylesheet" href="../common.css">
 <style>
-  :root {
-    --bg: #121016;
-    --panel: #1c1922;
-    --text: #ffffff;
-    --accent: #c9a0ff;
-    --accent2: #5fd3c4;
-    --hot-pink: #e10ab2;
-    --dim: #a89bbd;
-    --border: #332c3e;
-    --now: #ff4d6d;
-    --good: #7ddba3;
-  }  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --now: #ff4d6d; --hot-pink: #e10ab2; }
   body {
     background: var(--bg); color: var(--text);
     font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -30,31 +19,6 @@
     flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
   }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
-.nav-bar {
-    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-}
-  .nav-btn {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--dim);
-    text-decoration: none;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-  }
-  .nav-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .nav-btn.active {
-    background: var(--accent);
-    color: var(--bg);
-    border-color: var(--accent);
-  }
-  .sync-note { color: var(--dim); font-size: 0.72rem; letter-spacing: 0.5px; }
-  .sync-note.live { color: var(--good); }
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
   .clock { color: var(--dim); font-size: 0.95rem; margin-bottom: 14px; }
   .clock b { color: var(--text); }
@@ -86,7 +50,7 @@
   .chip .chip-zone { color: var(--dim); font-size: 0.75rem; font-weight: 400; white-space: nowrap; }
   .chip.warn { border-color: var(--now); }
   .chip .warn-flag { color: var(--now); font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
-#ghost-block { margin-top: 14px; }
+  #ghost-block { margin-top: 14px; }
   .ghost-divider {
     margin: 18px 0 8px;
     font-size: 0.72rem; color: var(--accent2); letter-spacing: 1.5px;
@@ -117,19 +81,19 @@
   .info-line .lab { color: var(--dim); }
   .info-line.missing { color: var(--now); font-weight: 700; }
   .info-hint { color: var(--dim); font-size: 0.72rem; margin-top: 10px; }
-.info-del {
-  background: none; border: none; color: var(--dim); cursor: pointer;
-  font-family: inherit; font-size: 0.85rem; font-weight: 700;
-  padding: 2px 6px; flex-shrink: 0;
-}
-.info-del:hover { color: #ff8a8a; }
-.info-wp {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
-  color: var(--accent); cursor: pointer; font-family: inherit;
-  font-size: 0.82rem; padding: 1px 8px; margin-left: 8px;
-  text-decoration: underline;
-}
-.info-wp:hover { border-color: var(--accent); }
+  .info-del {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-family: inherit; font-size: 0.85rem; font-weight: 700;
+    padding: 2px 6px; flex-shrink: 0;
+  }
+  .info-del:hover { color: #ff8a8a; }
+  .info-wp {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--accent); cursor: pointer; font-family: inherit;
+    font-size: 0.82rem; padding: 1px 8px; margin-left: 8px;
+    text-decoration: underline;
+  }
+  .info-wp:hover { border-color: var(--accent); }
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
     background: var(--panel); border: 1px solid var(--good);
@@ -157,6 +121,7 @@
   <h1>Daily &amp; Weekly Tracker</h1>
 <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
+    <a class="nav-btn" href="timer.html">Timer</a>
     <div id="nav"></div>
 </nav>
 </div>
@@ -789,413 +754,7 @@ function tooltipFor(task, isWeekly, nowMs) {
   if (task.reward) tip += "\nReward: " + task.reward;
   if (isWeekly && task.rotating) {
     const wk = isoWeek(nowMs);
-    const wd = WEEKS[wk] || null;// db.js — patched (v2)
-// CHANGES vs original (marked // FIX):
-//  1. merge() preserves updatedAt — per-section newest stamp wins, so future
-//     merges know which side of each section is fresher.
-//  2. merge() union-merges "grow" sections (growSections option) — a growing
-//     log gains days from both sides instead of being replaced wholesale.
-//  3. stampSections() only stamps sections that ACTUALLY CHANGED since the
-//     last save (snapshot comparison), so untouched sections keep their age.
-//  4. push() safety guard for ALL sections: never upload a section as
-//     empty/missing when the last known remote copy had data. A broken build
-//     pushing {"updatedAt":{}} can no longer wipe the cloud row.
-//  5. push() additionally union-rescues growSections that shrank vs remote.
-//  6. init() pushes the merged state to Supabase when it differs from the
-//     remote copy (previously local-only data could sit unsynced forever).
-//
-// DEPLOYMENT FOR YOUR PAGES:
-//  - trackers.html:  add  growSections: ["logs"]  to historySync's options.
-//  - history page:   do NOT add growSections (keeps Import REPLACE working);
-//                    it's protected by the push guard in point 4 instead.
-//  - daily/weekly syncs: no changes needed.
-
-const SUPABASE_URL  = "https://pgmlomrttcznxmoonkgl.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg";
-let _sb = null;
-function sb() {
-  if (!_sb) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return _sb;
-}
-async function requireAuth() {
-  const { data, error } = await sb().auth.getSession();
-  if (error || !data.session) {
-    location.href = "/auth.html?next=" + encodeURIComponent(location.href);
-    return null;
-  }
-  return data.session;
-}
-async function currentUser() {
-  const { data } = await sb().auth.getUser();
-  return data.user || null;
-}
-async function currentUserId() {
-  const { data } = await sb().auth.getSession();
-  return (data && data.session && data.session.user) ? data.session.user.id : null;
-}
-async function signOut() {
-  await sb().auth.signOut();
-  location.href = "/auth.html";
-}
-async function loadBlob(key, fallback = null) {
-  const { data, error } = await sb()
-    .from("app_data").select("data").eq("key", key).maybeSingle();
-  if (error) {
-    console.error("loadBlob failed for " + key + ":", error.message);
-    return fallback;
-  }
-  return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
-}
-async function saveBlob(key, value) {
-  const { error } = await sb()
-    .from("app_data")
-    .upsert({ key: key, data: value }, { onConflict: "key" });
-  if (error) {
-    console.error("saveBlob failed for " + key + ":", error.message);
-    throw error;
-  }
-}
-async function loadUserState(key, fallback = null) {
-  const uid = await currentUserId();
-  if (!uid) throw new Error("not signed in");
-  const { data, error } = await sb()
-    .from("user_state")
-    .select("data, updated_at")
-    .eq("user_id", uid)
-    .eq("key", key)
-    .maybeSingle();
-  if (error) {
-    console.error("loadUserState failed for " + key + ":", error.message);
-    return fallback;
-  }
-  return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
-}
-async function saveUserState(key, value) {
-  const uid = await currentUserId();
-  if (!uid) throw new Error("not signed in");
-  const { error } = await sb()
-    .from("user_state")
-    .upsert(
-      { user_id: uid, key: key, data: value, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,key" }
-    );
-  if (error) {
-    console.error("saveUserState failed for " + key + ":", error.message);
-    throw error;
-  }
-}
-async function peekUserStamp(key) {
-  const uid = await currentUserId();
-  if (!uid) throw new Error("not signed in");
-  const { data, error } = await sb()
-    .from("user_state")
-    .select("updated_at")
-    .eq("user_id", uid)
-    .eq("key", key)
-    .maybeSingle();
-  if (error) {
-    console.error("peekUserStamp failed for " + key + ":", error.message);
-    return null;
-  }
-  return data ? (Date.parse(data.updated_at) || 0) : 0;
-}
-function isEpochDone(v) {
-  return v && typeof v === "object" && !Array.isArray(v) &&
-         typeof v.epoch === "number" &&
-         v.done && typeof v.done === "object" && !Array.isArray(v.done);
-}
-function mergeEpochDone(lv, rv) {
-  if (!isEpochDone(lv)) return rv;
-  if (!isEpochDone(rv)) return lv;
-  if (lv.epoch > rv.epoch) return lv;
-  if (rv.epoch > lv.epoch) return rv;
-  const done = { ...lv.done };
-  for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
-  return { epoch: lv.epoch, done: done };
-}
-
-// Deep union for append-only data (history logs): objects merge key-by-key,
-// arrays union by value, scalar conflicts keep the base value.
-function isPlainObj(v) {
-  return v && typeof v === "object" && !Array.isArray(v);
-}
-function deepUnion(base, extra) {
-  if (Array.isArray(base) && Array.isArray(extra)) {
-    const out = base.slice();
-    for (const v of extra) if (!out.includes(v)) out.push(v);
-    return out;
-  }
-  if (isPlainObj(base) && isPlainObj(extra)) {
-    const out = { ...base };
-    for (const k in extra) {
-      if (!(k in out)) out[k] = extra[k];
-      else out[k] = deepUnion(out[k], extra[k]);
-    }
-    return out;
-  }
-  return base;
-}
-
-function createUserSync(opts) {
-  const key = opts.key;
-  const loadLocal = opts.loadLocal;
-  const saveLocal = opts.saveLocal;
-  const getState = opts.getState;
-  const setState = opts.setState;
-  const onRender = opts.onRender || function () {};
-  const setOnline = opts.setOnline || function () {};
-  const sections = opts.sections || null;
-  // Sections that only ever grow (e.g. history logs): union-merged and
-  // protected from shrinking. Trackers.html historySync should pass
-  // growSections: ["logs"]. Do NOT pass it on the history page.
-  const growSections = opts.growSections || [];
-  let uid = null;
-  let cacheKey = null;
-  let stamp = 0;
-  let savedAt = 0;
-  let online = false;
-  let pushTimer = null;
-  let pushInFlight = false;
-  let pushPending = false;
-  let lastRemote = null;   // last known-good remote state
-  const prevSnap = {};     // FIX: section -> serialized snapshot at last stamping
-
-  function stampSections(obj) {
-    obj.updatedAt = obj.updatedAt || {};
-    const fields = sections || Object.keys(obj);
-    for (const s of fields) {
-      if (s === "updatedAt") continue;
-      const ser = JSON.stringify(obj[s]);
-      // FIX: only stamp sections that actually changed (or were never
-      // stamped). Unchanged sections keep their original timestamp so they
-      // can't falsely win a merge.
-      if (obj.updatedAt[s] === undefined || prevSnap[s] !== ser) {
-        obj.updatedAt[s] = Date.now();
-        prevSnap[s] = ser;
-      }
-    }
-  }
-  // Record current section contents as the baseline without stamping,
-  // so init/load doesn't fabricate fresh timestamps.
-  function primeStamps() {
-    const state = getState();
-    if (!state) return;
-    const fields = sections || Object.keys(state);
-    for (const s of fields) {
-      if (s === "updatedAt") continue;
-      prevSnap[s] = JSON.stringify(state[s]);
-    }
-  }
-  function isEmpty(v) {
-    if (v === null || v === undefined) return true;
-    if (Array.isArray(v)) return v.length === 0;
-    if (typeof v === "object") return Object.keys(v).length === 0;
-    return false;
-  }
-  function mergeSectionValue(f, lv, rv, lt, rt) {
-    if (growSections.includes(f)) return deepUnion(lv, rv);
-    return rt > lt ? rv : lv;
-  }
-  function merge(local, remote) {
-    const out = {};
-    const fields = sections ||
-      Array.from(new Set([
-        ...Object.keys(local || {}),
-        ...Object.keys(remote || {})
-      ])).filter(k => k !== "updatedAt");
-    for (const f of fields) {
-      const lv = (local && local[f] !== undefined) ? local[f] : null;
-      const rv = (remote && remote[f] !== undefined) ? remote[f] : null;
-      const lt = (local && local.updatedAt && local.updatedAt[f]) || 0;
-      const rt = (remote && remote.updatedAt && remote.updatedAt[f]) || 0;
-      if (isEmpty(lv) && isEmpty(rv)) out[f] = lv || rv;
-      else if (isEmpty(lv)) out[f] = rv;
-      else if (isEmpty(rv)) out[f] = lv;
-      else out[f] = mergeSectionValue(f, lv, rv, lt, rt);
-    }
-    // FIX: preserve updatedAt — per-section newest stamp wins.
-    const upd = {};
-    const lu = (local && local.updatedAt) || {};
-    const ru = (remote && remote.updatedAt) || {};
-    for (const s of Array.from(new Set([...Object.keys(lu), ...Object.keys(ru)]))) {
-      upd[s] = Math.max(lu[s] || 0, ru[s] || 0);
-    }
-    out.updatedAt = upd;
-    return out;
-  }
-  async function load() {
-    const data = await loadUserState(key, null);
-    if (data && data.state) {
-      savedAt = data.savedAt || 0;
-      const serverStamp = await peekUserStamp(key);
-      stamp = serverStamp || stamp;
-      return data.state;
-    }
-    return null;
-  }
-  async function push() {
-    if (!uid) return;
-    pushInFlight = true;
-    try {
-      const state = getState();
-      let rescued = false;
-      const fields = sections || Object.keys(state);
-      for (const s of fields) {
-        if (s === "updatedAt") continue;
-        const remoteVal = lastRemote ? lastRemote[s] : null;
-        const newVal = state[s];
-        if (!isEmpty(remoteVal) && isEmpty(newVal)) {
-          // FIX: universal guard — NEVER wipe a populated section by pushing
-          // an empty/missing one. This is what emptied the gw2-daily-log row.
-          state[s] = remoteVal;
-          rescued = true;
-        } else if (growSections.includes(s) && !isEmpty(remoteVal) && !isEmpty(newVal)) {
-          // FIX: grow sections must not shrink vs the remote copy either.
-          const mergedVal = deepUnion(remoteVal, newVal);
-          if (JSON.stringify(mergedVal) !== JSON.stringify(newVal)) {
-            state[s] = mergedVal;
-            rescued = true;
-          }
-        }
-      }
-      if (rescued) stampSections(state);
-      const now = Date.now();
-      await saveUserState(key, { savedAt: now, state: state });
-      savedAt = now;
-      const serverStamp = await peekUserStamp(key);
-      stamp = serverStamp || stamp;
-      online = true;
-      setOnline(true);
-    } catch (err) {
-      console.error("push failed for " + key + ":", err.message);
-      online = false;
-      setOnline(false);
-    } finally {
-      pushInFlight = false;
-      if (pushPending) { pushPending = false; schedule(0); }
-    }
-  }
-  function schedule(delay) {
-    clearTimeout(pushTimer);
-    pushTimer = setTimeout(push, delay);
-  }
-  async function poll() {
-    if (!online || pushInFlight || document.hidden) return;
-    try {
-      const serverStamp = await peekUserStamp(key);
-      if (serverStamp && serverStamp > stamp) {
-        const remote = await load();
-        if (remote && (remote.savedAt || 0) >= savedAt) {
-          lastRemote = remote;
-          setState(merge(getState(), remote));
-          saveLocal(getState());
-          primeStamps();
-          onRender();
-          setOnline(true, "synced from cloud ✓");
-        }
-      }
-    } catch (e) { /* transient — next poll retries */ }
-  }
-  document.addEventListener("visibilitychange", poll);
-  setInterval(poll, 60000);
-  return {
-    get uid() { return uid; },
-    async init() {
-      const session = await requireAuth();
-      if (!session) return false;
-      uid = session.user && session.user.id;
-      cacheKey = key + ":" + uid;
-
-      const local = loadLocal();
-      let remoteState = null;
-      try {
-        remoteState = await load();
-        online = true;
-      } catch (err) {
-        online = false;
-        setOnline(false);
-        if (local) setState(local);
-        primeStamps();
-        return true;
-      }
-      if (remoteState) {
-        lastRemote = remoteState;
-        const merged = merge(local || {}, remoteState);
-        setState(merged);
-        saveLocal(getState());
-        // FIX: if the merge produced anything the cloud doesn't have
-        // (e.g. local days missing remotely), push it up instead of
-        // leaving it stranded in the browser forever.
-        if (JSON.stringify(merged) !== JSON.stringify(remoteState)) {
-          schedule(0);
-        }
-      } else {
-        const s = (local && Object.keys(local).length) ? local : {};
-        stampSections(s);
-        setState(s);
-        try {
-          const now = Date.now();
-          await saveUserState(key, { savedAt: now, state: s });
-          savedAt = now;
-          const serverStamp = await peekUserStamp(key);
-          stamp = serverStamp || stamp;
-          setOnline(true);
-        } catch (err) { setOnline(false); }
-      }
-      saveLocal(getState());
-      primeStamps();
-      setOnline(true);
-      return true;
-    },
-    save(immediate) {
-      if (!uid) { if (typeof loadLocal === "function") saveLocal(getState()); return; }
-      stampSections(getState());
-      saveLocal(getState());
-      if (immediate) {
-        if (pushInFlight) pushPending = true; else schedule(0);
-      } else {
-        if (pushInFlight) pushPending = true; else schedule(1500);
-      }
-    }
-  };
-}
-async function listRows(table, { orderBy = null, ascending = true, eq = null } = {}) {
-  let q = sb().from(table).select("*");
-  if (eq) for (const col in eq) q = q.eq(col, eq[col]);
-  if (orderBy) q = q.order(orderBy, { ascending });
-  const { data, error } = await q;
-  if (error) { console.error("listRows:", error.message); return []; }
-  return data || [];
-}
-async function insertRow(table, obj) {
-  const { data, error } = await sb().from(table).insert(obj).select().single();
-  if (error) throw error;
-  return data;
-}
-async function insertRows(table, objs) {
-  const { data, error } = await sb().from(table).insert(objs).select();
-  if (error) throw error;
-  return data;
-}
-async function updateRow(table, id, patch) {
-  const { data, error } = await sb().from(table).update(patch).eq("id", id).select().single();
-  if (error) throw error;
-  return data;
-}
-async function deleteRow(table, id) {
-  const { error } = await sb().from(table).delete().eq("id", id);
-  if (error) throw error;
-}
-async function upsertRow(table, obj, conflictCol = "id") {
-  const { data, error } = await sb()
-    .from(table).upsert(obj, { onConflict: conflictCol }).select().single();
-  if (error) throw error;
-  return data;
-}
-window.addEventListener("unhandledrejection", e => {
-  if (e.reason && e.reason.message) console.error("Unhandled sync failure:", e.reason.message);
-});
-
+    const wd = WEEKS[wk] || null;
     tip += wd && wd[task.rotating]
       ? "\nThis week (" + wk + "): " + wd[task.rotating]
       : "\n!! no objective listed for week " + wk + " (fill it in)";
