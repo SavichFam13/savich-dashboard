@@ -363,13 +363,13 @@ function openTaskMenu(e, item, rerender) {
   menu.className = "item-menu";
   menu.innerHTML =
     '<button class="menu-x">✕</button>' +
-    '<button data-act="done">✓ mark done</button>' +
-    '<button data-act="skip">✗ won\'t do (instance only)</button>' +
-    '<button data-act="tomorrow">→ move to tomorrow</button>' +
-    '<button data-act="moveto">📅 move to date…</button>' +
-    '<button data-act="edit">✎ edit series</button>' +
-    '<button data-act="delete" class="danger">🗑 delete entire series</button>' +
-    '<button data-act="undo" class="danger">↺ undo override</button>';
+    '<button data-act="done">✓ Done</button>' +
+    '<button data-act="skip">✗ Won\'t do</button>' +
+    '<button data-act="tomorrow">→ Move to tomorrow</button>' +
+    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>' +
+    '<button data-act="edit">✎ Edit series</button>' +
+    '<button data-act="delete" class="danger">🗑 Delete entire series</button>' +
+    '<button data-act="undo" class="danger">↺ Undo override</button>';
   document.body.appendChild(menu);
   const rect = { x: e.clientX, y: e.clientY };
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
