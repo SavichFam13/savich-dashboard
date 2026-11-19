@@ -54,7 +54,7 @@ async function loadUserState(key, fallback = null) {
     .maybeSingle();
   if (error) {
     console.error("loadUserState failed for " + key + ":", error.message);
-    return fallback;
+    throw error;
   }
   return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
 }
@@ -138,8 +138,9 @@ function createUserSync(opts) {
   let pushTimer = null;
   let pushInFlight = false;
   let pushPending = false;
-  let lastRemote = null;  
-  const prevSnap = {}; 
+  let lastRemote = null;
+  const prevSnap = {};
+
   function stampSections(obj) {
     obj.updatedAt = obj.updatedAt || {};
     const fields = sections || Object.keys(obj);
@@ -168,6 +169,7 @@ function createUserSync(opts) {
     return false;
   }
   function mergeSectionValue(f, lv, rv, lt, rt) {
+    if (isEpochDone(lv) || isEpochDone(rv)) return mergeEpochDone(lv, rv);
     if (growSections.includes(f)) return deepUnion(lv, rv);
     return rt > lt ? rv : lv;
   }
@@ -229,10 +231,15 @@ function createUserSync(opts) {
           }
         }
       }
-      if (rescued) stampSections(state);
+      if (rescued) {
+        stampSections(state);
+        setState(state);
+        saveLocal(state);
+      }
       const now = Date.now();
       await saveUserState(key, { savedAt: now, state: state });
       savedAt = now;
+      lastRemote = JSON.parse(JSON.stringify(state));
       const serverStamp = await peekUserStamp(key);
       stamp = serverStamp || stamp;
       online = true;
@@ -258,6 +265,7 @@ function createUserSync(opts) {
         const remote = await load();
         if (remote && (remote.savedAt || 0) >= savedAt) {
           lastRemote = remote;
+          savedAt = remote.savedAt || 0; // FIX (v6): keep local bookkeeping current
           setState(merge(getState(), remote));
           saveLocal(getState());
           primeStamps();
@@ -305,6 +313,7 @@ function createUserSync(opts) {
           const now = Date.now();
           await saveUserState(key, { savedAt: now, state: s });
           savedAt = now;
+          lastRemote = JSON.parse(JSON.stringify(s)); // FIX (v3)
           const serverStamp = await peekUserStamp(key);
           stamp = serverStamp || stamp;
           setOnline(true);
