@@ -31,6 +31,16 @@
   p.sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 22px; }
   .sync-note { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.5px; }
   .sync-note.live { color: var(--good); }
+    .toast {
+    position: fixed; bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel); border: 1px solid var(--accent2);
+    color: var(--good); border-radius: 8px; padding: 12px 22px;
+    font-size: 0.81rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 210; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .add-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px; margin-bottom: 28px;
@@ -167,9 +177,11 @@
   <h1>Legendary Workshop</h1>
 <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="nav-btn" id="backup-imp" type="button">Import</button>
+    <button class="nav-btn" id="backup-exp" type="button">Export</button>
+    <input type="file" accept=".json" id="import-file" style="display:none;" onchange="importState(event)">
     <div id="nav"></div>
 </nav>
-</div>
 <div class="add-card">
   <h2>Start a new legendary</h2>
   <div class="form-row">
@@ -178,6 +190,7 @@
   </div>
 </div>
 <div class="leg-list" id="leg-list"></div>
+<div class="toast" id="toast"></div>
 <div class="confirm-overlay" id="modal-overlay">
   <div class="confirm-box">
     <div class="confirm-title" id="modal-title"></div>
@@ -229,6 +242,60 @@ function normalizeLegs(arr) {
     });
 }
 function save(immediate) { sync.save(immediate); }
+document.getElementById("backup-imp").onclick = () =>
+  document.getElementById("import-file").click();
+document.getElementById("backup-exp").onclick = () => exportState();
+function exportState() {
+  if (!legs.length) { showToast("Nothing to back up yet."); return; }
+  const blob = new Blob([JSON.stringify({ legs: legs }, null, 2)],
+    { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "gw2-legendaries-backup-" +
+    new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup downloaded. Keep it somewhere safe.");
+}
+function importState(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data = null;
+    try { data = JSON.parse(reader.result); } catch (err) { }
+    if (!data || !Array.isArray(data.legs)) {
+      showToast("That file isn't a valid legendaries backup.");
+      e.target.value = "";
+      return;
+    }
+    askModal({
+      title: "Restore backup over current data?",
+      text: "Backup: " + data.legs.length + " legendaries\n" +
+        "Current: " + legs.length + " legendaries\n\n" +
+        "This replaces everything on this page with the backup contents.",
+      yes: "RESTORE",
+      no: "CANCEL",
+      onYes: () => {
+        legs = normalizeLegs(data.legs);
+        save(true);
+        render();
+        showToast("Backup restored.");
+      }
+    });
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+}
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
 let modalCb = null;
 function askModal(opts) {
   const ov = document.getElementById("modal-overlay");

@@ -5,28 +5,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Savich Family Dashboard</title>
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="lists/tasks.css">
 <style>
-  :root {
-    --bg: #121016;
-    --panel: #1c1922;
-    --text: #f2eef7;
-    --accent: #c9a0ff;
-    --accent2: #5fd3c4;
-    --dim: #a89bbd;
-    --border: #332c3e;
-    --bad: #ff8a8a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
-    padding: 40px 20px;
-    max-width: 1060px;
-    margin: 0 auto;
-  }
   h1 {
     font-size: 1.7rem;
     color: var(--accent);
@@ -40,6 +21,7 @@
     text-transform: uppercase;
     margin: 0 0 16px 0;
     font-weight: 700;
+    text-align: center;
   }
   .nav-grid {
     display: flex;
@@ -74,7 +56,7 @@
     line-height: 1.55;
   }
   .top-split {
-    display: grid; grid-template-columns: max-content max-content 1fr;
+    display: grid; grid-template-columns: max-content max-content 360px;
     gap: 20px; align-items: start; margin-bottom: 46px;
   }
   .stack {
@@ -90,6 +72,7 @@
     justify-content: center;
   }
   .top-split .nav-grid { margin-bottom: 0; }
+  .top-split > div:first-child .nav-grid { justify-content: center; }
   @media (max-width: 780px) {
     .top-split { grid-template-columns: 1fr; }
   }
@@ -124,9 +107,14 @@
     color: var(--text);
     display: block;
     cursor: pointer;
+    height: 290px;
+    overflow-y: auto;
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
   .today-widget:hover { transform: translateY(-3px); border-color: var(--accent2); }
+  @media (max-width: 780px) {
+    .today-widget { height: auto; }
+  }
   .tw-head {
     display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
     margin-bottom: 8px;
@@ -241,7 +229,6 @@
   .gate-btn:hover { filter: brightness(1.1); }
   .gate-btn:disabled { opacity: 0.5; cursor: wait; }
 </style>
-<link rel="stylesheet" href="lists/tasks.css">
 <style>
   body { max-width: 1060px; padding: 40px 20px; line-height: 1.6; }
   .sn-card {
@@ -249,7 +236,8 @@
     border: none;
     padding: 0;
     min-height: 0;
-    width: 240px;
+    width: 264px;
+    margin-top: 26px;
     transition: transform 0.15s ease;
   }
   .sn-card:hover {
@@ -257,21 +245,21 @@
   }
   .sn-stack {
     position: relative;
-    height: 150px;
+    height: 204px;
   }
   .sn-mini {
     position: absolute;
-    width: 92px; height: 92px;
+    width: 102px; height: 102px;
     border-radius: 3px 3px 14px 3px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.45);
     transition: transform 0.2s ease;
   }
-  .sn-mini.m1 { background: #163a35; border: 1px solid #5fd3c4; left: 0;   top: 22px; transform: rotate(-12deg); }
-  .sn-mini.m2 { background: #22304a; border: 1px solid #8ab4ff; left: 72px; top: 8px;  transform: rotate(6deg); }
-  .sn-mini.m0 { background: #3a1733; border: 1px solid #e10ab2; left: 144px; top: 20px; transform: rotate(11deg); }
+  .sn-mini.m1 { background: #163a35; border: 1px solid #5fd3c4; left: 0;   top: 56px; transform: rotate(-12deg); }
+  .sn-mini.m2 { background: #22304a; border: 1px solid #8ab4ff; left: 80px; top: 38px;  transform: rotate(6deg); }
+  .sn-mini.m0 { background: #3a1733; border: 1px solid #e10ab2; left: 158px; top: 54px; transform: rotate(11deg); }
   .sn-mini.m3 {
     background: #2b2240; border: 1px solid #c9a0ff;
-    left: 58px; top: 52px; transform: rotate(-2deg);
+    left: 64px; top: 98px; transform: rotate(-2deg);
   }
   .sn-mini.m3::after {
     content: "STICKY NOTES";
@@ -287,6 +275,7 @@
   .sn-card:hover .sn-mini.m2 { transform: rotate(4deg) translateY(-6px); }
   .sn-card:hover .sn-mini.m0 { transform: rotate(13deg) translate(6px, -4px); }
   .lower-left { max-width: 520px; }
+  .lb-group { width: fit-content; }
   .lb-row {
     display: flex; flex-wrap: wrap; gap: 26px;
     align-items: flex-end; margin: 0 0 34px 0;
@@ -531,6 +520,15 @@
       <a href="gw2/history.html" class="nav-card">
         <h3>Game History</h3>
       </a>
+        <a href="gw2/nodes.html" class="nav-card">
+        <h3>Nodes</h3>
+      </a>
+        <a href="gw2/legendaries.html" class="nav-card">
+        <h3>Legendaries</h3>
+      </a>
+        <a href="gw2/crafting.html" class="nav-card">
+        <h3>Crafting</h3>
+      </a>
     </div>
   </div>
   <div>
@@ -550,41 +548,45 @@
   </div>
 </div>
 <div class="lower-left">
-  <h2 class="section">Household &amp; Finances</h2>
-  <div class="lb-row">
-    <a href="home/vault.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-vault"></div></div>
-      <h3>Vault Distribution</h3>
-    </a>
-    <a href="home/inventory.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-list"></div></div>
-      <h3>Household Inventory</h3>
-    </a>
-    <a href="home/recipes.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-eatz"><span class="pin"></span></div></div>
-      <h3>Savich Eatz</h3>
-    </a>
+  <div class="lb-group">
+    <h2 class="section">Household</h2>
+    <div class="lb-row">
+      <a href="home/vault.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-vault"></div></div>
+        <h3>Vault Distribution</h3>
+      </a>
+      <a href="home/inventory.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-list"></div></div>
+        <h3>Household Inventory</h3>
+      </a>
+      <a href="home/recipes.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-eatz"><span class="pin"></span></div></div>
+        <h3>Savich Eatz</h3>
+      </a>
+    </div>
+    <div class="lb-row">
+      <a href="home/videos.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-crt"><i></i><b></b></div></div>
+        <h3>Movie &amp; TV Shows</h3>
+      </a>
+      <a href="home/bos.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-grim"><i></i><b></b></div></div>
+        <h3>Book of Shadows</h3>
+      </a>
+    </div>
   </div>
-  <div class="lb-row">
-    <a href="home/videos.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-crt"><i></i><b></b></div></div>
-      <h3>Movie &amp; TV Shows</h3>
-    </a>
-    <a href="home/bos.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-grim"><i></i><b></b></div></div>
-      <h3>Book of Shadows</h3>
-    </a>
-  </div>
-  <h2 class="section">Personal Shit</h2>
-  <div class="lb-row">
-    <a href="personal/bucket.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-bucket"></div></div>
-      <h3>Bucket List</h3>
-    </a>
-    <a href="personal/stufties.html" class="lb-btn">
-      <div class="lb-art"><div class="lb-stuff"></div></div>
-      <h3>Iri's Stufties</h3>
-    </a>
+  <div class="lb-group">
+    <h2 class="section">Personal Shit</h2>
+    <div class="lb-row">
+      <a href="personal/bucket.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-bucket"></div></div>
+        <h3>Bucket List</h3>
+      </a>
+      <a href="personal/stufties.html" class="lb-btn">
+        <div class="lb-art"><div class="lb-stuff"></div></div>
+        <h3>Iri's Stufties</h3>
+      </a>
+    </div>
   </div>
 </div>
 <div class="footer-note">
@@ -620,15 +622,15 @@
   <input id="ed-time" type="time">
   <label for="ed-repeat">Repeat</label>
   <select id="ed-repeat">
-    <option value="none">Doesn't repeat (one time)</option>
+    <option value="none">One time</option>
     <option value="daily">Every day</option>
     <option value="weekdays">Weekdays (Mon–Fri)</option>
     <option value="weekly">Weekly</option>
-    <option value="biweekly">Every N weeks</option>
+    <option value="biweekly">Every Nth weeks</option>
     <option value="monthly">Monthly</option>
-     <option value="yearly">Yearly</option>
-    <option value="nthmonth">Every N months on the Nth day (12 = year)</option>
-    <option value="afterdone">Every N days after completion</option>
+    <option value="yearly">Yearly</option>
+    <option value="nthmonth">Nth month on the Nth day (12 = year)</option>
+    <option value="afterdone">Nth days after completion</option>
   </select>
   <div class="dow-row" id="ed-dow-row" style="display:none"></div>
     <div id="ed-ends-row" style="display:none">
