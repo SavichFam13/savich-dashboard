@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Media Collection</title>
+<link rel="stylesheet" href="../common.css">
 <style>
 :root {
   --bg: #121016;
@@ -17,7 +18,6 @@
   --good: #7ddba3;
   --bad: #ff8a8a;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -35,8 +35,6 @@ body {
 .masthead h1 { font-size: 1.4rem; }
 .masthead .sub { margin-top: 2px; }
 .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.sync-note { color: var(--dim); font-size: 0.68rem; letter-spacing: .3px; white-space: nowrap; }
-.sync-note.live { color: var(--good); }
 header h1 { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
 header .sub { color: var(--dim); font-size: 0.8rem; margin-top: 4px; }
 .btn-topbar {
@@ -232,14 +230,6 @@ tr:hover td { background: #1d1926; }
 .modal-box h3 { color: var(--hot-pink); font-size: 1rem; margin-bottom: 10px; }
 .modal-box p { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; white-space: pre-line; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-  background: var(--panel); border: 1px solid var(--accent2);
-  color: var(--text); font-size: 0.82rem;
-  border-radius: 5px; padding: 10px 20px;
-  opacity: 0; transition: all 0.3s ease; z-index: 200; pointer-events: none;
-}
-.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
