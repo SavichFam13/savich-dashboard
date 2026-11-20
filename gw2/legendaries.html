@@ -14,21 +14,6 @@
     font-size: 15px; line-height: 1.5;
     padding: 32px 20px; max-width: 1100px; margin: 0 auto;
   }
-  .add-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 20px; margin-bottom: 28px;
-    box-sizing: border-box;
-    max-width: 560px;
-  }
-  .leg-list {
-    display: flex; flex-direction: column; gap: 16px;
-    width: 100%;   
-  }
-  .leg-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 20px;
-    box-sizing: border-box;
-  }
   .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
@@ -43,6 +28,8 @@
   .add-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px; margin-bottom: 28px;
+    box-sizing: border-box;
+    max-width: 560px;
   }
   .add-card h2 {
     font-size: 0.75rem; letter-spacing: 2px; color: var(--accent2);
@@ -64,6 +51,12 @@
     font-weight: 700; cursor: pointer;
   }
   .form-row button:hover { background: var(--accent2); color: var(--bg); }
+  .leg-list { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+  .leg-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px;
+    box-sizing: border-box;
+  }
   .leg-card.complete { border-color: var(--good); box-shadow: 0 0 0 2px rgba(125,219,163,0.25); }
   .leg-head { cursor: pointer; user-select: none; }
   .leg-caret { color: var(--accent2); font-size: 0.7rem; margin-left: 8px; display: inline-block; transition: transform 0.2s ease; }
@@ -167,17 +160,16 @@
 </style>
 </head>
 <body>
-  </div>  
 <div class="top">
   <h1>Legendary Workshop</h1>
-  <nav class="nav-bar"></nav>
+  <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
     <button class="nav-btn" id="backup-imp" type="button">Import</button>
     <button class="nav-btn" id="backup-exp" type="button">Export</button>
     <input type="file" accept=".json" id="import-file" style="display:none;" onchange="importState(event)">
     <div id="nav"></div>
   </nav>
-</div> 
+</div>
 <div class="add-card">
   <h2>Start a new legendary</h2>
   <div class="form-row">
