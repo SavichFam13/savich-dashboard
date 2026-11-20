@@ -221,8 +221,12 @@ function createUserSync(opts) {
         const remoteVal = lastRemote ? lastRemote[s] : null;
         const newVal = state[s];
         if (!isEmpty(remoteVal) && isEmpty(newVal)) {
-          state[s] = remoteVal;
-          rescued = true;
+          const newEp = isEpochDone(newVal) ? newVal.epoch : null;
+          const remEp = isEpochDone(remoteVal) ? remoteVal.epoch : null;
+          if (remEp === null || newEp === null || newEp === remEp) {
+            state[s] = remoteVal;
+            rescued = true;
+          }
         } else if (growSections.includes(s) && !isEmpty(remoteVal) && !isEmpty(newVal)) {
           const mergedVal = deepUnion(remoteVal, newVal);
           if (JSON.stringify(mergedVal) !== JSON.stringify(newVal)) {

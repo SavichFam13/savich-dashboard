@@ -138,7 +138,6 @@
 </div>
 <div class="section-title">Days on record</div>
 <div id="day-list"></div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <h2 id="modal-title"></h2>
@@ -272,16 +271,6 @@ function render() {
       "<div class='empty-msg'>No archived days yet. Do today's dailies, come back tomorrow.</div>";
     document.getElementById("day-list").innerHTML = "";
     clearDonut();
-    const impLabel = document.createElement("label");
-    impLabel.className = "backup-btn import";
-    impLabel.style.marginLeft = "auto";
-    impLabel.textContent = "\u2913 Import Year JSON ";
-    const impInput = document.createElement("input");
-    impInput.type = "file";
-    impInput.accept = ".json";
-    impInput.onchange = importYear;
-    impLabel.appendChild(impInput);
-    yrRow.appendChild(impLabel);
     return;
   }
   const { log, days } = loadYear(currentYear);
