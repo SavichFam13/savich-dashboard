@@ -143,6 +143,47 @@ function saveSecOrder(arr) {
   try { localStorage.setItem(secOrderKey(), JSON.stringify(arr)); }
   catch (e) { /* ignore */ }
 }
+function taskDoneOcc(t) {
+  if (t.repeat_type !== "none") return null;
+  let best = null;
+  for (const o of occCache) {
+    if (o.task_id !== t.id) continue;
+    if (o.status !== "done" && o.status !== "skipped") continue;
+    if (!best || o.orig_date > best.orig_date) best = o;
+  }
+  return best;
+}
+function seriesEnded(t, today) {
+  if (t.repeat_count && countRemaining(t, occCache, today) <= 0) return true;
+  if (t.repeat_until && t.repeat_until < today) return true;
+  return false;
+}
+const PURGE_DAYS = 3;
+let purging = false;
+async function purgeOldOneTimers() {
+  if (purging) return false;
+  purging = true;
+  try {
+    const cutoff = addDaysStr(todayStr(), -PURGE_DAYS);
+    const targets = [];
+    for (const t of tasksCache) {
+      if (t.archived || t.is_note || t.repeat_type !== "none") continue;
+      const o = taskDoneOcc(t);
+      if (o && o.orig_date <= cutoff) targets.push(t.id);
+    }
+    if (!targets.length) return false;
+    for (const id of targets)
+      await updateRow("tasks", id, { archived: true });
+    await loadAll();
+    renderListView();
+    return true;
+  } catch (e) {
+    console.warn("purge sweep failed:", e.message);
+    return false;
+  } finally {
+    purging = false;
+  }
+}
 function renderListView() {
   const rail = document.getElementById("list-rail");
   const area = document.getElementById("task-area");
@@ -211,27 +252,47 @@ function renderListView() {
   for (const o of occCache)
     if (o.orig_date === today && (o.status === "done" || o.status === "skipped"))
       handledToday.add(o.task_id);
+  const finRows = [];   
+  const finIds = new Set();
+  for (const t of real) {
+    if (handledToday.has(t.id)) continue; 
+    if (t.repeat_type === "none") {
+      const d = taskDoneOcc(t);
+      if (d) {
+        finRows.push({ t: t, effDate: d.orig_date,
+          label: (d.status === "skipped" ? "won't do · " : "done · ") + d.orig_date.slice(5) });
+        finIds.add(t.id);
+      }
+    } else if (seriesEnded(t, today)) {
+      finRows.push({ t: t, effDate: today, label: "series ended" });
+      finIds.add(t.id);
+    }
+  }
   for (const s of order)
-    groups[s] = groups[s].filter(t => !handledToday.has(t.id));  
+    groups[s] = groups[s].filter(t => !handledToday.has(t.id) && !finIds.has(t.id));
   for (const s of order) applyTaskOrder(groups[s], s);
-    const rowFor = (t, note) => {
-    const occToday = occCache.find(o => o.task_id === t.id && o.orig_date === today);
-    const doneToday = occToday && occToday.status === "done";
+  const rowFor = (t, note, opts) => {
+    opts = opts || {};
+    const effDate = opts.effDate ||
+      ((t.repeat_type === "none") ? (t.start_date || today) : today);
+    const occEff = occCache.find(o => o.task_id === t.id && o.orig_date === effDate);
+    const done = !!opts.forceDone || (occEff && occEff.status === "done");
     const nf = note ? "" : (t.start_date
       ? (t.repeat_type === "none"
         ? (t.start_date < today ? "past" : "next: " + t.start_date.slice(5))
         : "next: " + (nextFireDate(t, today) || "—").slice(5))
       : "unscheduled");
-    const mv = (!note && !handledToday.has(t.id))
+    const meta = (opts.label != null) ? opts.label : nf;
+    const mv = (!note && !handledToday.has(t.id) && opts.label == null)
       ? '<span class="row-move"><button type="button" class="row-up" title="move up">▲</button>' +
         '<button type="button" class="row-down" title="move down">▼</button></span>'
       : "";
-    return '<div class="task-row' + (note ? " note" : "") + (doneToday ? " done" : "") +
-      '" data-task="' + t.id + '" data-date="' + today + '">' +
-      '<span class="cb" title="click = done"></span>' +
+    return '<div class="task-row' + (note ? " note" : "") + (done ? " done" : "") +
+      '" data-task="' + t.id + '" data-date="' + effDate + '">' +
+      '<span class="cb" title="click = done · shift-click = undo"></span>' +
       '<span class="t-title">' + esc(t.title) + "</span>" +
       '<span class="t-meta">' + esc(repeatDescr(t)) + "</span>" +
-      '<span class="t-next">' + nf + "</span>" + mv +
+      '<span class="t-next">' + esc(meta) + "</span>" + mv +
       "</div>";
   };
   const collapsed = getCollapsed();
@@ -265,17 +326,27 @@ function renderListView() {
     for (const t of groups[s]) html += rowFor(t, false);
     html += "</div>";
   }
-    const handled = [];
+  const handled = [];
+  const handledSeen = new Set();
   for (const o of occCache) {
     if (o.orig_date !== today || (o.status !== "done" && o.status !== "skipped")) continue;
     const t = tasksCache.find(x => x.id === o.task_id);
-    if (t && !t.is_note && !handled.includes(t)) handled.push(t);
+    if (t && !t.is_note && !handledSeen.has(t.id)) {
+      handledSeen.add(t.id);
+      handled.push({ t: t, effDate: o.orig_date });
+    }
   }
-  if (handled.length) {
-    html += '<div class="sec-block" data-sec="__donetoday__">' +
+  const doneTotal = handled.length + finRows.length;
+  if (doneTotal) {
+    html += '<div class="sec-block' + (collapsed.has("__donetoday__") ? " closed" : "") +
+      '" data-sec="__donetoday__">' +
       '<div class="sec-head" data-sec="__donetoday__"><span class="sec-arrow">▾</span> Completed ' +
-      '<span class="sec-count">· ' + handled.length + "</span></div>";
-    for (const t of handled) html += rowFor(t, false);
+      '<span class="sec-count">· ' + doneTotal + "</span></div>";
+    for (const h of handled)
+      html += rowFor(h.t, false, { effDate: h.effDate });
+    for (const f of finRows)
+      html += rowFor(f.t, false,
+        { effDate: f.effDate, label: f.label, forceDone: true });
     html += "</div>";
   }
   area.innerHTML = html;
@@ -297,12 +368,13 @@ function renderListView() {
   });
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
+    const dateStr = row.getAttribute("data-date");
     const t = tasksCache.find(x => x.id === taskId);
     if (!t) return;
     row.addEventListener("click", async ev => {
       if (ev.target.classList.contains("cb")) {
-        if (row.classList.contains("done")) { await undoOverride(taskId, today); renderListView(); }
-        else { await markDone(taskId, today); renderListView(); }
+        if (row.classList.contains("done")) { await undoOverride(taskId, dateStr); renderListView(); }
+        else { await markDone(taskId, dateStr); renderListView(); }
       } else if (t.is_note || ev.target.classList.contains("t-title")) {
         openDetailPopup(ev, t);
       }
@@ -318,17 +390,21 @@ function renderListView() {
       ? ev => { ev.preventDefault(); openDetailPopup(ev, t); }
       : ev => openTaskMenu(ev, {
           task: t,
-          occ: occCache.find(o => o.task_id === taskId && o.orig_date === today),
-          date: today, time: t.due_time
+          occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
+          date: dateStr, time: t.due_time
         }, renderListView);
   });
 }
 async function initListPage(pageScope) {
   LP_SCOPE = pageScope;
+  const rerenderWithPurge = async () => {
+    await purgeOldOneTimers();
+    renderListView();
+  };
   await initTaskPage({
     pageTitle: pageScope,
     filterFn: () => true,
-    rerender: renderListView
+    rerender: rerenderWithPurge
   });
 }
 function moveSection(key, dir) {
