@@ -17,7 +17,8 @@
   .add-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px; margin-bottom: 28px;
-    box-sizing: border-box;   /* NEW */
+    box-sizing: border-box;
+    max-width: 560px;
   }
   .leg-list {
     display: flex; flex-direction: column; gap: 16px;
@@ -169,12 +170,13 @@
   </div>  
 <div class="top">
   <h1>Legendary Workshop</h1>
+  <nav class="nav-bar"></nav>
     <span class="sync-note" id="sync-note">syncing…</span>
     <button class="nav-btn" id="backup-imp" type="button">Import</button>
     <button class="nav-btn" id="backup-exp" type="button">Export</button>
     <input type="file" accept=".json" id="import-file" style="display:none;" onchange="importState(event)">
     <div id="nav"></div>
-</nav>
+  </nav>
 </div> 
 <div class="add-card">
   <h2>Start a new legendary</h2>
