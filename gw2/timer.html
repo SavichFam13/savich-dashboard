@@ -6,9 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Event Timers &amp; Trackers</title>
 <link rel="stylesheet" href="../common.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../db.js"></script>
-<script src="../nav.js"></script>
 <style>
   #page-timers {
     --text: #ffffff;
@@ -255,6 +252,9 @@
   <p class="note">Resets: dailies at midnight UTC, weeklies Monday 07:30 UTC.</p>
 </div>
 <div class="flash-msg" id="flash-msg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script src="../nav.js"></script>
 <script>
 const tabTimersBtn = document.getElementById("tab-timers");
 const tabTrackersBtn = document.getElementById("tab-trackers");
@@ -264,10 +264,12 @@ function showTab(which) {
   tabTrackersBtn.classList.toggle("active", t);
   document.getElementById("page-timers").classList.toggle("visible", !t);
   document.getElementById("page-trackers").classList.toggle("visible", t);
+  if (t) location.hash = "trackers";
+  else if (location.hash === "#trackers") history.replaceState(null, "", location.pathname);
 }
 tabTimersBtn.onclick = () => showTab("timers");
 tabTrackersBtn.onclick = () => showTab("trackers");
-/* ================= EVENT TIMERS DATA ================= */
+if (location.hash === "#trackers") showTab("trackers");
 const WORLD_BOSSES = [
   { name: "Svanir Shaman Chief",     short: "Svanir Shaman Chief", interval: 120, offset: 15,  color: "#959393", tid: "wb_svanir", zone: "Wayfarer Foothills"},
   { name: "Fire Elemental",          short: "Fire Elemental", interval: 120, offset: 45,  color: "#959393", tid: "wb_fire", zone: "Metrica Province"},
