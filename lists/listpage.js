@@ -158,31 +158,20 @@ function seriesEnded(t, today) {
   if (t.repeat_until && t.repeat_until < today) return true;
   return false;
 }
-const PURGE_DAYS = 3;
-let purging = false;
-async function purgeOldOneTimers() {
-  if (purging) return false;
-  purging = true;
-  try {
-    const cutoff = addDaysStr(todayStr(), -PURGE_DAYS);
-    const targets = [];
-    for (const t of tasksCache) {
-      if (t.archived || t.is_note || t.repeat_type !== "none") continue;
-      const o = taskDoneOcc(t);
-      if (o && o.orig_date <= cutoff) targets.push(t.id);
+function nextAppearance(t, today, movedLands) {
+  if (!t.start_date) return null;
+  for (let i = 0; i < 550; i++) {
+    const d = addDaysStr(today, i);
+    const lands = movedLands[t.id];
+    if (lands && lands.includes(d)) return d;
+    if (ruleFiresOn(t, d) && countRemaining(t, occCache, d) > 0) {
+      const o = occCache.find(x => x.task_id === t.id && x.orig_date === d);
+      if (o && (o.status === "done" || o.status === "skipped" ||
+                (o.moved_to && o.moved_to !== d))) continue;
+      return d;
     }
-    if (!targets.length) return false;
-    for (const id of targets)
-      await updateRow("tasks", id, { archived: true });
-    await loadAll();
-    renderListView();
-    return true;
-  } catch (e) {
-    console.warn("purge sweep failed:", e.message);
-    return false;
-  } finally {
-    purging = false;
   }
+  return null;
 }
 function renderListView() {
   const rail = document.getElementById("list-rail");
@@ -223,10 +212,17 @@ function renderListView() {
       'hit “+ add task” to create the first one.</div>';
     return;
   }
+  const movedLands = {};
+  for (const o of occCache) {
+    if (o.moved_to && !o.status) {
+      (movedLands[o.task_id] = movedLands[o.task_id] || []).push(o.moved_to);
+    }
+  }
   function nextSortDate(t) {
-    if (!t.start_date) return null;
-    if (t.repeat_type === "none") return t.start_date;
-    return nextFireDate(t, today) || t.start_date;
+    const na = nextAppearance(t, today, movedLands);
+    if (na) return na;
+    if (t.repeat_type === "none") return t.start_date || null;
+    return t.start_date || null;
   }
   const sorter = (a, b) => {
     const da = nextSortDate(a);
@@ -255,7 +251,7 @@ function renderListView() {
   const finRows = [];   
   const finIds = new Set();
   for (const t of real) {
-    if (handledToday.has(t.id)) continue; 
+    if (handledToday.has(t.id)) continue;
     if (t.repeat_type === "none") {
       const d = taskDoneOcc(t);
       if (d) {
@@ -270,6 +266,7 @@ function renderListView() {
   }
   for (const s of order)
     groups[s] = groups[s].filter(t => !handledToday.has(t.id) && !finIds.has(t.id));
+
   for (const s of order) applyTaskOrder(groups[s], s);
   const rowFor = (t, note, opts) => {
     opts = opts || {};
@@ -277,11 +274,12 @@ function renderListView() {
       ((t.repeat_type === "none") ? (t.start_date || today) : today);
     const occEff = occCache.find(o => o.task_id === t.id && o.orig_date === effDate);
     const done = !!opts.forceDone || (occEff && occEff.status === "done");
-    const nf = note ? "" : (t.start_date
-      ? (t.repeat_type === "none"
-        ? (t.start_date < today ? "past" : "next: " + t.start_date.slice(5))
-        : "next: " + (nextFireDate(t, today) || "—").slice(5))
-      : "unscheduled");
+    const na = t.start_date ? nextAppearance(t, today, movedLands) : null;
+    const nf = note ? "" :
+      (!t.start_date ? "unscheduled"
+       : na ? "next: " + na.slice(5)
+       : t.repeat_type === "none" ? "past"
+       : "—");
     const meta = (opts.label != null) ? opts.label : nf;
     const mv = (!note && !handledToday.has(t.id) && opts.label == null)
       ? '<span class="row-move"><button type="button" class="row-up" title="move up">▲</button>' +
@@ -397,14 +395,10 @@ function renderListView() {
 }
 async function initListPage(pageScope) {
   LP_SCOPE = pageScope;
-  const rerenderWithPurge = async () => {
-    await purgeOldOneTimers();
-    renderListView();
-  };
   await initTaskPage({
     pageTitle: pageScope,
     filterFn: () => true,
-    rerender: rerenderWithPurge
+    rerender: renderListView
   });
 }
 function moveSection(key, dir) {

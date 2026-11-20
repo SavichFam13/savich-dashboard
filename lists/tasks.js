@@ -296,6 +296,16 @@ async function markSkipped(taskId, dateStr) {
   await loadAll();
 }
 async function moveTask(taskId, fromDate, toDate) {
+  const t = tasksCache.find(x => x.id === taskId);
+  if (t && t.repeat_type === "none") {
+    await updateRow("tasks", taskId, { start_date: toDate });
+    for (const o of occCache)
+      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
+    await refreshOcc();
+    await loadAll();
+    flash("moved to " + fmtDateLong(toDate));
+    return;
+  }
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === fromDate);
   if (existing) {
@@ -334,10 +344,30 @@ function openDetailPopup(ev, t) {
   closeMenus(); closeDetailPopup();
   const el = document.createElement("div");
   el.className = "item-menu note-popup";
+  const HIST_SHOWN = 3;
+  const hist = occCache
+    .filter(o => o.task_id === t.id)
+    .sort((a, b) => a.orig_date > b.orig_date ? -1 :
+                    a.orig_date < b.orig_date ? 1 : 0)
+    .slice(0, HIST_SHOWN);
+  const histHTML = hist.map(o => {
+    let what;
+    if (o.status === "done")        what = "✓ done";
+    else if (o.status === "skipped") what = "✗ won't do";
+    else if (o.moved_to)            what = "→ moved to " + o.moved_to.slice(5);
+    else return "";                  // stale marker, nothing to report
+    return "<div>" + o.orig_date.slice(5) + " · " + what + "</div>";
+  }).join("");
+  const histBlock = (histHTML && !t.is_note)
+    ? '<div style="margin:10px 0 0;padding-top:8px;border-top:1px solid var(--border);' +
+      'font-size:0.72rem;color:var(--dim)">recent:' + histHTML + "</div>"
+    : "";
+
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
     '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
+    histBlock +
     '<button data-act="edit">✎ edit series</button>';
   document.body.appendChild(el);
   detailPopupEl = el;
