@@ -1,0 +1,47 @@
+body { max-width: 1060px; }
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 26px;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .layout { grid-template-columns: 1fr; }
+}
+.rail-h {
+  font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent2); font-weight: 700; margin: 0 0 12px 0;
+}
+#list-rail { display: flex; flex-direction: column; gap: 8px; }
+.rail-chip {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 13px; font-family: inherit; font-size: 0.85rem;
+  cursor: pointer; text-align: left; width: 100%;
+}
+.rail-chip:hover { border-color: var(--accent); }
+.rail-chip.sel { border-color: var(--accent2); color: var(--accent2); }
+.rail-count {
+  margin-left: auto; color: var(--dim);
+  font-size: 0.7rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 1px 8px;
+}
+.rail-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.rail-chip .rail-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-chip .rail-count { flex: 0 0 auto; }
+.task-row.done .t-meta, .task-row.done .t-next { opacity: 0.6; }
+#page-title { font-size: 1.2rem; color: var(--accent); margin: 18px 0 12px 0; }
