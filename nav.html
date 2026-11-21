@@ -1,5 +1,4 @@
 <style>
-  /* the cluster owns its own layout now */
   #nav {
     display: flex; align-items: center; justify-content: flex-end;
     gap: 10px; flex-wrap: wrap; margin-left: auto;
@@ -23,28 +22,33 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.45);
   }
   .nav-menu.open .menu-drop { display: block; }
-  .menu-drop a {
-    display: block; padding: 5px 12px; border-radius: 6px;
+  .nav-menu .menu-drop a {
+    display: block !important; width: 100%;
+    padding: 5px 12px; border-radius: 6px;
     color: var(--dim, #a89bbd); text-decoration: none; font-size: 0.82rem;
   }
-  .menu-drop a:hover { color: var(--accent, #c9a0ff); background: rgba(201,160,255,0.08); }
-  .menu-drop a.active { background: var(--accent, #c9a0ff); color: var(--bg, #121016); font-weight: 700; }
+  .nav-menu .menu-drop a:hover {
+    color: var(--accent, #c9a0ff); background: rgba(201,160,255,0.08);
+  }
+  .nav-menu .menu-drop a.active {
+    background: var(--accent, #c9a0ff); color: var(--bg, #121016); font-weight: 700;
+  }
 </style>
 <div class="nav-menu">
   <button class="menu-btn" type="button">Menu <span class="caret">▾</span></button>
   <div class="menu-drop">
     <a href="index.html">Dashboard</a>
-    <a href="home/bos.html">Book of Shadow</a>
+    <a href="home/bos.html">Book of Shadow (UNDER CONSTRUCTION)</a>
     <a href="personal/bucket.html">Bucket List</a>
-    <a href="health/checkin.html">Health Check-in</a>
+    <a href="health/checkin.html">Health Check-in (UNDER CONSTRUCTION)</a>
     <a href="gw2/timer.html">Event Timers</a>
     <a href="gw2/history.html">Game History</a>
     <a href="gw2/timer.html#trackers">GW2 Receipts</a>
-    <a href="gw2/crafting.html">GW2 Crafting</a>
+    <a href="gw2/crafting.html">GW2 Crafting (UNDER CONSTRUCTION)</a>
     <a href="gw2/nodes.html">Home Instance Nodes</a>
     <a href="home/inventory.html">Household Inventory</a>
     <a href="gw2/legendaries.html">Legendary Workshop</a>
-    <a href="personal/notes.html">Notes</a> 
+    <a href="personal/notes.html">Notes</a>
     <a href="home/recipes.html">Recipes</a>
     <a href="home/vault.html">So-Fi Vault</a>
     <a href="personal/stufties.html">Stufties</a>

@@ -3,7 +3,7 @@
   const BASE = script.src.replace(/nav\.js.*$/, "");
   const host = document.getElementById("nav");
   if (!host) return;
-fetch(BASE + "nav.html?v=2")
+  fetch(BASE + "nav.html?v=3")
     .then(r => r.text())
     .then(html => {
       host.insertAdjacentHTML("beforeend", html);
@@ -11,15 +11,6 @@ fetch(BASE + "nav.html?v=2")
         const href = a.getAttribute("href");
         if (href && !/^(https?:|\/)/.test(href)) a.setAttribute("href", BASE + href);
       });
-      const bar = host.parentElement;
-      if (bar) {
-        let sib = host.previousElementSibling;
-        while (sib) {
-          const next = sib.previousElementSibling;
-          host.insertBefore(sib, host.firstChild);
-          sib = next;
-        }
-      }
       const neighbor =
         bar && bar.querySelector("button:not(.menu-btn)");
       const mb = host.querySelector(".menu-btn");
