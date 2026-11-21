@@ -13,7 +13,8 @@
     font-size: 15px; line-height: 1.5;
     padding: 32px 20px; max-width: 1100px; margin: 0 auto;
   }
-  .top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+  .nav-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
 .nav-btn {
@@ -114,7 +115,7 @@
   }
   .info-input:focus { outline: none; border-color: var(--accent2); }
 
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin: 0; }
   .filter-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
     border-radius: 999px; padding: 5px 14px; font-family: inherit; font-size: 0.78rem;
@@ -128,24 +129,26 @@
 <body>
 <div class="top">
   <h1>Home Instance Nodes</h1>
-<nav class="nav-bar">
-  <span class="sync-note" id="sync-note">syncing…</span>
-  <label class="nav-btn" style="cursor:pointer;">
-    Import<input type="file" accept=".json" style="display:none;" onchange="importState(event)">
-  </label>
-  <button class="nav-btn" onclick="exportState()">Export</button>
-  <div id="nav"></div>
-</nav>
+  <div class="nav-col">
+    <nav class="nav-bar">
+      <span class="sync-note" id="sync-note">syncing…</span>
+      <label class="nav-btn" style="cursor:pointer;">
+        Import<input type="file" accept=".json" style="display:none;" onchange="importState(event)">
+      </label>
+      <button class="nav-btn" onclick="exportState()">Export</button>
+      <div id="nav"></div>
+    </nav>
+    <div class="filter-row">
+      <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
+      <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
+    </div>
+  </div>
 </div>
 <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
 <div class="bar-wrap">
   <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
   <div class="stats-line" id="stats"></div>
-</div>
-<div class="filter-row">
-  <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
-  <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
-  <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
 </div>
 <div id="groups"></div>
 <div class="info-panel" id="info-panel">
