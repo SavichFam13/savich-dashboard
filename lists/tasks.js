@@ -375,7 +375,8 @@ function openDetailPopup(ev, t) {
     return "<div>" + o.orig_date.slice(5) + " · " + what + "</div>";
   }).join("");
   const histBlock = (histHTML && !t.is_note)
-    ? '<div style="margin:10px 0 0;padding-top:8px;border-top:1px solid var(--border);' +
+    ? '<div style="margin:10px 0 10px;padding:8px 0;' +
+      'border-top:1px solid var(--border);border-bottom:1px solid var(--border);' +
       'font-size:0.72rem;color:var(--dim)">recent:' + histHTML + "</div>"
     : "";
   el.innerHTML =
@@ -475,9 +476,13 @@ function drawMdayCal() {
   for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
     cells += '<div class="mc-dow">' + n + "</div>";
   for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+  const now = new Date();
+  const isThisMonth = (now.getFullYear() === mdayCalY && (now.getMonth() + 1) === mdayCalM);
   for (let d = 1; d <= days; d++) {
     cells += '<button type="button" class="mc-day' +
-      (Number(inp.value) === d ? " sel" : "") + '" data-d="' + d + '">' + d + "</button>";
+      (Number(inp.value) === d ? " sel" : "") +
+      (isThisMonth && d === now.getDate() ? " mc-today" : "") +
+      '" data-d="' + d + '">' + d + "</button>";
   }
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
@@ -597,9 +602,13 @@ function openMiniDate(anchorEvent, cb) {
     for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
       cells += '<div class="mc-dow">' + n + "</div>";
     for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+    const now = new Date();
+    const isNowMonth = (now.getFullYear() === y && (now.getMonth() + 1) === m);
     for (let d = 1; d <= days; d++) {
       const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-      cells += '<button type="button" class="mc-day" data-iso="' + iso + '">' + d + "</button>";
+      cells += '<button type="button" class="mc-day' +
+        (isNowMonth && d === now.getDate() ? " mc-today" : "") +
+        '" data-iso="' + iso + '">' + d + "</button>";
     }
     el.innerHTML =
       '<button class="menu-x">✕</button>' +
@@ -995,9 +1004,12 @@ function openDateCalFor(inpId) {
     for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
       cells += '<div class="mc-dow">' + n + "</div>";
     for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+    const now = new Date();
+    const isNowMonth = (now.getFullYear() === y && (now.getMonth() + 1) === m);
     for (let d = 1; d <= days; d++) {
       const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
       cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
+        (isNowMonth && d === now.getDate() ? " mc-today" : "") +
         '" data-iso="' + iso + '">' + d + "</button>";
     }
     el.innerHTML =
