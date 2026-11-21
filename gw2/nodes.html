@@ -14,6 +14,10 @@
     padding: 32px 20px; max-width: 1100px; margin: 0 auto;
   }
   .top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+  .help-row {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin: 0 0 22px;
+}
   .title-line { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
   .title-line .sub { margin: 0; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
@@ -124,16 +128,12 @@
     font-weight: 700; cursor: pointer;
   }
   .filter-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
 </style>
 </head>
 <body>
 <div class="top">
-  <div class="title-line">
-    <h1>Home Instance Nodes</h1>
-    <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
-  </div>
+  <h1>Home Instance Nodes</h1>
   <nav class="nav-bar">
     <span class="sync-note" id="sync-note">syncing…</span>
     <label class="nav-btn" style="cursor:pointer;">
@@ -143,11 +143,20 @@
     <div id="nav"></div>
   </nav>
 </div>
+<div class="help-row">
+  <p class="sub" style="margin:0;">Left-click = toggle owned &middot; Right-click = details popup.</p>
+  <div class="filter-row">
+    <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
+    <button class="filter-btn" id="f-owned" onclick="setFilter('owned')">Owned</button>
+  </div>
+</div>
 <div class="bar-row">
   <div class="bar-wrap">
     <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
     <div class="stats-line" id="stats"></div>
   </div>
+</div>
   <div class="filter-row">
     <button class="filter-btn on" id="f-all" onclick="setFilter('all')">All</button>
     <button class="filter-btn" id="f-needed" onclick="setFilter('needed')">Needed</button>
