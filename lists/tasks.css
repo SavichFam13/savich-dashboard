@@ -216,7 +216,7 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   display: block; width: auto; margin: 0; text-align: center;
 }
 .item-menu .mc-day.mc-today {
-  border-color: var(--accent); color: var(--accent); font-weight: 700;
+  border-color: var(--accent2); color: var(--accent2); font-weight: 700;
 }
 .item-menu .mc-day:hover { border-color: var(--accent2); color: var(--accent2); }
 .item-menu .mc-day.sel { background: var(--accent2); color: #121016; font-weight: 700; }
