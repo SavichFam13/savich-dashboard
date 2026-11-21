@@ -191,7 +191,6 @@ function collectOverdue(tasks, occRows, today, horizonDays = 60) {
     if (t.archived) continue;
     if (t.is_note || !t.start_date) continue;
     if (t.repeat_count && countRemaining(t, occRows, today) <= 0) continue;
-    if (t.repeat_count && countRemaining(t, occRows, today) <= 0) continue;
     if (t.repeat_type === "none") {
       if (t.start_date >= from && t.start_date < today) {
         const o = occByTD[t.id + "|" + t.start_date];
@@ -270,8 +269,18 @@ async function markDone(taskId, dateStr) {
       task_id: taskId, orig_date: dateStr, status: "done", done_by: uid
     });
   }
+  const t = tasksCache.find(x => x.id === taskId);
+  if (t && t.repeat_type === "none") {
+    // one-time task completed: remove it entirely, instantly
+    for (const o of occCache)
+      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
+    await deleteRow("tasks", taskId);
+    flash("done — one-time task removed");
+  } else {
+    flash("done — shift-click to undo");
+  }
   await refreshOcc();
-  flash("done — shift-click to undo");
+  await loadAll();
 }
 async function markSkipped(taskId, dateStr) {
   const existing = occCache.find(o =>
@@ -286,9 +295,11 @@ async function markSkipped(taskId, dateStr) {
     });
   }
   const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none" && !t.archived) {
-    await updateRow("tasks", t.id, { archived: true });
-    flash("won't do — one-time task filed under Done · skipped today");
+  if (t && t.repeat_type === "none") {
+    for (const o of occCache)
+      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
+    await deleteRow("tasks", taskId);
+    flash("won't do — one-time task removed");
   } else {
     flash("won't do — instance only, future repeats unchanged");
   }
@@ -298,6 +309,7 @@ async function markSkipped(taskId, dateStr) {
 async function moveTask(taskId, fromDate, toDate) {
   const t = tasksCache.find(x => x.id === taskId);
   if (t && t.repeat_type === "none") {
+    // one-time task: it only has one date, so moving = re-dating it
     await updateRow("tasks", taskId, { start_date: toDate });
     for (const o of occCache)
       if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
@@ -308,8 +320,12 @@ async function moveTask(taskId, fromDate, toDate) {
   }
   const existing = occCache.find(o =>
     o.task_id === taskId && o.orig_date === fromDate);
-  if (existing) {
-    await updateRow("task_occurrences", existing.id, {
+  const pending = occCache.find(o =>
+    o.task_id === taskId && o.moved_to && !o.status &&
+    (!existing || o.id !== existing.id));
+  const target = existing || pending;
+  if (target) {
+    await updateRow("task_occurrences", target.id, {
       moved_to: toDate, status: null,
       updated_at: new Date().toISOString()
     });
@@ -355,14 +371,13 @@ function openDetailPopup(ev, t) {
     if (o.status === "done")        what = "✓ done";
     else if (o.status === "skipped") what = "✗ won't do";
     else if (o.moved_to)            what = "→ moved to " + o.moved_to.slice(5);
-    else return "";                  // stale marker, nothing to report
+    else return "";
     return "<div>" + o.orig_date.slice(5) + " · " + what + "</div>";
   }).join("");
   const histBlock = (histHTML && !t.is_note)
     ? '<div style="margin:10px 0 0;padding-top:8px;border-top:1px solid var(--border);' +
       'font-size:0.72rem;color:var(--dim)">recent:' + histHTML + "</div>"
     : "";
-
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
@@ -413,7 +428,9 @@ function openTaskMenu(e, item, rerender) {
     if (act === "done") { await markDone(t.id, orig); rerender(); }
     if (act === "skip") { await markSkipped(t.id, orig); rerender(); }
     if (act === "tomorrow") {
-      await moveTask(t.id, orig, addDaysStr(orig, 1)); rerender();
+      const base = window.VIEW_DATE || todayStr();
+      const anchor = orig > base ? orig : base;
+      await moveTask(t.id, orig, addDaysStr(anchor, 1)); rerender();
     }
     if (act === "moveto") {
       openMiniDate(e, async dateStr => {
@@ -824,7 +841,6 @@ function initEditorUI() {
     fi.addEventListener("blur", () => { normDateField(fi); });
   }
   const md = document.getElementById("ed-mday");
-
   if (md) md.addEventListener("click", openMdayCal);
 }
 function renderDay({ filterFn, rerender, containerId = "task-area" }) {
@@ -832,7 +848,6 @@ function renderDay({ filterFn, rerender, containerId = "task-area" }) {
   if (!area) return;
   const viewDate = window.VIEW_DATE || todayStr();
   const today = todayStr();
-
   let dayItems = buildDayModel(tasksCache, listsCache, occCache, viewDate, today);
   dayItems = dayItems.filter(it => filterFn(it.list));
   dayItems.sort((a, b) => {
@@ -850,7 +865,6 @@ function renderDay({ filterFn, rerender, containerId = "task-area" }) {
   for (const it of dayItems) grouped[timeBucket(it.time)].push(it);
   let html = "";
   const overdueCount = over.length;
-
   if (overdueCount) {
     html += '<div class="sec-head overdue-label">Overdue · ' + overdueCount + "</div>";
     for (const it of over) html += taskRowHTML(it, true, rerender);

@@ -37,11 +37,29 @@
       document.addEventListener("keydown", e => {
         if (e.key === "Escape") wrap.classList.remove("open");
       });
-      const here = location.pathname.split("/").pop();
-      host.querySelectorAll(".menu-drop a").forEach(a => {
-        const href = a.getAttribute("href");
-        if (href.includes("#")) return;
-        if (href.split("/").pop() === here) a.classList.add("active");
-      });
+      function markActive() {
+        const here = location.pathname.split("/").pop();
+        const hash = location.hash;
+        let matchedHashLink = false;
+        host.querySelectorAll(".menu-drop a").forEach(a => {
+          a.classList.remove("active");
+          const href = a.getAttribute("href");
+          const file = href.split("#")[0].split("/").pop();
+          const linkHash = href.includes("#") ? "#" + href.split("#")[1] : null;
+          if (file === here && linkHash && linkHash === hash) {
+            a.classList.add("active");
+            matchedHashLink = true;
+          }
+        });
+        if (!matchedHashLink) {
+          host.querySelectorAll(".menu-drop a").forEach(a => {
+            const href = a.getAttribute("href");
+            if (href.includes("#")) return;
+            if (href.split("/").pop() === here) a.classList.add("active");
+          });
+        }
+      }
+      markActive();
+      window.addEventListener("hashchange", markActive);
     });
 })();
