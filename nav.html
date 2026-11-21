@@ -1,11 +1,16 @@
 <style>
-  .nav-bar #nav { margin-left: 0; }
-  #nav { margin-left: auto; }
-  .nav-menu { position: relative; display: inline-block; }
+  /* the cluster owns its own layout now */
+  #nav {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px; flex-wrap: wrap; margin-left: auto;
+  }
+  #nav .sync-note { white-space: nowrap; }
+  .nav-menu { position: relative; display: inline-flex; }
   .menu-btn {
     background: var(--panel, #1c1922); border: 1px solid var(--border, #332c3e);
-    color: var(--dim, #a89bbd); text-decoration: none; padding: 6px 22px;
-    border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600;
+    color: var(--dim, #a89bbd); text-decoration: none;
+    padding: 7px 22px; border-radius: 8px; font-family: inherit;
+    font-size: 0.78rem; font-weight: 600; line-height: 1.55;
     cursor: pointer; transition: all 0.2s ease;
   }
   .menu-btn:hover { border-color: var(--accent, #c9a0ff); color: var(--accent, #c9a0ff); }
@@ -18,12 +23,6 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.45);
   }
   .nav-menu.open .menu-drop { display: block; }
-  .menu-drop .group {
-    font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--accent2, #5fd3c4); font-weight: 700;
-    padding: 8px 12px 3px; margin-top: 4px;
-  }
-  .menu-drop .group:first-child { margin-top: 0; padding-top: 4px; }
   .menu-drop a {
     display: block; padding: 5px 12px; border-radius: 6px;
     color: var(--dim, #a89bbd); text-decoration: none; font-size: 0.82rem;
@@ -35,26 +34,19 @@
   <button class="menu-btn" type="button">Menu <span class="caret">▾</span></button>
   <div class="menu-drop">
     <a href="index.html">Dashboard</a>
-    <div class="group">GW2</div>
     <a href="gw2/timer.html">Event Timers</a>
-    <a href="gw2/timer.html#trackers">GW2 Receipts</a>   
+    <a href="gw2/timer.html#trackers">GW2 Receipts</a>
     <a href="gw2/history.html">Game History</a>
     <a href="gw2/nodes.html">Home Instance Nodes</a>
     <a href="gw2/legendaries.html">Legendary Workshop</a>
     <a href="gw2/crafting.html">Crafting</a>
-    <div class="group">Health</div>
     <a href="health/checkin.html">Check-in</a>
-    <div class="group">Home</div>
     <a href="home/bos.html">BoS</a>
     <a href="home/inventory.html">Inventory</a>
     <a href="home/recipes.html">Recipes</a>
     <a href="home/vault.html">Vault</a>
     <a href="home/videos.html">Videos</a>
-    <div class="group">Lists</div>
-    <a href="lists/household.html">Household</a>
-    <a href="lists/personal.html">Personal</a>
     <a href="lists/today.html">Today</a>
-    <div class="group">Personal</div>
     <a href="personal/bucket.html">Bucket List</a>
     <a href="personal/notes.html">Notes</a>
     <a href="personal/stufties.html">Stufties</a>

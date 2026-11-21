@@ -14,6 +14,8 @@
     padding: 32px 20px; max-width: 1100px; margin: 0 auto;
   }
   .top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 6px; }
+  .title-line { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .title-line .sub { margin: 0; }
   .nav-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .nav-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
@@ -41,7 +43,7 @@
     color: var(--accent2); font-size: 0.85rem; font-weight: 700;
     white-space: nowrap;
   }
-  .bar-wrap { position: relative; width: 100%; max-width: 420px; margin: 0 0 22px; }
+  .bar-wrap { position: relative; width: 100%; max-width: 420px; margin: 12px 0 22px; }
   .progress-outer {
     background: #16131c; border-radius: 999px; height: 14px;
     margin: 0; overflow: hidden; width: 100%;
@@ -114,7 +116,6 @@
     width: 68%;
   }
   .info-input:focus { outline: none; border-color: var(--accent2); }
-
   .filter-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin: 0; }
   .filter-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--dim);
@@ -122,13 +123,15 @@
     font-weight: 700; cursor: pointer;
   }
   .filter-btn.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-
   .note { color: var(--dim); font-size: 0.75rem; margin-top: 26px; }
 </style>
 </head>
 <body>
 <div class="top">
-  <h1>Home Instance Nodes</h1>
+  <div class="title-line">
+    <h1>Home Instance Nodes</h1>
+    <p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
+  </div>
   <div class="nav-col">
     <nav class="nav-bar">
       <span class="sync-note" id="sync-note">syncing…</span>
@@ -145,7 +148,6 @@
     </div>
   </div>
 </div>
-<p class="sub">Left-click = toggle owned &middot; Right-click = details popup.</p>
 <div class="bar-wrap">
   <div class="progress-outer"><div class="progress-inner" id="bar"></div></div>
   <div class="stats-line" id="stats"></div>
