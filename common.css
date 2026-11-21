@@ -57,10 +57,7 @@ body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .nav-bar .nav-btn,
 .nav-bar .menu-btn,
-.nav-bar #nav .nav-btn,
 .nav-bar #nav .menu-btn,
-.nav-bar #nav button,
-.nav-bar #nav a,
 .help-row .filter-btn,
 .help-row .filter-btn.on,
 .nav-bar .filter-btn {
