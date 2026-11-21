@@ -60,7 +60,9 @@ body {
 .nav-bar #nav .nav-btn,
 .nav-bar #nav .menu-btn,
 .nav-bar #nav button,
-.nav-bar #nav a {
+.nav-bar #nav a 
+.help-row .filter-btn.on,
+.nav-bar .filter-btn {
   padding: 6px 22px !important;
   font-size: 0.85rem !important;
   font-weight: 600 !important;

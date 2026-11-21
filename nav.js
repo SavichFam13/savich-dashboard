@@ -3,7 +3,7 @@
   const BASE = script.src.replace(/nav\.js.*$/, "");
   const host = document.getElementById("nav");
   if (!host) return;
-  fetch(BASE + "nav.html")
+fetch(BASE + "nav.html?v=2")
     .then(r => r.text())
     .then(html => {
       host.insertAdjacentHTML("beforeend", html);
