@@ -382,3 +382,9 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .item-menu .dc-today:hover { border-color: var(--accent2); color: var(--accent2); }
 #ed-date, #ed-until { padding-right: 8px; }
 #ed-date::placeholder, #ed-until::placeholder { color: var(--dim); opacity: 0.6; }
+.nav-bar {
+  justify-content: flex-end;
+}
+.nav-bar #nav {
+  margin-left: 0;
+}
