@@ -11,13 +11,17 @@
         const href = a.getAttribute("href");
         if (href && !/^(https?:|\/)/.test(href)) a.setAttribute("href", BASE + href);
       });
-      const note = document.getElementById("sync-note");
-      const parent = host.parentElement;
-      if (note && parent && note.parentElement !== parent) {
-        parent.insertBefore(note, parent.firstChild);
+      const bar = host.parentElement;
+      if (bar) {
+        let sib = host.previousElementSibling;
+        while (sib) {
+          const next = sib.previousElementSibling;
+          host.insertBefore(sib, host.firstChild);
+          sib = next;
+        }
       }
       const neighbor =
-        parent && parent.querySelector("button:not(.menu-btn)");
+        bar && bar.querySelector("button:not(.menu-btn)");
       const mb = host.querySelector(".menu-btn");
       if (neighbor && mb) {
         const cs = getComputedStyle(neighbor);
