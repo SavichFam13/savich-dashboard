@@ -1053,7 +1053,7 @@ function evToggleLog(name, tid, nowMs, remove) {
   }
   if (!rm) {
     const stamp = (ev && (ev.interval || ev.daily))
-      ? evNextMs(EVS[tid] || ev, nowMs)
+      ? evPrevMs(EVS[tid] || ev, nowMs)
       : undefined;
     trackerToggleLog(name, tid, nowMs, false, stamp, remove);
   }
