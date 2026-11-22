@@ -25,21 +25,21 @@ async function signOut() {
   await sb().auth.signOut();
   location.href = "/auth.html";
 }
-async function loadBlob(key, fallback = null) {
+async function loadDash(key, fallback = null) {
   const { data, error } = await sb()
     .from("app_data").select("data").eq("key", key).maybeSingle();
   if (error) {
-    console.error("loadBlob failed for " + key + ":", error.message);
+    console.error("loadDash failed for " + key + ":", error.message);
     return fallback;
   }
   return (data && data.data !== null && data.data !== undefined) ? data.data : fallback;
 }
-async function saveBlob(key, value) {
+async function saveDash(key, value) {
   const { error } = await sb()
     .from("app_data")
     .upsert({ key: key, data: value }, { onConflict: "key" });
   if (error) {
-    console.error("saveBlob failed for " + key + ":", error.message);
+    console.error("saveDash failed for " + key + ":", error.message);
     throw error;
   }
 }

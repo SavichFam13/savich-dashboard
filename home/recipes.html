@@ -295,7 +295,7 @@ function esc(str) {
 async function saveStorage() {
   if (cloudReady) {
     try {
-      await saveBlob(CLOUD_BLOB_KEY, recipes);
+      await saveDash(CLOUD_BLOB_KEY, recipes);
       setSyncNote(true);
     } catch (err) {
       setSyncNote(false, "offline \u2014 changes NOT saved");
@@ -695,6 +695,11 @@ function importData(e) {
         "This overwrites the book with the contents of the backup file.",
         true
       );
+    recipes.forEach(r => {
+    r.calories = Number(r.calories) || 0;
+    r.carbs = Number(r.carbs) || 0;
+    r.id = parseInt(r.id, 10) || Date.now();
+    });
       if (!ok) return;
       recipes = data;
       navStack = [];
@@ -748,7 +753,7 @@ function showToast(message) {
   isOwner = email === OWNER_EMAIL.trim().toLowerCase();
   if (!isOwner) document.body.classList.add("read-only");
   try {
-    const cloud = await loadBlob(CLOUD_BLOB_KEY, null);
+    const cloud = await loadDash(CLOUD_BLOB_KEY, null);
     cloudReady = true;
     if (cloud !== null) {
       adoptCloudBook(cloud);

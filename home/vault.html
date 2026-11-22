@@ -208,6 +208,11 @@
 <script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
 const DEFAULT_VAULTS = [
   { name: "420", weight: 2 },
   { name: "Advantage", weight: 0 },
@@ -336,10 +341,10 @@ function renderVaults() {
       '<td><input type="checkbox" class="cb"' +
         (current.done[v.name] ? " checked" : "") +
         ' onchange="toggleDone(\'' + encodeURIComponent(v.name) + '\')"></td>' +
-      "<td>" + v.name + "</td>" +
+      "<td>" + esc(v.name) + "</td>" +
       '<td class="transfer">' + (t === "" ? "—" : money(t)) + "</td>" +
       '<td><input type="number" class="weight" min="0" max="100" step="0.5" value="' +
-        v.weight + '" onchange="setWeight(' +
+        esc(v.weight) + '" onchange="setWeight(' +
         vaults.indexOf(v) + ', this.value)"></td>';
     tbody.appendChild(tr);
   });
@@ -470,7 +475,7 @@ function renderHistory() {
       '<td style="white-space:nowrap; text-align:right;">' +
         '<span style="color:var(--dim); font-size:0.75rem;">&#9662;</span>' +
         (IS_ADMIN
-          ? '<button class="row-del" title="Delete this cycle" onclick="event.stopPropagation(); deleteCycle(' + row.id + ', this)">✕</button>'
+          ? '<button class="row-del" title="Delete this cycle" onclick="event.stopPropagation(); deleteCycle(' + parseInt(row.id, 10) + ', this)">✕</button>'
           : "") +
       "</td>";
     tbody.appendChild(tr);
@@ -483,7 +488,7 @@ function toggleDetail(tr, row) {
   detail.className = "detail-row";
   detail.id = "detail-" + row.id;
   const cells = (row.entries || []).map(e =>
-    "<div><span class='v'>" + e.name + " (" + e.weight + "%)</span>" +
+    "<div><span class='v'>" + esc(e.name) + " (" + esc(e.weight) + "%)</span>" +
     "<span class='a'>" + money(e.transfer) + "</span></div>").join("");
   detail.innerHTML = '<td colspan="4"><div class="detail-grid">' + cells + "</div></td>";
   tr.after(detail);
@@ -588,6 +593,21 @@ async function importHistory(input) {
     false
   );
   if (!ok) return;
+    if (impVaults) {
+    impVaults.forEach(function (v) {
+      v.name = String(v.name == null ? "" : v.name);
+      v.weight = Number(v.weight) || 0;
+    });
+  }
+  if (cycles) {
+    cycles.forEach(function (c) {
+      (c.entries || []).forEach(function (e) {
+        e.name = String(e.name == null ? "" : e.name);
+        e.weight = Number(e.weight) || 0;
+        e.transfer = Number(e.transfer) || 0;
+      });
+    });
+  }
   try {
     if (impVaults) {
       vaults = impVaults;

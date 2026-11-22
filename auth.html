@@ -108,7 +108,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL  = "https://abcdefghij.supabase.co";
+const SUPABASE_URL  = "https://pgmlomrttcznxmoonkgl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_BrHe5dx8nd4Cs40QPEq7zg_mZwOGgqc";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 (async () => {
@@ -118,7 +118,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 function redirect() {
   const params = new URLSearchParams(location.search);
   const next = params.get("next");
-  if (next && /^https?:\/\/.+/.test(next)) {
+  if (next && next.startsWith(location.origin + "/")) {
     location.href = next;
   } else {
     location.href = "index.html";

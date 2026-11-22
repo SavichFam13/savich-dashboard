@@ -578,12 +578,12 @@ function save(immediate) {
     setSync(false);
   };
   if (immediate) {
-    saveBlob(CLOUD_KEY, data).then(finishOk).catch(fail);
+    saveDash(CLOUD_KEY, data).then(finishOk).catch(fail);
   } else {
     saveQueued = true;
     setSync(true, "☁️ saving…");
     saveTimer = setTimeout(() => {
-      saveBlob(CLOUD_KEY, data).then(finishOk).catch(fail);
+      saveDash(CLOUD_KEY, data).then(finishOk).catch(fail);
     }, 900);
   }
 }
@@ -611,7 +611,7 @@ function scheduleRemoteReload() {
   clearTimeout(rtReloadTimer);
   rtReloadTimer = setTimeout(async () => {
     try {
-      const cloud = await loadBlob(CLOUD_KEY);
+      const cloud = await loadDash(CLOUD_KEY);
       if (!cloud) return;
       const fresh = normalizeState(cloud);
       const fp = fingerprint(fresh);
@@ -951,13 +951,13 @@ renderAll();
     const session = await requireAuth();
     if (!session) return; 
 
-    const cloud = await loadBlob(CLOUD_KEY);
+    const cloud = await loadDash(CLOUD_KEY);
     if (cloud) {
       data = normalizeState(cloud);
       cacheLocal();
       renderAll();
     } else {
-      await saveBlob(CLOUD_KEY, data);
+      await saveDash(CLOUD_KEY, data);
     }
     lastSyncedPrint = fingerprint(data);
     cloudReady = true;

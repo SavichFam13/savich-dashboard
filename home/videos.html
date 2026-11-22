@@ -435,12 +435,12 @@ function save(immediate) {
     setSync(false);
   };
   if (immediate) {
-    saveBlob(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
+    saveDash(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
   } else {
     saveQueued = true;
     setSync(true, "☁️ saving…");
     saveTimer = setTimeout(function () {
-      saveBlob(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
+      saveDash(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
     }, 900);
   }
 }
@@ -465,7 +465,7 @@ function scheduleRemoteReload() {
   clearTimeout(rtReloadTimer);
   rtReloadTimer = setTimeout(async function () {
     try {
-      var cloud = await loadBlob(CLOUD_KEY);
+      var cloud = await loadDash(CLOUD_KEY);
       if (!cloud) return;
       var o = cloud && typeof cloud === "object" ? cloud : {};
       var normalized = {
@@ -632,9 +632,9 @@ function renderOwned() {
         colHtml += '<div class="media-item">' +
           '<span class="mi-title">' + ccBadgeHTML(i) + '<span>' + esc(i.title) + '</span></span>' +
           '<span class="mi-actions">' +
-            '<button class="mini-btn cc-toggle" data-cctoggle="' + i.id + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
-            '<button class="mini-btn" data-edit="' + i.id + '">Edit</button>' +
-            '<button class="mini-btn del" data-del="' + i.id + '">✕</button>' +
+            '<button class="mini-btn cc-toggle" data-cctoggle="' + esc(i.id) + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
+            '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
+            '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
           '</span></div>';
       });
       colHtml += '</div></div>';
@@ -705,9 +705,9 @@ function renderWish() {
       '<td><span class="badge ' + (i.type === "movie" ? "movie" : "tv") + '">' + (i.type === "movie" ? "Movie" : "TV") + '</span></td>' +
       '<td>' + esc(i.cat) + '</td>' +
       '<td style="text-align:right;">' +
-        '<button class="mini-btn" data-got="' + i.id + '">✔ Own It Now</button> ' +
-        '<button class="mini-btn" data-wedit="' + i.id + '">Edit</button> ' +
-        '<button class="mini-btn del" data-wdel="' + i.id + '">✕</button>' +
+        '<button class="mini-btn" data-got="' + esc(i.id) + '">✔ Own It Now</button> ' +
+        '<button class="mini-btn" data-wedit="' + esc(i.id) + '">Edit</button> ' +
+        '<button class="mini-btn del" data-wdel="' + esc(i.id) + '">✕</button>' +
       '</td></tr>';
   }).join("");
   body.querySelectorAll("[data-got]").forEach(function (b) {
@@ -856,18 +856,18 @@ function renderAll() {
 renderAll();
 (async function initSharedCloud() {
   try {
-    if (typeof requireAuth !== "function" || typeof loadBlob !== "function" || typeof saveBlob !== "function") {
+    if (typeof requireAuth !== "function" || typeof loadDash !== "function" || typeof saveDash !== "function") {
       throw new Error("db.js did not load (check the ../db.js path)");
     }
     var session = await requireAuth();
     if (!session) return; // bounced to login
-    var cloud = await loadBlob(CLOUD_KEY);
+    var cloud = await loadDash(CLOUD_KEY);
     if (cloud && cloud.items) {
       adoptState(cloud);
       cacheLocal();
       renderAll();
     } else {
-      await saveBlob(CLOUD_KEY, snapshot());
+      await saveDash(CLOUD_KEY, snapshot());
     }
     lastSyncedPrint = fingerprint();
     cloudReady = true;
