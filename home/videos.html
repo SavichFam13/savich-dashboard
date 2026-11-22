@@ -88,8 +88,17 @@ input[type="text"], select {
   font-family: inherit; font-size: 0.82rem;
   padding: 8px 10px;
 }
-input:focus, select:focus { outline: none; border-color: var(--accent2); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent2); }
 input[type="checkbox"] { accent-color: var(--accent2); width: 16px; height: 16px; cursor: pointer; }
+textarea {
+  background: #16131d;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-family: inherit; font-size: 0.82rem;
+  padding: 8px 10px;
+  resize: vertical;
+}
 label.f-label {
   display: block;
   color: var(--dim);
@@ -159,6 +168,12 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
 .media-item:nth-child(even) { background: #171420; }
 .media-item:hover { background: #1d1926; }
 .mi-title { font-size: 0.85rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mi-name {
+  cursor: pointer;
+  border-bottom: 1px dotted var(--dim);
+}
+.mi-name:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.mi-year { color: var(--dim); font-size: 0.72rem; }
 .cc-badge {
   display: inline-block;
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px;
@@ -230,6 +245,70 @@ tr:hover td { background: #1d1926; }
 .modal-box h3 { color: var(--hot-pink); font-size: 1rem; margin-bottom: 10px; }
 .modal-box p { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; white-space: pre-line; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.step-tag {
+  color: var(--dim);
+  font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+.ai-step { display: none; }
+.ai-step.show { display: block; }
+.star-row { display: flex; align-items: center; gap: 2px; }
+.star-btn {
+  background: none; border: none;
+  color: var(--dim); font-size: 1.4rem;
+  cursor: pointer; padding: 0 2px;
+  line-height: 1.2;
+}
+.star-btn.sel { color: var(--hot-pink); }
+.star-btn:hover { transform: scale(1.15); }
+.star-clear {
+  background: none; border: none;
+  color: var(--dim); font-family: inherit;
+  font-size: 0.68rem; cursor: pointer;
+  margin-left: 8px; text-decoration: underline;
+}
+.star-clear:hover { color: var(--text); }
+.media-chip {
+  position: absolute;
+  z-index: 150;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 16px;
+  max-width: 320px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.media-chip .menu-x {
+  background: none; border: none;
+  color: var(--dim); cursor: pointer;
+  font-size: 0.8rem;
+  float: right; margin: -4px -4px 4px 8px;
+}
+.media-chip .menu-x:hover { color: var(--text); }
+.chip-title {
+  color: var(--accent);
+  font-weight: 700; font-size: 0.9rem;
+  margin-bottom: 8px;
+  padding-right: 18px;
+}
+.chip-row { font-size: 0.8rem; margin-bottom: 4px; }
+.chip-k {
+  color: var(--dim);
+  text-transform: uppercase;
+  font-size: 0.64rem; font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  width: 72px;
+}
+.chip-stars { color: var(--hot-pink); letter-spacing: 2px; }
+.chip-notes {
+  font-size: 0.78rem;
+  margin: 8px 0 10px;
+  white-space: pre-wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
 </style>
 </head>
 <body>
@@ -332,33 +411,52 @@ tr:hover td { background: #1d1926; }
 <div class="modal-overlay" id="addItemOverlay">
   <div class="modal-box">
     <h3 id="addItemHeading">Add Item</h3>
+    <div class="step-tag" id="aiStepTag">STEP 1 OF 2 — BASICS</div>
     <div style="display:grid; gap:12px;">
-      <div>
-        <label class="f-label">Title</label>
-        <input type="text" id="aiTitle" style="width:100%;">
+      <div class="ai-step show" id="aiStep1">
+        <div>
+          <label class="f-label">Title</label>
+          <input type="text" id="aiTitle" style="width:100%;">
+        </div>
+        <div>
+          <label class="f-label">Type</label>
+          <select id="aiType" style="width:100%;">
+            <option value="movie">Movie</option>
+            <option value="tv">TV Show</option>
+          </select>
+        </div>
+        <div>
+          <label class="f-label">Category</label>
+          <select id="aiCat" style="width:100%;"></select>
+        </div>
+        <div>
+          <label class="f-label">Subtitles</label>
+          <label class="check-row">
+            <input type="checkbox" id="aiSubs">
+            <span>Has subtitles</span>
+          </label>
+        </div>
       </div>
-      <div>
-        <label class="f-label">Type</label>
-        <select id="aiType" style="width:100%;">
-          <option value="movie">Movie</option>
-          <option value="tv">TV Show</option>
-        </select>
-      </div>
-      <div>
-        <label class="f-label">Category</label>
-        <select id="aiCat" style="width:100%;"></select>
-      </div>
-      <div>
-        <label class="f-label">Subtitles</label>
-        <label class="check-row">
-          <input type="checkbox" id="aiSubs">
-          <span>Has subtitles</span>
-        </label>
+      <div class="ai-step" id="aiStep2">
+        <div>
+          <label class="f-label">Year it came out</label>
+          <input type="text" id="aiYear" inputmode="numeric" placeholder="e.g. 1994" style="width:100%;">
+        </div>
+        <div>
+          <label class="f-label">Our rating</label>
+          <div class="star-row" id="aiStars"></div>
+        </div>
+        <div>
+          <label class="f-label">Notes</label>
+          <textarea id="aiNotes" rows="4" style="width:100%;" placeholder="Thoughts, favorite scenes, who loved it, anything..."></textarea>
+        </div>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:18px;">
       <button class="btn" id="aiCancel">Cancel</button>
-      <button class="btn btn-primary" id="aiSave">Save</button>
+      <button class="btn" id="aiBack" style="display:none;">← Back</button>
+      <button class="btn btn-primary" id="aiNext">Next: Details →</button>
+      <button class="btn btn-primary" id="aiSave" style="display:none;">Save</button>
     </div>
   </div>
 </div>
@@ -545,7 +643,10 @@ function renderSummary() {
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
+
+/* ===================== ADD ITEM — TWO-STEP WIZARD ===================== */
 var addItemCtx = null;
+var aiStars = 0;
 function openAddItem(mode, existing) {
   addItemCtx = { mode: mode, editId: existing ? existing.id : null };
   document.getElementById("addItemHeading").textContent =
@@ -553,9 +654,44 @@ function openAddItem(mode, existing) {
   document.getElementById("aiTitle").value = existing ? existing.title : "";
   document.getElementById("aiType").value = existing ? existing.type : "movie";
   document.getElementById("aiSubs").checked = existing ? !!existing.subs : false;
+  document.getElementById("aiYear").value = existing && existing.year ? existing.year : "";
+  document.getElementById("aiNotes").value = existing && existing.notes ? existing.notes : "";
+  aiStars = existing && existing.rating ? Number(existing.rating) || 0 : 0;
   fillCatSelect(document.getElementById("aiCat"), existing ? existing.cat : cats[0]);
+  setAiStep(1);
   document.getElementById("addItemOverlay").classList.add("show");
   document.getElementById("aiTitle").focus();
+}
+function setAiStep(n) {
+  document.getElementById("aiStep1").classList.toggle("show", n === 1);
+  document.getElementById("aiStep2").classList.toggle("show", n === 2);
+  document.getElementById("aiStepTag").textContent =
+    n === 1 ? "STEP 1 OF 2 — BASICS" : "STEP 2 OF 2 — DETAILS";
+  document.getElementById("aiBack").style.display = n === 2 ? "inline-block" : "none";
+  document.getElementById("aiNext").style.display = n === 1 ? "inline-block" : "none";
+  document.getElementById("aiSave").style.display = n === 2 ? "inline-block" : "none";
+  if (n === 2) { renderAiStars(); document.getElementById("aiYear").focus(); }
+}
+function renderAiStars() {
+  var el = document.getElementById("aiStars");
+  var html = "";
+  for (var i = 1; i <= 5; i++) {
+    html += '<button type="button" class="star-btn' + (i <= aiStars ? " sel" : "") +
+      '" data-star="' + i + '" title="' + i + ' star' + (i > 1 ? "s" : "") + '">★</button>';
+  }
+  html += aiStars
+    ? '<button type="button" class="star-clear" id="aiStarsClear">clear</button>'
+    : "";
+  el.innerHTML = html;
+  el.querySelectorAll("[data-star]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var v = Number(b.dataset.star);
+      aiStars = (v === aiStars) ? 0 : v;   // click the lit star again to clear it
+      renderAiStars();
+    });
+  });
+  var cl = document.getElementById("aiStarsClear");
+  if (cl) cl.addEventListener("click", function () { aiStars = 0; renderAiStars(); });
 }
 function closeAddItem() {
   document.getElementById("addItemOverlay").classList.remove("show");
@@ -565,20 +701,39 @@ on("aiCancel", "click", closeAddItem);
 on("addItemOverlay", "click", function (e) {
   if (e.target === this) closeAddItem();
 });
+on("aiBack", "click", function () { setAiStep(1); });
+on("aiNext", "click", function () {
+  var title = document.getElementById("aiTitle").value.trim();
+  var cat = document.getElementById("aiCat").value;
+  if (!title) { toast("Give it a title first."); return; }
+  if (!cat) { toast("Add a category first in Manage."); return; }
+  setAiStep(2);
+});
 on("aiSave", "click", function () {
   if (!addItemCtx) return;
   var title = document.getElementById("aiTitle").value.trim();
   var type = document.getElementById("aiType").value;
   var cat = document.getElementById("aiCat").value;
   var subs = document.getElementById("aiSubs").checked;
+  var year = document.getElementById("aiYear").value.trim() || null;
+  var rating = aiStars || null;
+  var notes = document.getElementById("aiNotes").value.trim() || null;
   if (!title) { toast("Give it a title."); return; }
   if (!cat) { toast("Add a category first in Manage."); return; }
   if (addItemCtx.editId != null) {
     var it = items.find(function (i) { return i.id === addItemCtx.editId; });
-    if (it) { it.title = title; it.type = type; it.cat = cat; it.subs = subs; }
+    if (it) {
+      it.title = title; it.type = type; it.cat = cat; it.subs = subs;
+      it.year = year; it.rating = rating; it.notes = notes;
+    }
     toast("Updated.");
   } else {
-    items.push({ id: Date.now() + "-" + Math.floor(Math.random() * 1e6), title: title, type: type, cat: cat, subs: subs, owned: addItemCtx.mode === "owned" });
+    items.push({
+      id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
+      title: title, type: type, cat: cat, subs: subs,
+      owned: addItemCtx.mode === "owned",
+      year: year, rating: rating, notes: notes
+    });
     toast(addItemCtx.mode === "owned" ? "Added to collection." : "Added to wishlist.");
   }
   persist();
@@ -591,6 +746,62 @@ function fillCatSelect(sel, chosen) {
   }).join("");
 }
 on("btnAddWish", "click", function () { openAddItem("wishlist"); });
+
+/* ===================== TITLE-CLICK DETAIL CHIP ===================== */
+var mediaChipEl = null;
+function closeMediaChip() {
+  if (mediaChipEl) { mediaChipEl.remove(); mediaChipEl = null; }
+}
+function chipStarLine(v) {
+  var n = Number(v) || 0;
+  if (!n) return "";
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+function openMediaChip(ev, it) {
+  closeMediaChip();
+  var el = document.createElement("div");
+  el.className = "media-chip";
+  var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<div class="chip-title">' + esc(it.title) + "</div>" +
+    '<div class="chip-row"><span class="chip-k">Type</span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</div>" +
+    '<div class="chip-row"><span class="chip-k">Category</span>' + esc(it.cat) + "</div>" +
+    '<div class="chip-row"><span class="chip-k">Year</span>' + (it.year ? esc(it.year) : "—") + "</div>" +
+    '<div class="chip-row"><span class="chip-k">Rating</span>' + stars + "</div>" +
+    '<div class="chip-row"><span class="chip-k">Subtitles</span>' + (it.subs ? "✓ has them" : "needs them") + "</div>" +
+    '<div class="chip-notes">' + esc(it.notes || "no notes on this one") + "</div>" +
+    '<button class="mini-btn chip-edit" data-chipedit="' + esc(it.id) + '">✎ edit</button>';
+  document.body.appendChild(el);
+  mediaChipEl = el;
+  el.style.left = Math.max(8, Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12)) + "px";
+  el.style.top = Math.max(8, Math.min(ev.clientY + 10, window.innerHeight - el.offsetHeight - 12)) + "px";
+  el.querySelector(".menu-x").onclick = closeMediaChip;
+  var eb = el.querySelector("[data-chipedit]");
+  if (eb) eb.onclick = function () {
+    closeMediaChip();
+    openAddItem(it.owned ? "owned" : "wishlist", it);
+  };
+  setTimeout(function () {
+    document.addEventListener("mousedown", function onDoc(me) {
+      if (mediaChipEl && !mediaChipEl.contains(me.target)) closeMediaChip();
+      if (!mediaChipEl) document.removeEventListener("mousedown", onDoc);
+    });
+    document.addEventListener("keydown", function onKey(ke) {
+      if (ke.key === "Escape") closeMediaChip();
+      if (!mediaChipEl) document.removeEventListener("keydown", onKey);
+    });
+  }, 0);
+}
+function wireChips(container) {
+  container.querySelectorAll("[data-chip]").forEach(function (el) {
+    el.addEventListener("click", function (ev) {
+      var it = items.find(function (i) { return i.id === el.dataset.chip; });
+      if (it) openMediaChip(ev, it);
+    });
+  });
+}
+
 var collapsedCats = {};
 function filteredOwned() {
   var q = document.getElementById("ownedSearch").value.trim().toLowerCase();
@@ -629,8 +840,12 @@ function renderOwned() {
         '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
         '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">';
       g.forEach(function (i) {
+        var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
+        var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
         colHtml += '<div class="media-item">' +
-          '<span class="mi-title">' + ccBadgeHTML(i) + '<span>' + esc(i.title) + '</span></span>' +
+          '<span class="mi-title">' + ccBadgeHTML(i) +
+            '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + st + "</span>" +
+          "</span>" +
           '<span class="mi-actions">' +
             '<button class="mini-btn cc-toggle" data-cctoggle="' + esc(i.id) + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
             '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
@@ -684,6 +899,7 @@ function renderOwned() {
   cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
     b.addEventListener("click", function () { openAddItem("owned"); });
   });
+  wireChips(cols);
 }
 function filteredWish() {
   var q = document.getElementById("wishSearch").value.trim().toLowerCase();
@@ -700,8 +916,10 @@ function renderWish() {
     return;
   }
   body.innerHTML = list.map(function (i) {
+    var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
+    var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
     return '<tr>' +
-      '<td>' + ccBadgeHTML(i) + ' ' + esc(i.title) + '</td>' +
+      '<td>' + ccBadgeHTML(i) + ' <span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + st + '</span></td>' +
       '<td><span class="badge ' + (i.type === "movie" ? "movie" : "tv") + '">' + (i.type === "movie" ? "Movie" : "TV") + '</span></td>' +
       '<td>' + esc(i.cat) + '</td>' +
       '<td style="text-align:right;">' +
@@ -736,6 +954,7 @@ function renderWish() {
       });
     });
   });
+  wireChips(body);
 }
 var spinning = false;
 function doRandom(type) {
@@ -761,8 +980,12 @@ function doRandom(type) {
       spinning = false;
       document.getElementById("btnRandMovie").disabled = false;
       document.getElementById("btnRandTV").disabled = false;
+      var extras = [];
+      if (r.year) extras.push(r.year);
+      if (r.rating) extras.push(chipStarLine(r.rating) + " " + r.rating + "/5");
       slotMeta.innerHTML = '<span class="badge ' + (r.type === "movie" ? "movie" : "tv") + '">' + (r.type === "movie" ? "Movie" : "TV") + '</span>' +
-        '<span>' + esc(r.cat) + (r.subs ? ' · subtitles ready' : ' · needs subtitles') + "</span>";
+        '<span>' + esc(r.cat) + (extras.length ? " · " + esc(extras.join(" · ")) : "") +
+        (r.subs ? " · subtitles ready" : " · needs subtitles") + "</span>";
     }
   }, 90);
 }
