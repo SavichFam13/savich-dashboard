@@ -72,6 +72,15 @@ async function saveUserState(key, value) {
     throw error;
   }
 }
+async function insertUserStateIfAbsent(key, value) {
+  const { data, error } = await sb()
+    .rpc("insert_user_state_if_absent", { p_key: key, p_data: value });
+  if (error) {
+    console.error("insertUserStateIfAbsent failed for " + key + ":", error.message);
+    throw error;
+  }
+  return !!data;
+}
 async function peekUserStamp(key) {
   const uid = await currentUserId();
   if (!uid) throw new Error("not signed in");
@@ -98,7 +107,19 @@ function mergeEpochDone(lv, rv) {
   if (lv.epoch > rv.epoch) return lv;
   if (rv.epoch > lv.epoch) return rv;
   const done = { ...lv.done };
-  for (const tid in rv.done) if (done[tid] === undefined) done[tid] = rv.done[tid];
+  for (const tid in rv.done) {
+    if (done[tid] === undefined) { done[tid] = rv.done[tid]; continue; }
+    const ex = done[tid];
+    const inc = rv.done[tid];
+    if (Array.isArray(ex) || Array.isArray(inc)) {
+      const arr = (Array.isArray(ex) ? ex : [ex]).slice();
+      const incArr = Array.isArray(inc) ? inc : [inc];
+      for (const v of incArr) if (!arr.includes(v)) arr.push(v);
+      done[tid] = arr.sort(function (a, b) { return a - b; });
+    } else {
+      done[tid] = inc; 
+    }
+  }
   return { epoch: lv.epoch, done: done };
 }
 function isPlainObj(v) {
@@ -129,6 +150,7 @@ function createUserSync(opts) {
   const onRender = opts.onRender || function () {};
   const setOnline = opts.setOnline || function () {};
   const sections = opts.sections || null;
+  const rolloverGuard = !!opts.rolloverGuard;
   const growSections = opts.growSections || [];
   let uid = null;
   let cacheKey = null;
@@ -213,7 +235,16 @@ function createUserSync(opts) {
     if (!uid) return;
     pushInFlight = true;
     try {
-      const state = getState();
+      if (rolloverGuard) {
+        if (typeof window.__gw2RolloverTick !== "function") {
+          throw new Error("Rollover unavailable; daily push cancelled.");
+        }
+        const rolloverOk = await window.__gw2RolloverTick();
+        if (rolloverOk !== true) {
+          throw new Error("Rollover not confirmed; daily push cancelled.");
+        }
+      }
+      let state = getState();
       let rescued = false;
       const fields = sections || Object.keys(state);
       for (const s of fields) {
@@ -240,12 +271,22 @@ function createUserSync(opts) {
         setState(state);
         saveLocal(state);
       }
+      const serverNow = await peekUserStamp(key);
+      if (serverNow && serverNow > stamp) {
+        const remote = await load();
+        if (remote) {
+          state = merge(state, remote);
+          stampSections(state);
+          setState(state);
+          saveLocal(state);
+        }
+      }
       const now = Date.now();
       await saveUserState(key, { savedAt: now, state: state });
       savedAt = now;
       lastRemote = JSON.parse(JSON.stringify(state));
-      const serverStamp = await peekUserStamp(key);
-      stamp = serverStamp || stamp;
+      const serverAfter = await peekUserStamp(key);
+      stamp = serverAfter || stamp;
       online = true;
       setOnline(true);
     } catch (err) {
@@ -264,12 +305,20 @@ function createUserSync(opts) {
   async function poll() {
     if (!online || pushInFlight || document.hidden) return;
     try {
+      if (rolloverGuard) {
+        if (typeof window.__gw2RolloverTick !== "function") {
+          return; // rollover unavailable — defer adoption this cycle
+        }
+        let rolloverOk = false;
+        try { rolloverOk = await window.__gw2RolloverTick(); } catch (e) {}
+        if (rolloverOk !== true) return; // not confirmed — defer adoption
+      }
       const serverStamp = await peekUserStamp(key);
       if (serverStamp && serverStamp > stamp) {
         const remote = await load();
         if (remote && (remote.savedAt || 0) >= savedAt) {
           lastRemote = remote;
-          savedAt = remote.savedAt || 0; // FIX (v6): keep local bookkeeping current
+          savedAt = remote.savedAt || 0; 
           setState(merge(getState(), remote));
           saveLocal(getState());
           primeStamps();
@@ -314,10 +363,27 @@ function createUserSync(opts) {
         stampSections(s);
         setState(s);
         try {
-          const now = Date.now();
-          await saveUserState(key, { savedAt: now, state: s });
+          let toWrite = s;
+          let now = Date.now();
+          if (rolloverGuard && typeof insertUserStateIfAbsent === "function") {
+            const inserted = await insertUserStateIfAbsent(key, { savedAt: now, state: toWrite });
+            if (!inserted) {
+              const remote = await load();
+              if (remote) {
+                const merged = merge(toWrite, remote);
+                stampSections(merged);
+                setState(merged);  
+                saveLocal(merged); 
+                toWrite = merged;
+              }
+              now = Date.now();
+              await saveUserState(key, { savedAt: now, state: toWrite });
+            }
+          } else {
+            await saveUserState(key, { savedAt: now, state: toWrite });
+          }
           savedAt = now;
-          lastRemote = JSON.parse(JSON.stringify(s)); // FIX (v3)
+          lastRemote = JSON.parse(JSON.stringify(toWrite));
           const serverStamp = await peekUserStamp(key);
           stamp = serverStamp || stamp;
           setOnline(true);

@@ -7,7 +7,8 @@
 <title>Event Timers &amp; Trackers</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-  #page-timers {
+  #page-timers,
+  #page-trackers {
     --text: #ffffff;
     --accent2: #ff01d9;
     --hot-pink: #00b7b7;
@@ -254,6 +255,7 @@
 <div class="flash-msg" id="flash-msg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
 const tabTimersBtn = document.getElementById("tab-timers");
@@ -838,6 +840,7 @@ function setDailySync(ok)   { dailyOnline = !!ok; updateSyncNote(); }
 function setWeeklySync(ok)  { weeklyOnline = !!ok; updateSyncNote(); }
 function setHistorySync(ok) { historyOnline = !!ok; updateSyncNote(); }
 const dailySync = createUserSync({
+  rolloverGuard: true,
   key: DAILY_CLOUD_KEY,
   sections: ["daily", "carry"],
   loadLocal: () => {
@@ -912,19 +915,7 @@ function getFreshState(key, epoch) {
   }
   if (rolloverLocked) return state || { epoch: epoch, done: {} };
   if (key === KEY_DAILY) {
-    if (state && state.epoch !== epoch && state.epoch >= 0) {
-      archiveOldDay(state);
-    }
-    const fresh = { epoch: epoch, done: {} };
-    const carryNow = loadState(KEY_CARRY);
-    if (carryNow && carryNow.epoch === epoch) {
-      for (const tid in (carryNow.done || {})) {
-        if (fresh.done[tid] === undefined) fresh.done[tid] = carryNow.done[tid];
-      }
-      saveState(KEY_CARRY, { epoch: epoch, done: {} });
-    }
-    saveState(KEY_DAILY, fresh);
-    return fresh;
+    return { epoch: epoch, done: {} };
   }
   const fresh = { epoch: epoch, done: {} };
   saveState(key, fresh);
@@ -943,7 +934,19 @@ function archiveOldDay(oldState) {
                  "-" + String(d.getUTCDate()).padStart(2, "0");
   historyLogs[year] = historyLogs[year] || {};
   const existing = historyLogs[year][dayKey] || {};
-  for (const tid in done) if (existing[tid] === undefined) existing[tid] = done[tid];
+  for (const tid in done) {
+    if (existing[tid] === undefined) { existing[tid] = done[tid]; continue; }
+    const ex = existing[tid];
+    const inc = done[tid];
+    if (Array.isArray(ex) || Array.isArray(inc)) {
+      const arr = (Array.isArray(ex) ? ex : [ex]).slice();
+      const incArr = Array.isArray(inc) ? inc : [inc];
+      for (const v of incArr) if (!arr.includes(v)) arr.push(v);
+      existing[tid] = arr.sort((a, b) => a - b);
+    } else {
+      existing[tid] = inc; 
+    }
+  }
   historyLogs[year][dayKey] = existing;
   if (historySyncReady) historySync.save(true);
 }
@@ -1049,7 +1052,10 @@ function evToggleLog(name, tid, nowMs, remove) {
     return;
   }
   if (!rm) {
-    trackerToggleLog(name, tid, nowMs, false, undefined, remove);
+    const stamp = (ev && (ev.interval || ev.daily))
+      ? evNextMs(EVS[tid] || ev, nowMs)
+      : undefined;
+    trackerToggleLog(name, tid, nowMs, false, stamp, remove);
   }
 }
 function carryDone(tid, nowMs) {
@@ -1209,7 +1215,6 @@ function renderChips(containerId, list, now, preserveOrder, isAdhoc) {
     chip.onclick = e => {
       e.preventDefault();
       if (ev.multi) evToggleLogMulti(ev, Date.now(), e.shiftKey);
-      else if (ROLLOVER_MINS[ev.tid]) evToggleLog(ev.short, ev.tid, Date.now(), e.shiftKey);
       else evToggleLog(ev.short, ev.tid, Date.now(), e.shiftKey);
       render();
     };
@@ -1388,7 +1393,10 @@ function renderDailyChips(now) {
     const ev = t.ev ? EVS[t.id] : null;
     const chip = document.createElement("button");
     chip.type = "button";
-    chip.className = "chip" + (ts !== undefined ? " logged" : "");
+    const since = (ts === undefined && ev) ? minsSinceSpawn(ev, now) : null;
+    chip.className = "chip" +
+      (ts !== undefined ? " logged" : "") +
+      (since !== null && since < 15 ? " active" : "");
     let inner = '<span class="dot" style="background:' + t.color + '"></span>' + t.name;
     if (ts !== undefined) {
       let stampTxt = fmtClock(ts);
@@ -1398,7 +1406,11 @@ function renderDailyChips(now) {
         inner += ' <span class="chip-cd" style="color:var(--accent2)">(yesterday)</span>';
       }
     } else if (ev) {
-      inner += cdSpanHtml(t, now);
+      if (since !== null && since < 15) {
+        /* active window: no countdown text, chip pulses via .active */
+      } else {
+        inner += cdSpanHtml(t, now);
+      }
     } else if (t.zone) {
       inner += ' <span class="chip-zone">@ ' + t.zone + '</span>';
     }
