@@ -368,11 +368,11 @@ function drawDonut(catCounts, total) {
       esc(cat) + " <span class='lc-n'>" + n + " (" + Math.round(n / total * 100) + "%)</span>";
     leg.appendChild(li);
   });
-  ctx.globalCompositeOperation = "destination-out";
+  ctx.globalCompositeOperation = "source-over";
   ctx.beginPath();
   ctx.arc(cx, cy, r - w, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(18, 16, 22, 1)";
   ctx.fill();
-  ctx.globalCompositeOperation = "source-over";
   ctx.fillStyle = "#f2eef7";
   ctx.font = "700 26px Verdana";
   ctx.textAlign = "center";
@@ -562,6 +562,9 @@ function showToast(message) {
   currentYear = yrs.length ? yrs[yrs.length - 1] : String(new Date().getUTCFullYear());
   render();
 })();
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) render();
+});
 </script>
 </body>
 </html>

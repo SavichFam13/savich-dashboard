@@ -1,930 +1,369 @@
-function esc(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/'/g, "&#39;")
-    .replace(/"/g, "&quot;");
+const DNAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function nthName(n) {
+  if (n === 5) return "last";
+  return ["1st", "2nd", "3rd", "4th"][n - 1] || n + "th";
 }
-function todayStr(d) {
-  const dt = d || new Date();
-  return dt.getFullYear() + "-" +
-    String(dt.getMonth() + 1).padStart(2, "0") + "-" +
-    String(dt.getDate()).padStart(2, "0");
+function dowsText(t) {
+  if (!Array.isArray(t.repeat_days) || !t.repeat_days.length) return "?";
+  return t.repeat_days.map(d => DNAMES[d]).join(", ");
 }
-function addDaysStr(dateStr, n) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + n);
-  return todayStr(dt);
-}
-function parseDateStr(dateStr) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-function fmtDateLong(dateStr) {
-  const dt = parseDateStr(dateStr);
-  return dt.toLocaleDateString(undefined,
-    { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-}
-function fmtTime(hhmm) {
-  if (!hhmm) return null;
-  let [h, m] = hhmm.split(":").map(Number);
-  const ap = h >= 12 ? "PM" : "AM";
-  h = h % 12; if (h === 0) h = 12;
-  return h + ":" + String(m).padStart(2, "0") + " " + ap;
-}
-function timeBucket(hhmm) {
-  if (!hhmm) return "Anytime";
-  const h = Number(hhmm.split(":")[0]);
-  if (h < 12) return "Morning";
-  if (h < 17) return "Afternoon";
-  if (h < 21) return "Evening";
-  return "Night";
-}
-function flash(msg) {
-  const el = document.getElementById("flash-msg");
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove("show"), 1800);
-}
-function lastWeekdayOfMonth(y, m, weekday) {
-  const last = new Date(y, m, 0);
-  const back = (last.getDay() - weekday + 7) % 7;
-  last.setDate(last.getDate() - back);
-  return todayStr(last);
-}
-function nthWeekdayOfMonth(y, m, weekday, nth) {
-  const first = new Date(y, m - 1, 1);
-  const offset = (weekday - first.getDay() + 7) % 7;
-  const day = 1 + offset + (nth - 1) * 7;
-  const probe = new Date(y, m - 1, day);
-  if (probe.getMonth() !== m - 1) return null;
-  return todayStr(probe);
-}
-function rollingDueDate(task) {
-  const n = task.repeat_every || 3;
-  let last = null;
-  for (const o of occCache) {
-    if (o.task_id !== task.id) continue;
-    if (o.status !== "done" && o.status !== "skipped") continue;
-    const eff = o.moved_to || o.orig_date;
-    if (!last || eff > last) last = eff;
-  }
-  return last ? addDaysStr(last, n) : task.start_date;
-}
-function ruleFiresOn(task, dateStr) {
-  const start = task.start_date;
-  if (dateStr < start) return false;
-  if (task.repeat_until && dateStr > task.repeat_until) return false;
-  const wd = parseDateStr(dateStr).getDay();
-  switch (task.repeat_type) {
-    case "none":
-      return dateStr === start;
-    case "daily":
-      return true;
-    case "weekdays":
-      return wd >= 1 && wd <= 5;
-    case "weekly":
-      return Array.isArray(task.repeat_days) && task.repeat_days.includes(wd);
-    case "biweekly": {
-      if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
-        return false;
-      const every = task.repeat_every || 2;
-      const a = parseDateStr(start);
-      const b = parseDateStr(dateStr);
-      const weekOf = dt => {
-        const d = new Date(dt);
-        d.setDate(d.getDate() - d.getDay());
-        return Math.round((d - new Date(d.getFullYear(), 0, 1)) / 604800000);
-      };
-      return weekOf(a) % every === weekOf(b) % every;
-    }
+function repeatDescr(t) {
+  if (t.is_note) return "note";
+  let tm = t.due_time ? " · " + fmtTime(t.due_time) : " · anytime";
+  if (t.repeat_count) tm += " · " + t.repeat_count + "× total";
+  if (t.repeat_until) tm += " · ends " + t.repeat_until.slice(5);
+  switch (t.repeat_type) {
+    case "none":     return "One-time" + tm;
+    case "daily":    return "Every day" + tm;
+    case "weekdays": return "Weekdays Mon–Fri" + tm;
+    case "weekly":   return "Weekly on " + dowsText(t) + tm;
+    case "biweekly": return "Every " + (t.repeat_every || 2) +
+                      " weeks on " + dowsText(t) + tm;
     case "monthly": {
-      const md = task.repeat_mday || Number(start.split("-")[2]);
-      const [y, m] = dateStr.split("-").map(Number);
-      const dayNum = Number(dateStr.split("-")[2]);
-      if (md === 99) {
-        if (dayNum !== new Date(y, m, 0).getDate()) return false;
-      } else {
-        if (dayNum !== md) return false;
-      }
-      const every = task.repeat_every || 1;
-      const [sy, sm] = start.split("-").map(Number);
-      const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
-      return mdiff >= 0 && mdiff % every === 0;
+      const fb = Number((t.start_date || todayStr()).split("-")[2]);
+      const md = t.repeat_mday || fb;
+      const last = md === 99;
+      return ((t.repeat_every || 1) === 12
+        ? last ? "Yearly on the last day" : "Yearly on day " + fb
+        : (t.repeat_every || 1) > 1
+        ? last ? "Every " + t.repeat_every + " mo. on the last day"
+               : "Every " + t.repeat_every + " mo. on day " + md
+        : last ? "Monthly on the last day" : "Monthly on day " + md) + tm;
     }
-    case "nthmonth": {
-      if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
-        return false;
-      const every = task.repeat_every || 1;
-      const [y, m] = dateStr.split("-").map(Number);
-      const [sy, sm] = start.split("-").map(Number);
-      const mdiff = (y * 12 + (m - 1)) - (sy * 12 + (sm - 1));
-      if (mdiff < 0 || mdiff % every !== 0) return false;
-      if ((task.repeat_nth || 1) === 5)
-        return lastWeekdayOfMonth(y, m, wd) === dateStr;
-      return nthWeekdayOfMonth(y, m, wd, task.repeat_nth || 1) === dateStr;
-    }
-    case "afterdone":
-      return dateStr === rollingDueDate(task);
-    default:
-      return false;
+    case "nthmonth": return ((t.repeat_every || 1) === 12
+                      ? "Yearly on the " : "Every " + t.repeat_every + " mo. on the ") +
+                      nthName(t.repeat_nth || 1) + " " + dowsText(t) + tm;
+    case "afterdone":return "Every " + (t.repeat_every || 3) +
+                      " days after completion" + tm;
+    default:         return "";
   }
 }
-function movedHereOn(occRows, taskId, dateStr) {
-  return occRows.find(o =>
-    o.task_id === taskId && o.moved_to === dateStr && o.status !== "done");
-}
-function countRemaining(t, occRows, onDate) {
-  if (!t.repeat_count) return Infinity;
-  let fired = 0;
-  const doneDates = {};
-  for (const o of occRows) {
-    if (o.task_id === t.id && (o.status === "done" || o.status === "skipped"))
-      doneDates[o.orig_date] = true;
+function nextFireDate(t, fromStr, maxDays) {
+  maxDays = maxDays || 550;
+  for (let i = 1; i <= maxDays; i++) {
+    const d = addDaysStr(fromStr, i);
+    if (ruleFiresOn(t, d)) return d;
   }
-  for (let d = t.start_date; d <= onDate; d = addDaysStr(d, 1)) {
-    if (doneDates[d]) fired++;
-    else if (ruleFiresOn(t, d) && d < onDate) fired++;
+  return null;
+}
+let LP_SCOPE = null;
+let LP_SEL = null;
+function pageLists() {
+  return listsCache.filter(l => l.page === LP_SCOPE);
+}
+function fillListSelectForPage() {
+  const sel = document.getElementById("ed-list");
+  const prev = sel.value;
+  sel.innerHTML = "";
+  for (const l of pageLists()) {
+    const opt = document.createElement("option");
+    opt.value = l.id;
+    opt.textContent = l.name;
+    sel.appendChild(opt);
   }
-  return t.repeat_count - fired;
+  if (prev && pageLists().some(l => l.id === prev)) sel.value = prev;
 }
-function buildDayModel(tasks, lists, occRows, dateStr, today) {
-  const listById = {};
-  for (const l of lists) listById[l.id] = l;
-  const occByTaskDate = {};
-  for (const o of occRows) {
-    occByTaskDate[o.task_id + "|" + o.orig_date] = o;
-  }
-  const out = [];
-  for (const t of tasks) {
-    if (t.archived) continue;
-    if (t.is_note || !t.start_date) continue;
-    const key = t.id + "|" + dateStr;
-    const o = occByTaskDate[key];
-    if (o && (o.status === "skipped")) continue;
-    if (o && o.status === "done" && dateStr === today) continue;
-    if (o && o.status === "done" && dateStr !== today) continue;
-    if (o && o.moved_to && o.moved_to !== dateStr) continue;
-    const mh = movedHereOn(occRows, t.id, dateStr);
-    if (mh) {
-      out.push({ task: t, list: listById[t.list_id], occ: mh,
-                 time: t.due_time, date: mh.orig_date, moved: true });
-      continue;
-    }
-    if (ruleFiresOn(t, dateStr) && countRemaining(t, occRows, dateStr) > 0) {
-      out.push({ task: t, list: listById[t.list_id], occ: o || null,
-                 time: t.due_time, date: dateStr, moved: false });
-    }
-  }
-  return out;
+let notePopupEl = null;
+function closeNotePopup() {
+  if (notePopupEl) { notePopupEl.remove(); notePopupEl = null; }
 }
-function collectOverdue(tasks, occRows, today, horizonDays = 60) {
-  const from = addDaysStr(today, -horizonDays);
-  const listById = {};
-  for (const l of listsCache) listById[l.id] = l;
-  const occByTD = {};
-  for (const o of occRows) occByTD[o.task_id + "|" + o.orig_date] = o;
-  const overdue = [];
-  for (const t of tasks) {
-    if (t.archived) continue;
-    if (t.is_note || !t.start_date) continue;
-    if (t.repeat_count && countRemaining(t, occRows, today) <= 0) continue;
-    if (t.repeat_type === "none") {
-      if (t.start_date >= from && t.start_date < today) {
-        const o = occByTD[t.id + "|" + t.start_date];
-        if (!o || (!o.status && !o.moved_to) ) {
-          overdue.push({ task: t, list: listById[t.list_id], occ: o || null,
-                         date: t.start_date });
-        }
-      }
-      continue;
-    }
-    for (let d = from; d < today; d = addDaysStr(d, 1)) {
-      if (!ruleFiresOn(t, d)) continue;
-      const o = occByTD[t.id + "|" + d];
-      if (o) {
-        if (o.moved_to && o.moved_to < today && !o.status) {
-          overdue.push({ task: t, list: listById[t.list_id], occ: o,
-                         date: o.moved_to });
-        }
-        continue;
-      }
-      overdue.push({ task: t, list: listById[t.list_id], occ: null, date: d });
-    }
-  }
-  return overdue;
-}
-let listsCache = [];
-let tasksCache = [];
-let occCache = [];
-let realtimeChannel = null;
-async function loadAll() {
-  [listsCache, tasksCache, occCache] = await Promise.all([
-    listRows("task_lists", { orderBy: "sort_order" }),
-    listRows("tasks", { orderBy: "created_at" }),
-    listRows("task_occurrences")
-  ]);
-}
-async function refreshOcc() {
-  occCache = await listRows("task_occurrences");
-}
-function subscribeRealtime(onChange) {
-  try {
-    if (!sb().channel) return false;
-    realtimeChannel = sb()
-      .channel("task-system-" + Math.random().toString(36).slice(2))
-      .on("postgres_changes",
-          { event: "*", schema: "public", table: "task_occurrences" },
-          onChange)
-      .on("postgres_changes",
-          { event: "*", schema: "public", table: "tasks" }, onChange)
-      .on("postgres_changes",
-          { event: "*", schema: "public", table: "task_lists" }, onChange)
-      .subscribe(status => {
-        if (status === "SUBSCRIPTION_ERROR") {
-          console.warn("realtime failed, falling back to polling");
-          setInterval(onChange, 30000);
-        }
-      });
-    return true;
-  } catch (e) {
-    console.warn("realtime unavailable:", e.message);
-    setInterval(onChange, 30000);
-    return false;
-  }
-}
-async function markDone(taskId, dateStr) {
-  const existing = occCache.find(o =>
-    o.task_id === taskId && o.orig_date === dateStr);
-  const uid = await currentUserId();
-  if (existing) {
-    await updateRow("task_occurrences", existing.id, {
-      status: "done", moved_to: existing.moved_to,
-      done_by: uid,
-      done_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  } else {
-    await insertRow("task_occurrences", {
-      task_id: taskId, orig_date: dateStr, status: "done", done_by: uid,
-      done_at: new Date().toISOString()
-    });
-  }
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none") {
-    // one-time task completed: remove it entirely, instantly
-    for (const o of occCache)
-      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
-    await deleteRow("tasks", taskId);
-    flash("done — one-time task removed");
-  } else {
-    flash("done — shift-click to undo");
-  }
-  await refreshOcc();
-  await loadAll();
-}
-async function markSkipped(taskId, dateStr) {
-  const existing = occCache.find(o =>
-    o.task_id === taskId && o.orig_date === dateStr);
-  if (existing) {
-    await updateRow("task_occurrences", existing.id, {
-      status: "skipped",
-      done_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  } else {
-    await insertRow("task_occurrences", {
-      task_id: taskId, orig_date: dateStr, status: "skipped",
-      done_at: new Date().toISOString()
-    });
-  }
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none") {
-    for (const o of occCache)
-      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
-    await deleteRow("tasks", taskId);
-    flash("won't do — one-time task removed");
-  } else {
-    flash("won't do — instance only, future repeats unchanged");
-  }
-  await refreshOcc();
-  await loadAll();
-}
-async function moveTask(taskId, fromDate, toDate) {
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none") {
-    await updateRow("tasks", taskId, { start_date: toDate });
-    for (const o of occCache)
-      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
-    await refreshOcc();
-    await loadAll();
-    flash("moved to " + fmtDateLong(toDate));
-    return;
-  }
-  const existing = occCache.find(o =>
-    o.task_id === taskId && o.orig_date === fromDate);
-  const pending = occCache.find(o =>
-    o.task_id === taskId && o.moved_to && !o.status &&
-    (!existing || o.id !== existing.id));
-  const target = existing || pending;
-  if (target) {
-    await updateRow("task_occurrences", target.id, {
-      moved_to: toDate, status: null,
-      updated_at: new Date().toISOString()
-    });
-  } else {
-    await insertRow("task_occurrences", {
-      task_id: taskId, orig_date: fromDate, moved_to: toDate
-    });
-  }
-  await refreshOcc();
-  flash("moved to " + fmtDateLong(toDate));
-}
-async function undoOverride(taskId, dateStr) {
-  const existing = occCache.find(o =>
-    o.task_id === taskId && o.orig_date === dateStr);
-  if (existing) await deleteRow("task_occurrences", existing.id);
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.archived) {
-    await updateRow("tasks", t.id, { archived: false });
-  }
-  await refreshOcc();
-  await loadAll();
-  flash("undone — back on schedule");
-}
-function closeMenus() {
-  document.querySelectorAll(".item-menu").forEach(m => m.remove());
-}
-let detailPopupEl = null;
-function closeDetailPopup() {
-  if (detailPopupEl) { detailPopupEl.remove(); detailPopupEl = null; }
-}
-function histTime(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "";
-  return " " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-function openDetailPopup(ev, t) {
-  closeMenus(); closeDetailPopup();
+function openNotePopup(ev, t) {
+  closeMenus(); openMiniCancel(); closeNotePopup();
   const el = document.createElement("div");
   el.className = "item-menu note-popup";
-  const HIST_SHOWN = 3;
-  const hist = occCache
-    .filter(o => o.task_id === t.id)
-    .map(o => ({ o: o, eff: o.moved_to || o.orig_date }))
-    .sort((a, b) => a.eff > b.eff ? -1 : a.eff < b.eff ? 1 : 0)
-    .slice(0, HIST_SHOWN);
-  const histHTML = hist.map(({ o, eff }) => {
-    let what;
-    if (o.status === "done")
-      what = "✓ done" + histTime(o.done_at || o.updated_at);
-    else if (o.status === "skipped")
-      what = "✗ won't do" + histTime(o.done_at || o.updated_at);
-    else if (o.moved_to)
-      what = "→ moved to " + o.moved_to.slice(5);
-    else return "";
-    return "<div>" + eff.slice(5) + " · " + what + "</div>";
-  }).join("");
-  const histBlock = (histHTML && !t.is_note)
-    ? '<div style="margin:10px 0 10px;padding:8px 0;' +
-      'border-top:1px solid var(--border);border-bottom:1px solid var(--border);' +
-      'font-size:0.72rem;color:var(--dim)">recent:' + histHTML + "</div>"
-    : "";
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
     '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
-    histBlock +
-    '<button data-act="edit">✎ edit series</button>';
+    '<button data-act="edit">✎ edit this note</button>';
   document.body.appendChild(el);
-  detailPopupEl = el;
+  notePopupEl = el;
   el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
   el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
-  el.querySelector(".menu-x").onclick = closeDetailPopup;
-  el.querySelector('[data-act="edit"]').onclick = () => { closeDetailPopup(); openEditor(t); };
+  el.querySelector(".menu-x").onclick = closeNotePopup;
+  el.querySelector('[data-act="edit"]').onclick = () => { closeNotePopup(); openEditor(t); };
   setTimeout(() => document.addEventListener("mousedown", function onDoc(mev) {
-    if (detailPopupEl && !detailPopupEl.contains(mev.target)) closeDetailPopup();
+    if (notePopupEl && !notePopupEl.contains(mev.target)) closeNotePopup();
     document.removeEventListener("mousedown", onDoc);
   }), 0);
   setTimeout(() => document.addEventListener("keydown", function onEsc(kev) {
-    if (kev.key === "Escape") closeDetailPopup();
+    if (kev.key === "Escape") closeNotePopup();
     document.removeEventListener("keydown", onEsc);
   }), 0);
 }
-function openTaskMenu(e, item, rerender) {
-  e.preventDefault();
-  closeMenus();
-  const t = item.task;
-  const orig = item.occ ? item.occ.orig_date : item.date;
-  const menu = document.createElement("div");
-  menu.className = "item-menu";
-  menu.innerHTML =
-    '<button class="menu-x">✕</button>' +
-    '<button data-act="done">✓ Done</button>' +
-    '<button data-act="skip">✗ Won\'t do</button>' +
-    '<button data-act="tomorrow">→ Move to tomorrow</button>' +
-    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>' +
-    '<button data-act="edit">✎ Edit series</button>' +
-    '<button data-act="delete" class="danger">🗑 Delete entire series</button>' +
-    '<button data-act="undo" class="danger">↺ Undo override</button>';
-  document.body.appendChild(menu);
-  const rect = { x: e.clientX, y: e.clientY };
-  const mw = menu.offsetWidth, mh = menu.offsetHeight;
-  menu.style.left = Math.min(rect.x, window.innerWidth - mw - 12) + "px";
-  menu.style.top = Math.min(rect.y, window.innerHeight - mh - 12) + "px";
-  menu.querySelector(".menu-x").onclick = closeMenus;
-  menu.addEventListener("click", async ev => {
-    const act = ev.target.getAttribute("data-act");
-    if (!act) return;
-    closeMenus();
-    if (act === "done") { await markDone(t.id, orig); rerender(); }
-    if (act === "skip") { await markSkipped(t.id, orig); rerender(); }
-    if (act === "tomorrow") {
-      const base = window.VIEW_DATE || todayStr();
-      const anchor = orig > base ? orig : base;
-      await moveTask(t.id, orig, addDaysStr(anchor, 1)); rerender();
-    }
-    if (act === "moveto") {
-      openMiniDate(e, async dateStr => {
-        if (dateStr) { await moveTask(t.id, orig, dateStr); rerender(); }
-      });
-    }
-    if (act === "edit") { openEditor(t); }
-    if (act === "delete") {
-      const okDel = await confirmBox("Delete this task series?",
-        "\"" + t.title + "\" will be removed — every occurrence, past overrides included. This cannot be undone.");
-      if (okDel) {
-        try { await deleteRow("tasks", t.id); }
-        catch (err) { flash("delete failed: " + err.message); return; }
-        await loadAll();
-        rerender();
-        flash("series deleted");
-      }
-      return;
-    }
-    if (act === "undo") { await undoOverride(t.id, orig); rerender(); }
-  });
-  setTimeout(() => document.addEventListener("keydown", function onEsc(ev) {
-    if (ev.key === "Escape") { closeMenus(); openMiniCancel(); }
-    document.removeEventListener("keydown", onEsc);
-  }), 0);
-  setTimeout(() => document.addEventListener("click", function onDoc(ev) {
-    if (!menu.contains(ev.target)) { closeMenus(); openMiniCancel(); }
-    document.removeEventListener("click", onDoc);
-  }), 0);
+function collapsedStoreKey() {
+  return "lp-closed-sections-" + (LP_SEL || "none");
 }
-let miniDateEl = null;
-function openMiniCancel() { if (miniDateEl) { miniDateEl.remove(); miniDateEl = null; } }
-let mdayCalEl = null;
-let mdayCalY = 0, mdayCalM = 0;
-function closeMdayCal() { if (mdayCalEl) { mdayCalEl.remove(); mdayCalEl = null; } }
-function drawMdayCal() {
-  const inp = document.getElementById("ed-mday");
-  const el = mdayCalEl;
-  const first = new Date(mdayCalY, mdayCalM - 1, 1);
-  const days = new Date(mdayCalY, mdayCalM, 0).getDate();
-  let cells = "";
-  for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
-    cells += '<div class="mc-dow">' + n + "</div>";
-  for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
-  const now = new Date();
-  const isThisMonth = (now.getFullYear() === mdayCalY && (now.getMonth() + 1) === mdayCalM);
-  for (let d = 1; d <= days; d++) {
-    cells += '<button type="button" class="mc-day' +
-      (Number(inp.value) === d ? " sel" : "") +
-      (isThisMonth && d === now.getDate() ? " mc-today" : "") +
-      '" data-d="' + d + '">' + d + "</button>";
-  }
-  el.innerHTML =
-    '<button class="menu-x">✕</button>' +
-    '<div class="mc-nav">' +
-      '<button type="button" id="mc-prev">‹</button>' +
-      '<span class="mc-title">' +
-        first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
-      '</span>' +
-      '<button type="button" id="mc-next">›</button>' +
-    '</div>' +
-        '<div class="mc-grid">' + cells + "</div>" +
-    '<button type="button" class="mc-last">last day of month</button>';
-  el.querySelector(".menu-x").onclick = closeMdayCal;
-  el.querySelector("#mc-prev").onclick = () => {
-    mdayCalM--; if (mdayCalM < 1) { mdayCalM = 12; mdayCalY--; } drawMdayCal();
-  };
-  el.querySelector("#mc-next").onclick = () => {
-    mdayCalM++; if (mdayCalM > 12) { mdayCalM = 1; mdayCalY++; } drawMdayCal();
-  };
-  el.querySelectorAll(".mc-day").forEach(b => {
-    b.onclick = () => { inp.value = b.getAttribute("data-d"); closeMdayCal(); };
-  });
-    el.querySelector(".mc-last").onclick = () => {
-    inp.value = "99"; closeMdayCal();
-  };
+function getCollapsed() {
+  try { return new Set(JSON.parse(localStorage.getItem(collapsedStoreKey()) || "[]")); }
+  catch (e) { return new Set(); }
 }
-function openDateCal() {
-  closeMenus(); openMiniCancel(); closeMdayCal();
-  const inp = document.getElementById("ed-date");
-  const el = document.createElement("div");
-  el.className = "item-menu mday-cal date-cal";
-  document.body.appendChild(el);
-  let y, m;
-  const cur = inp.value ? inp.value.split("-").map(Number) : todayStr().split("-").map(Number);
-  y = cur[0]; m = cur[1];
-  function draw() {
-    const first = new Date(y, m - 1, 1);
-    const days = new Date(y, m, 0).getDate();
-    let cells = "";
-    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
-      cells += '<div class="mc-dow">' + n + "</div>";
-    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
-    for (let d = 1; d <= days; d++) {
-      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-      cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
-        '" data-iso="' + iso + '">' + d + "</button>";
-    }
-    el.innerHTML =
-      '<button class="menu-x">✕</button>' +
-      '<div class="mc-nav">' +
-        '<button type="button" class="dc-prev">‹</button>' +
-        '<span class="mc-title">' +
-          first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
-        '</span>' +
-        '<button type="button" class="dc-next">›</button>' +
-      '</div>' +
-      '<div class="mc-grid">' + cells + "</div>" +
-      '<button type="button" class="dc-today">today</button>';
-    el.querySelector(".menu-x").onclick = () => { el.remove(); };
-    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
-    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
-    el.querySelector(".dc-today").onclick = () => { inp.value = todayStr(); el.remove(); };
-    el.querySelectorAll(".mc-day").forEach(b => {
-      b.onclick = () => { inp.value = b.getAttribute("data-iso"); el.remove(); };
-    });
-  }
-  draw();
-  const r = inp.getBoundingClientRect();
-  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (!el.isConnected || (!el.contains(ev.target) &&
-        ev.target !== document.getElementById("ed-date-cal"))) { el.remove(); }
-    document.removeEventListener("mousedown", onDoc);
-  }), 0);
+function saveCollapsed(set) {
+  try { localStorage.setItem(collapsedStoreKey(), JSON.stringify(Array.from(set))); }
+  catch (e) { /* private mode etc. — just don't remember it */ }
 }
-  function wireDateCalRedirect() {
-  const inp = document.getElementById("ed-date");
-  if (!inp) return;
-  inp.addEventListener("mousedown", ev => {
-    if (ev.offsetX > inp.clientWidth - 30) {
-      ev.preventDefault(); ev.stopImmediatePropagation();
-      openDateCal();
-    }
-  }, true);
+function taskOrderKey(section) {
+  return "lp-task-order-" + (LP_SEL || "none") + "::" + (section || "__loose__");
 }
-  function openMdayCal() {
-  closeMenus(); openMiniCancel(); closeMdayCal();
-  const inp = document.getElementById("ed-mday");
-  const base = (document.getElementById("ed-date").value || todayStr()).split("-");
-  mdayCalY = Number(base[0]); mdayCalM = Number(base[1]);
-  const el = document.createElement("div");
-  el.className = "item-menu mday-cal";
-  document.body.appendChild(el);
-  mdayCalEl = el;
-  const r = inp.getBoundingClientRect();
-  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
-  drawMdayCal();
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (mdayCalEl && !mdayCalEl.contains(ev.target) && ev.target !== inp) closeMdayCal();
-    if (!mdayCalEl) document.removeEventListener("mousedown", onDoc);
-  }), 0);
+function getTaskOrder(section) {
+  try { return JSON.parse(localStorage.getItem(taskOrderKey(section)) || "[]"); }
+  catch (e) { return []; }
 }
-function openMiniDate(anchorEvent, cb) {
-  closeMenus(); openMiniCancel(); closeDateCal(); closeMdayCal();
-  const el = document.createElement("div");
-  el.className = "item-menu mday-cal";
-  document.body.appendChild(el);
-  miniDateEl = el;
-  const t0 = todayStr().split("-").map(Number);
-  let y = t0[0], m = t0[1];
-  function draw() {
-    const first = new Date(y, m - 1, 1);
-    const days = new Date(y, m, 0).getDate();
-    let cells = "";
-    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
-      cells += '<div class="mc-dow">' + n + "</div>";
-    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
-    const now = new Date();
-    const isNowMonth = (now.getFullYear() === y && (now.getMonth() + 1) === m);
-    for (let d = 1; d <= days; d++) {
-      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-      cells += '<button type="button" class="mc-day' +
-        (isNowMonth && d === now.getDate() ? " mc-today" : "") +
-        '" data-iso="' + iso + '">' + d + "</button>";
-    }
-    el.innerHTML =
-      '<button class="menu-x">✕</button>' +
-      '<div class="mc-nav">' +
-        '<button type="button" class="dc-prev">‹</button>' +
-        '<span class="mc-title">MOVE TO</span>' +
-        '<button type="button" class="dc-next">›</button>' +
-      '</div>' +
-      '<div style="text-align:center;font-size:0.78rem;margin:0 0 6px;color:var(--dim)">' +
-        first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
-      '</div>' +
-      '<div class="mc-grid">' + cells + "</div>" +
-      '<button type="button" class="dc-today">today</button>';
-    el.querySelector(".menu-x").onclick = openMiniCancel;
-    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
-    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
-    el.querySelector(".dc-today").onclick = () => { openMiniCancel(); cb(todayStr()); };
-    el.querySelectorAll(".mc-day").forEach(b => {
-      b.onclick = () => { const iso = b.getAttribute("data-iso"); openMiniCancel(); cb(iso); };
-    });
-  }
-  draw();
-  el.style.left = Math.min(anchorEvent.clientX, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(anchorEvent.clientY, window.innerHeight - 400) + "px";
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (miniDateEl && !miniDateEl.contains(ev.target)) openMiniCancel();
-    if (!miniDateEl) document.removeEventListener("mousedown", onDoc);
-  }), 0);
+function saveTaskOrder(section, arr) {
+  try { localStorage.setItem(taskOrderKey(section), JSON.stringify(arr)); }
+  catch (e) { /* ignore */ }
 }
-let editingTask = null;
-let selectedDows = [];
-function openEditor(task) {
-  editingTask = task || null;
-  const p = document.getElementById("editor-panel");
-  const t = task || {};
-  const rt = (t.repeat_type === "monthly" && Number(t.repeat_every) === 12)
-    ? "yearly" : (t.repeat_type || "none");
-  document.getElementById("ed-heading").textContent =
-    task ? "Edit Task Series" : "New Task";
-  document.getElementById("ed-title").value = t.title || "";
-  document.getElementById("ed-notes").value = t.notes || "";
-  document.getElementById("ed-list").value = t.list_id || edDefaultListId();
-  document.getElementById("ed-date").value = t.start_date || "";
-  document.getElementById("ed-section").value = t.section || "";
-  document.getElementById("ed-note").checked = !!t.is_note;
-  const dl = document.getElementById("ed-section-list");
-  dl.innerHTML = "";
-  const secs = new Set();
-  const lid = t.list_id || edDefaultListId();
-  for (const x of tasksCache)
-    if (x.list_id === lid && x.section) secs.add(x.section);
-  for (const s of [...secs].sort()) {
-    const o = document.createElement("option");
-    o.value = s; dl.appendChild(o);
-  }
-  document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
-  document.getElementById("ed-repeat").value = rt;
-  document.getElementById("ed-dow-row").style.display =
-    (rt === "weekly" || rt === "biweekly" || rt === "nthmonth") ? "flex" : "none";
-  document.getElementById("ed-mday").value =
-    t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
-  document.getElementById("ed-mday").dataset.own = t.repeat_mday || "";
-  document.getElementById("ed-mday-row").style.display =
-    (rt === "monthly" || rt === "yearly") ? "block" : "none";
-  document.getElementById("ed-every").value = t.repeat_every ||
-    (rt === "yearly" ? 12 : rt === "afterdone" ? 3 : rt === "biweekly" ? 2 :
-     rt === "monthly" ? 1 : 6);
-  document.getElementById("ed-every").dataset.own = t.repeat_every || "";
-  document.getElementById("ed-every").dataset.rt0 = rt;
-  document.getElementById("ed-every-row").style.display =
-    (rt !== "yearly" &&
-     (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly")) ? "block" : "none";
-  document.getElementById("ed-every-label").textContent =
-    (rt === "nthmonth" || rt === "monthly") ? "Every … months" :
-    rt === "biweekly" ? "Every … weeks" :
-    rt === "afterdone" ? "Every … days after completion" : "Every …";
-  document.getElementById("ed-nth-row").style.display =
-    (rt === "nthmonth") ? "block" : "none";
-  document.getElementById("ed-count").value = t.repeat_count || "";
-  document.getElementById("ed-until").value = t.repeat_until || "";
-  document.getElementById("ed-ends-row").style.display =
-    (rt === "none") ? "none" : "block";
-  selectedDows = Array.isArray(t.repeat_days) ? t.repeat_days.slice() : [];
-  renderDows();
-  p.classList.add("open");
-  document.getElementById("ed-title").focus();
-}
-function edDefaultListId() {
-  if (window.EDITOR_DEFAULT_LIST) {
-    const pref = listsCache.find(l => l.id === window.EDITOR_DEFAULT_LIST);
-    if (pref) return pref.id;
-  }
-  return listsCache.length ? listsCache[0].id : "";
-}
-function closeEditor() {
-  document.getElementById("editor-panel").classList.remove("open");
-}
-function renderDows() {
-  const row = document.getElementById("ed-dow-row");
-  const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  row.innerHTML = names.map((n, i) =>
-    '<button type="button" class="dow-btn' +
-    (selectedDows.includes(i) ? " sel" : "") + '" data-dow="' + i + '">' +
-    n + "</button>").join("");
-  row.querySelectorAll(".dow-btn").forEach(b => {
-    b.onclick = () => {
-      const i = Number(b.getAttribute("data-dow"));
-      if (selectedDows.includes(i))
-        selectedDows = selectedDows.filter(x => x !== i);
-      else selectedDows.push(i);
-      renderDows();
-    };
+function applyTaskOrder(arr, section) {
+  const saved = getTaskOrder(section);
+  if (!saved.length) return;
+  const rank = new Map(saved.map((id, i) => [id, i]));
+  arr.sort((a, b) => {
+    const ra = rank.has(a.id) ? rank.get(a.id) : Infinity;
+    const rb = rank.has(b.id) ? rank.get(b.id) : Infinity;
+    if (ra !== rb) return ra < rb ? -1 : 1;
+    return 0;
   });
 }
-async function saveEditor() {
-  const title = document.getElementById("ed-title").value.trim();
-  if (!title) { flash("give the task a name first"); return; }
-  let repeat = document.getElementById("ed-repeat").value;
-  const isYearly = repeat === "yearly";
-  if (isYearly) repeat = "monthly";
-  const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
-  const needsEvery = repeat === "nthmonth" || repeat === "biweekly" ||
-    repeat === "afterdone" || repeat === "monthly";
-  const isNote = document.getElementById("ed-note").checked;
-  const dateVal = document.getElementById("ed-date").value;
-  if (!isNote && repeat !== "none" && !dateVal) {
-    flash("repeating tasks need a start date"); return;
+function nudgeTask(section, ids, taskId, dir) {
+  const i = ids.indexOf(taskId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(j, 0, ids.splice(i, 1)[0]);
+  saveTaskOrder(section, ids);
+  renderListView();
+}
+function secOrderKey() {
+  return "lp-sec-order-" + (LP_SEL || "none");
+}
+function getSecOrder() {
+  try { return JSON.parse(localStorage.getItem(secOrderKey()) || "[]"); }
+  catch (e) { return []; }
+}
+function saveSecOrder(arr) {
+  try { localStorage.setItem(secOrderKey(), JSON.stringify(arr)); }
+  catch (e) { /* ignore */ }
+}
+function taskDoneOcc(t) {
+  if (t.repeat_type !== "none") return null;
+  let best = null;
+  for (const o of occCache) {
+    if (o.task_id !== t.id) continue;
+    if (o.status !== "done" && o.status !== "skipped") continue;
+    if (!best || o.orig_date > best.orig_date) best = o;
   }
-  const payload = {
-    title: title,
-    notes: document.getElementById("ed-notes").value.trim() || null,
-    list_id: document.getElementById("ed-list").value,
-    start_date: (isNote || repeat === "none") ? (dateVal || null) : (dateVal || todayStr()),
-    is_note: isNote,
-    section: document.getElementById("ed-section").value.trim() || null,
-    due_time: document.getElementById("ed-time").value || null,
-    repeat_type: repeat,
-    repeat_days: needsDow ? selectedDows.slice().sort() : null,
-    repeat_mday:
-      repeat === "monthly"
-        ? Number(document.getElementById("ed-mday").value) || 1
-        : null,
-    repeat_every: isYearly ? 12 : (needsEvery
-      ? Number(document.getElementById("ed-every").value) || 1
-      : null),
-    repeat_nth: repeat === "nthmonth"
-      ? Number(document.getElementById("ed-nth").value) || 1
-      : null,
-    repeat_count:
-      (repeat !== "none" && document.getElementById("ed-count").value)
-        ? Number(document.getElementById("ed-count").value)
-        : null,
-    repeat_until:
-      (repeat !== "none" && document.getElementById("ed-until").value)
-        ? document.getElementById("ed-until").value
-        : null
-  };
-  if (!isNote && needsDow && !payload.repeat_days.length) {
-    flash("pick at least one day of the week"); return;
-  }
-  try {
-    if (editingTask) {
-      await updateRow("tasks", editingTask.id, payload);
-      flash("task updated");
-    } else {
-      await insertRow("tasks", payload);
-      flash("task added");
+  return best;
+}
+function seriesEnded(t, today) {
+  if (t.repeat_count && countRemaining(t, occCache, today) <= 0) return true;
+  if (t.repeat_until && t.repeat_until < today) return true;
+  return false;
+}
+function nextAppearance(t, today, movedLands) {
+  if (!t.start_date) return null;
+  for (let i = 0; i < 550; i++) {
+    const d = addDaysStr(today, i);
+    const lands = movedLands[t.id];
+    if (lands && lands.includes(d)) return d;
+    if (ruleFiresOn(t, d) && countRemaining(t, occCache, d) > 0) {
+      const o = occCache.find(x => x.task_id === t.id && x.orig_date === d);
+      if (o && (o.status === "done" || o.status === "skipped" ||
+                (o.moved_to && o.moved_to !== d))) continue;
+      return d;
     }
-  } catch (err) {
-    flash("save failed: " + err.message);
-    return;
   }
-  closeEditor();
-  await loadAll();
-  window.__rerender && window.__rerender();
+  return null;
 }
-async function deleteSeries() {
-  if (!editingTask) return;
-  const okDel = await confirmBox("Delete this task series?",
-    "\"" + editingTask.title + "\" will be removed — every occurrence, past overrides included. This cannot be undone.");
-  if (!okDel) return;
-  try {
-    await deleteRow("tasks", editingTask.id);
-  } catch (err) {
-    flash("delete failed: " + err.message);
-    return;
-  }
-  closeEditor();
-  await loadAll();
-  window.__rerender && window.__rerender();
-  flash("series deleted");
-}
-function initEditorUI() {
-    wireDateCalRedirect();
-  document.getElementById("ed-save").onclick = saveEditor;
-  document.getElementById("ed-close").onclick = closeEditor;
-  const del = document.getElementById("ed-delete");
-  if (del) del.onclick = deleteSeries;
-  document.getElementById("ed-repeat").addEventListener("change", function () {
-    const v = this.value;
-    document.getElementById("ed-dow-row").style.display =
-      (v === "weekly" || v === "biweekly" || v === "nthmonth") ? "flex" : "none";
-    document.getElementById("ed-mday-row").style.display =
-      (v === "monthly" || v === "yearly") ? "block" : "none";
-    const evEl = document.getElementById("ed-every");
-    const mdEl = document.getElementById("ed-mday");
-    const rt0 = evEl.dataset.rt0 || "none";
-    if (v === rt0) {
-      evEl.value = evEl.dataset.own ||
-        (v === "yearly" ? 12 : v === "afterdone" ? 3 : v === "biweekly" ? 2 :
-         v === "monthly" ? 1 : 6);
-      if (v === "monthly" || v === "yearly")
-        mdEl.value = mdEl.dataset.own ||
-          Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
-    } else {
-      evEl.value = v === "yearly" ? 12 : v === "monthly" ? 1 :
-        v === "biweekly" ? 2 : v === "afterdone" ? 3 :
-        v === "nthmonth" ? 6 : evEl.value;
-      if (v === "monthly" || v === "yearly")
-        mdEl.value = Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
-    }
-    document.getElementById("ed-every-row").style.display =
-      (v !== "yearly" &&
-       (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly")) ? "block" : "none";
-    document.getElementById("ed-every-label").textContent =
-      (v === "nthmonth" || v === "monthly") ? "Every … months" :
-      v === "biweekly" ? "Every … weeks" :
-      v === "afterdone" ? "Every … days after completion" : "Every …";
-    document.getElementById("ed-nth-row").style.display =
-      (v === "nthmonth") ? "block" : "none";
-    document.getElementById("ed-ends-row").style.display =
-      (v === "none") ? "none" : "block";
-  });
-    for (const fid of ["ed-date", "ed-until"]) {
-    const fi = document.getElementById(fid);
-    if (!fi) continue;
-    fi.addEventListener("click", () => openDateCalFor(fid));
-    fi.addEventListener("keydown", () => closeDateCal());
-    fi.addEventListener("blur", () => { normDateField(fi); });
-  }
-  const md = document.getElementById("ed-mday");
-  if (md) md.addEventListener("click", openMdayCal);
-}
-function renderDay({ filterFn, rerender, containerId = "task-area" }) {
-  const area = document.getElementById(containerId);
-  if (!area) return;
-  const viewDate = window.VIEW_DATE || todayStr();
+function renderListView() {
+  const rail = document.getElementById("list-rail");
+  const area = document.getElementById("task-area");
   const today = todayStr();
-  let dayItems = buildDayModel(tasksCache, listsCache, occCache, viewDate, today);
-  dayItems = dayItems.filter(it => filterFn(it.list));
-  dayItems.sort((a, b) => {
-    if (!a.time && b.time) return -1;
-    if (a.time && !b.time) return 1;
-    if (a.time !== b.time) return a.time < b.time ? -1 : 1;
-    return a.task.title.localeCompare(b.task.title);
+  const lists = pageLists();
+  if (!LP_SEL || !lists.some(l => l.id === LP_SEL)) LP_SEL = lists.length ? lists[0].id : null;
+  let railHtml = "";
+  if (!lists.length) {
+    railHtml = '<span class="empty-note">No lists visible for this page yet. ' +
+      (LP_SCOPE === "personal"
+        ? "Personal lists stay invisible until owner assignment SQL is run for your account."
+        : "") + "</span>";
+  } else {
+    railHtml = lists.map(l => {
+      const count = tasksCache.filter(
+        t => !t.archived && !t.is_note && t.list_id === l.id).length;
+      return '<button class="rail-chip' + (l.id === LP_SEL ? " sel" : "") +
+        '" data-list="' + l.id + '">' +
+        '<span class="t-icon">' + esc(l.icon || "") + "</span>" +
+    '<span class="rail-name">' + esc(l.name) + '</span>' +
+    '<span class="rail-count">' + count + "</span></button>";
+    }).join("");
+  }
+  rail.innerHTML = railHtml;
+  rail.querySelectorAll(".rail-chip[data-list]").forEach(b => {
+    b.onclick = () => { LP_SEL = b.getAttribute("data-list"); renderListView(); };
   });
-  let over = collectOverdue(tasksCache, occCache, today);
-  over = over.filter(it => filterFn(it.list));
-  over.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-  const buckets = ["Anytime", "Morning", "Afternoon", "Evening", "Night"];
-  const grouped = {};
-  for (const b of buckets) grouped[b] = [];
-  for (const it of dayItems) grouped[timeBucket(it.time)].push(it);
+  fillListSelectForPage();
+  window.EDITOR_DEFAULT_LIST = LP_SEL || undefined;
+  if (!LP_SEL) {
+    area.innerHTML = '<div class="empty-note">Nothing to show yet — add a list or a task.</div>';
+    return;
+  }
+  let tsks = tasksCache.filter(t => !t.archived && t.list_id === LP_SEL);
+  if (!tsks.length) {
+    area.innerHTML = '<div class="empty-note">This list is empty — ' +
+      'hit “+ add task” to create the first one.</div>';
+    return;
+  }
+  const movedLands = {};
+  for (const o of occCache) {
+    if (o.moved_to && !o.status) {
+      (movedLands[o.task_id] = movedLands[o.task_id] || []).push(o.moved_to);
+    }
+  }
+  function nextSortDate(t) {
+    const na = nextAppearance(t, today, movedLands);
+    if (na) return na;
+    if (t.repeat_type === "none") return t.start_date || null;
+    return t.start_date || null;
+  }
+  const sorter = (a, b) => {
+    const da = nextSortDate(a);
+    const db = nextSortDate(b);
+    if (da && db && da !== db) return da < db ? -1 : 1;
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    const ta = a.due_time || "99";
+    const tb = b.due_time || "99";
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return a.title.localeCompare(b.title);
+  };
+  const notes = tsks.filter(t => t.is_note).sort(sorter);
+  const real = tsks.filter(t => !t.is_note).sort(sorter);
+  const groups = {};
+  const order = [];
+  for (const t of real) {
+    const s = t.section || "";
+    if (!groups[s]) { groups[s] = []; order.push(s); }
+    groups[s].push(t);
+  }
+  const handledToday = new Set();
+  for (const o of occCache)
+    if (o.orig_date === today && (o.status === "done" || o.status === "skipped"))
+      handledToday.add(o.task_id);
+  const finRows = [];   
+  const finIds = new Set();
+  for (const t of real) {
+    if (handledToday.has(t.id)) continue;
+    if (t.repeat_type === "none") {
+      const d = taskDoneOcc(t);
+      if (d) {
+        finRows.push({ t: t, effDate: d.orig_date,
+          label: (d.status === "skipped" ? "won't do · " : "done · ") + d.orig_date.slice(5) });
+        finIds.add(t.id);
+      }
+    } else if (seriesEnded(t, today)) {
+      finRows.push({ t: t, effDate: today, label: "series ended" });
+      finIds.add(t.id);
+    }
+  }
+  for (const s of order)
+    groups[s] = groups[s].filter(t => !handledToday.has(t.id) && !finIds.has(t.id));
+
+  for (const s of order) applyTaskOrder(groups[s], s);
+  const rowFor = (t, note, opts) => {
+    opts = opts || {};
+    const effDate = opts.effDate ||
+      ((t.repeat_type === "none") ? (t.start_date || today) : today);
+    const occEff = occCache.find(o => o.task_id === t.id && o.orig_date === effDate);
+    const done = !!opts.forceDone || (occEff && occEff.status === "done");
+    const na = t.start_date ? nextAppearance(t, today, movedLands) : null;
+    const nf = note ? "" :
+      (!t.start_date ? "unscheduled"
+       : na ? "next: " + na.slice(5)
+       : t.repeat_type === "none" ? "past"
+       : "—");
+    const meta = (opts.label != null) ? opts.label : nf;
+    const mv = (!note && !handledToday.has(t.id) && opts.label == null)
+      ? '<span class="row-move"><button type="button" class="row-up" title="move up">▲</button>' +
+        '<button type="button" class="row-down" title="move down">▼</button></span>'
+      : "";
+    return '<div class="task-row' + (note ? " note" : "") + (done ? " done" : "") +
+      '" data-task="' + t.id + '" data-date="' + effDate + '">' +
+      '<span class="cb" title="click = done · shift-click = undo"></span>' +
+      '<span class="t-title">' + esc(t.title) + "</span>" +
+      '<span class="t-meta">' + esc(repeatDescr(t)) + "</span>" +
+      '<span class="t-next">' + esc(meta) + "</span>" + mv +
+      "</div>";
+  };
+  const collapsed = getCollapsed();
+  const pref = getSecOrder();
+  order.sort((a, b) => {
+    const pa = pref.indexOf(a), pb = pref.indexOf(b);
+    if (pa === -1 && pb === -1) return 0;
+    if (pa === -1) return 1;
+    if (pb === -1) return -1;
+    return pa - pb;
+  });
   let html = "";
-  const overdueCount = over.length;
-  if (overdueCount) {
-    html += '<div class="sec-head overdue-label">Overdue · ' + overdueCount + "</div>";
-    for (const it of over) html += taskRowHTML(it, true, rerender);
+    if (notes.length) {
+    html += '<div class="sec-block' + (collapsed.has("__notes__") ? " closed" : "") +
+      '" data-sec="__notes__">' +
+      '<div class="sec-head" data-sec="__notes__"><span class="sec-arrow">▾</span> Notes ' +
+      '<span class="sec-count">· ' + notes.length + "</span></div>";
+    for (const t of notes) html += rowFor(t, true);
+    html += "</div>";
   }
-  for (const b of buckets) {
-    if (!grouped[b].length) continue;
-    html += '<div class="sec-head">' + b + ' <span class="sec-count">· ' +
-      grouped[b].length + "</span></div>";
-    for (const it of grouped[b]) html += taskRowHTML(it, false, rerender);
+  for (const s of order) {
+    const label = s || "No Section";
+    const key = s || "__loose__";
+    if (!groups[s].length) continue;
+    html += '<div class="sec-block' + (collapsed.has(key) ? " closed" : "") +
+      '" data-sec="' + key + '">' +
+      '<div class="sec-head" data-sec="' + key + '"><span class="sec-arrow">▾</span> ' +
+      esc(label) + ' <span class="sec-count">· ' + groups[s].length +
+      '</span><span class="sec-move"><button type="button" class="sec-up" title="move section up">▲</button>' +
+      '<button type="button" class="sec-down" title="move section down">▼</button></span></div>';
+    for (const t of groups[s]) html += rowFor(t, false);
+    html += "</div>";
   }
-  if (!overdueCount && !dayItems.length) {
-    html = '<div class="empty-note">Nothing scheduled for this day. ' +
-      'Add a task with the button above.</div>';
+  const handled = [];
+  const handledSeen = new Set();
+  for (const o of occCache) {
+    if (o.orig_date !== today || (o.status !== "done" && o.status !== "skipped")) continue;
+    const t = tasksCache.find(x => x.id === o.task_id);
+    if (t && !t.is_note && !handledSeen.has(t.id)) {
+      handledSeen.add(t.id);
+      handled.push({ t: t, effDate: o.orig_date });
+    }
+  }
+  const doneTotal = handled.length + finRows.length;
+  if (doneTotal) {
+    html += '<div class="sec-block' + (collapsed.has("__donetoday__") ? " closed" : "") +
+      '" data-sec="__donetoday__">' +
+      '<div class="sec-head" data-sec="__donetoday__"><span class="sec-arrow">▾</span> Completed ' +
+      '<span class="sec-count">· ' + doneTotal + "</span></div>";
+    for (const h of handled)
+      html += rowFor(h.t, false, { effDate: h.effDate });
+    for (const f of finRows)
+      html += rowFor(f.t, false,
+        { effDate: f.effDate, label: f.label, forceDone: true });
+    html += "</div>";
   }
   area.innerHTML = html;
-  wireRows(area, rerender, viewDate);
-}
-function taskRowHTML(it, isOverdue, rerender) {
-  const t = it.task;
-  const li = it.list || { name: "?", color: "c9a0ff" };
-  const movedTag = it.moved
-    ? ' <span style="color:var(--accent);font-size:0.7rem">(moved)</span>' : "";
-  const odAttr = isOverdue ? " overdue" : "";
-  const when = isOverdue ? fmtDateLong(it.date).split(",")[0] + " " +
-    it.date.slice(5) : (fmtTime(it.time) || "anytime");
-  return '<div class="task-row' + odAttr + '" data-task="' + t.id +
-    '" data-date="' + (it.occ ? it.occ.orig_date : it.date) + '">' +
-    '<span class="cb" title="click = done"></span>' +
-    '<span class="t-time' + (it.time ? "" : " none") + '">' + when + "</span>" +
-    '<span class="t-title" title="click to edit the series">' +
-    esc(t.title) + movedTag + "</span>" +
-    '<span class="t-icon">' + esc(li.icon || "") + "</span>" +
-    '<span class="t-list">' + esc(li.name) + "</span>" +
-    "</div>";
-}
-function wireRows(area, rerender, viewDate) {
+  area.querySelectorAll(".sec-head").forEach(h => {
+    h.onclick = ev => {
+      if (ev.target.closest(".sec-up") || ev.target.closest(".sec-down")) return;
+      const blk = h.closest(".sec-block");
+      const key = h.getAttribute("data-sec");
+      const nowClosed = !blk.classList.contains("closed");
+      blk.classList.toggle("closed", nowClosed);
+      const set = getCollapsed();
+      if (nowClosed) set.add(key); else set.delete(key);
+      saveCollapsed(set);
+    };
+    const up = h.querySelector(".sec-up");
+    const dn = h.querySelector(".sec-down");
+    if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), -1); };
+    if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), 1); };
+  });
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");
     const dateStr = row.getAttribute("data-date");
@@ -932,139 +371,46 @@ function wireRows(area, rerender, viewDate) {
     if (!t) return;
     row.addEventListener("click", async ev => {
       if (ev.target.classList.contains("cb")) {
-        await markDone(taskId, dateStr); rerender();
-      } else if (ev.target.classList.contains("t-title")) {
+        if (row.classList.contains("done")) { await undoOverride(taskId, dateStr); renderListView(); }
+        else { await markDone(taskId, dateStr); renderListView(); }
+      } else if (t.is_note || ev.target.classList.contains("t-title")) {
         openDetailPopup(ev, t);
       }
     });
-    row.oncontextmenu = ev =>
-      openTaskMenu(ev,
-        { task: t,
+    const gkey = t.section || "";
+    const rowIds = (groups[gkey] || []).map(x => x.id);
+    const rUp = row.querySelector(".row-up");
+    const rDn = row.querySelector(".row-down");
+    if (rUp) rUp.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); nudgeTask(gkey, rowIds, t.id, -1); };
+    if (rDn) rDn.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); nudgeTask(gkey, rowIds, t.id, 1); };
+
+    row.oncontextmenu = t.is_note
+      ? ev => { ev.preventDefault(); openDetailPopup(ev, t); }
+      : ev => openTaskMenu(ev, {
+          task: t,
           occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
-          date: dateStr, time: t.due_time },
-        rerender);
+          date: dateStr, time: t.due_time
+        }, renderListView);
   });
 }
-async function initTaskPage({ pageTitle, filterFn, rerender }) {
-  initEditorUI();
-  document.addEventListener("keydown", ev => {
-    if (ev.key === "Escape") closeEditor();
-  });
-  const session = await requireAuth();
-  if (!session) return;
-  window.__rerender = rerender;
-  document.getElementById("sync-note").textContent = "connecting…";
-  try {
-    await loadAll();
-  } catch (err) {
-    document.getElementById("sync-note").textContent = "offline — changes NOT saved";
-    document.getElementById("sync-note").classList.add("off");
-    console.error("initial load failed:", err.message);
-    rerender();
-    return;
-  }
-  document.getElementById("sync-note").textContent = "✓";
-  rerender();
-  subscribeRealtime(async () => {
-    await loadAll();
-    rerender();
-  });
-  window.addEventListener("focus", async () => {
-    await loadAll();
-    rerender();
+async function initListPage(pageScope) {
+  LP_SCOPE = pageScope;
+  await initTaskPage({
+    pageTitle: pageScope,
+    filterFn: () => true,
+    rerender: renderListView
   });
 }
-function confirmBox(title, body) {
-  return new Promise(res => {
-    const ov = document.createElement("div");
-    ov.className = "cbox-overlay";
-    ov.innerHTML =
-      '<div class="cbox">' +
-      '<div class="cbox-title">' + esc(title) + "</div>" +
-      '<div class="cbox-body">' + esc(body) + "</div>" +
-      '<div class="cbox-btns">' +
-      '<button type="button" class="cbox-no">NO</button>' +
-      '<button type="button" class="cbox-yes">YES, DELETE</button>' +
-      "</div></div>";
-    document.body.appendChild(ov);
-    const done = v => {
-      ov.remove();
-      document.removeEventListener("keydown", onKey);
-      res(v);
-    };
-    const onKey = k => { if (k.key === "Escape") done(false); };
-    ov.querySelector(".cbox-no").onclick = () => done(false);
-    ov.querySelector(".cbox-yes").onclick = () => done(true);
-    ov.onclick = ev => { if (ev.target === ov) done(false); };
-    document.addEventListener("keydown", onKey);
-  });
-}
-let dateCalEl = null;
-function closeDateCal() { if (dateCalEl) { dateCalEl.remove(); dateCalEl = null; } }
-function openDateCalFor(inpId) {
-  closeMenus(); openMiniCancel(); closeMdayCal(); closeDateCal();
-  const inp = document.getElementById(inpId);
-  if (!inp) return;
-  const el = document.createElement("div");
-  el.className = "item-menu mday-cal date-cal";
-  document.body.appendChild(el);
-  dateCalEl = el;
-  const v = (inp.value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
-  const base = v ? inp.value.split("-").map(Number) : todayStr().split("-").map(Number);
-  let y = base[0], m = base[1];
-  function draw() {
-    const first = new Date(y, m - 1, 1);
-    const days = new Date(y, m, 0).getDate();
-    let cells = "";
-    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
-      cells += '<div class="mc-dow">' + n + "</div>";
-    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
-    const now = new Date();
-    const isNowMonth = (now.getFullYear() === y && (now.getMonth() + 1) === m);
-    for (let d = 1; d <= days; d++) {
-      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-      cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
-        (isNowMonth && d === now.getDate() ? " mc-today" : "") +
-        '" data-iso="' + iso + '">' + d + "</button>";
-    }
-    el.innerHTML =
-      '<button class="menu-x">✕</button>' +
-      '<div class="mc-nav">' +
-        '<button type="button" class="dc-prev">‹</button>' +
-        '<span class="mc-title">' +
-          first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
-        '</span>' +
-        '<button type="button" class="dc-next">›</button>' +
-      '</div>' +
-      '<div class="mc-grid">' + cells + "</div>" +
-      '<button type="button" class="dc-today">today</button>';
-    el.querySelector(".menu-x").onclick = closeDateCal;
-    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
-    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
-    el.querySelector(".dc-today").onclick = () => {
-      inp.value = todayStr(); closeDateCal(); flash("set to today");
-    };
-    el.querySelectorAll(".mc-day").forEach(b => {
-      b.onclick = () => { inp.value = b.getAttribute("data-iso"); closeDateCal(); };
-    });
-  }
-  draw();
-  const r = inp.getBoundingClientRect();
-  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 380) + "px";
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (dateCalEl && !dateCalEl.contains(ev.target) && ev.target !== inp) closeDateCal();
-    if (!dateCalEl) document.removeEventListener("mousedown", onDoc);
-  }), 0);
-}
-function normDateField(inp) {
-  const v = (inp.value || "").trim();
-  if (!v) return;
-  const s = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  const i = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (s) inp.value = s[3] + "-" +
-    String(s[1]).padStart(2, "0") + "-" + String(s[2]).padStart(2, "0");
-  else if (i) inp.value = i[1] + "-" +
-    String(i[2]).padStart(2, "0") + "-" + String(i[3]).padStart(2, "0");
-  else { inp.value = ""; flash("date didn't look right — cleared, use the calendar"); }
+function moveSection(key, dir) {
+  const cur = [];
+  for (const h of document.querySelectorAll('.sec-head[data-sec]'))
+    cur.push(h.getAttribute("data-sec"));
+  const pinned = getSecOrder().filter(x => cur.includes(x));
+  for (const s of cur) if (!pinned.includes(s)) pinned.push(s);
+  const i = pinned.indexOf(key);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= pinned.length) return;
+  pinned.splice(j, 0, pinned.splice(i, 1)[0]);
+  saveSecOrder(pinned);
+  renderListView();
 }
