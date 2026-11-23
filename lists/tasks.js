@@ -416,6 +416,50 @@ function openDetailPopup(ev, t) {
     document.removeEventListener("keydown", onEsc);
   }), 0);
 }
+// NEW: left-click title = mini move toolbar (Today + list pages)
+function openTitleToolbar(ev, t, dateStr, rerender) {
+  closeMenus(); closeDetailPopup();
+  const o = occCache.find(x => x.task_id === t.id && x.orig_date === dateStr);
+  if (o && (o.status === "done" || o.status === "skipped")) {
+    // already resolved today — offer details instead of a move
+    openDetailPopup(ev, t);
+    return;
+  }
+  const el = document.createElement("div");
+  el.className = "item-menu";
+  el.innerHTML =
+    '<button class="menu-x">✕</button>' +
+    '<button data-act="tomorrow">→ Move to tomorrow</button>' +
+    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>';
+  document.body.appendChild(el);
+  el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
+  el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
+  el.querySelector(".menu-x").onclick = () => el.remove();
+  el.addEventListener("click", async mev => {
+    const act = mev.target.getAttribute("data-act");
+    if (!act) return;
+    el.remove();
+    if (act === "tomorrow") {
+      const base = window.VIEW_DATE || todayStr();
+      const anchor = dateStr > base ? dateStr : base;
+      await moveTask(t.id, dateStr, addDaysStr(anchor, 1));
+      if (rerender) rerender();
+    }
+    if (act === "moveto") {
+      openMiniDate(ev, async d => {
+        if (d) { await moveTask(t.id, dateStr, d); if (rerender) rerender(); }
+      });
+    }
+  });
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(mev2) {
+    if (el.isConnected && !el.contains(mev2.target)) el.remove();
+    if (!el.isConnected) document.removeEventListener("mousedown", onDoc);
+  }), 0);
+  setTimeout(() => document.addEventListener("keydown", function onEsc(kev) {
+    if (kev.key === "Escape") el.remove();
+    if (!el.isConnected) document.removeEventListener("keydown", onEsc);
+  }), 0);
+}
 function openTaskMenu(e, item, rerender) {
   e.preventDefault();
   closeMenus();
@@ -919,7 +963,7 @@ function taskRowHTML(it, isOverdue, rerender) {
     '" data-date="' + (it.occ ? it.occ.orig_date : it.date) + '">' +
     '<span class="cb" title="click = done"></span>' +
     '<span class="t-time' + (it.time ? "" : " none") + '">' + when + "</span>" +
-    '<span class="t-title" title="click to edit the series">' +
+    '<span class="t-title" title="click = move · right-click = details">' +
     esc(t.title) + movedTag + "</span>" +
     '<span class="t-icon">' + esc(li.icon || "") + "</span>" +
     '<span class="t-list">' + esc(li.name) + "</span>" +
@@ -935,15 +979,21 @@ function wireRows(area, rerender, viewDate) {
       if (ev.target.classList.contains("cb")) {
         await markDone(taskId, dateStr); rerender();
       } else if (ev.target.classList.contains("t-title")) {
-        openDetailPopup(ev, t);
+        openTitleToolbar(ev, t, dateStr, rerender);
       }
     });
-    row.oncontextmenu = ev =>
+    row.oncontextmenu = ev => {
+      if (ev.target.classList.contains("t-title")) {
+        ev.preventDefault();
+        openDetailPopup(ev, t);
+        return;
+      }
       openTaskMenu(ev,
         { task: t,
           occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
           date: dateStr, time: t.due_time },
         rerender);
+    };
   });
 }
 async function initTaskPage({ pageTitle, filterFn, rerender }) {

@@ -71,3 +71,20 @@ body {
   display: inline-flex !important;
   align-items: center !important;
 }
+.modal-box {
+  background: var(--panel); border: 1px solid var(--accent2);
+  border-radius: 10px; padding: 26px 28px 22px;
+  max-width: 410px; width: 100%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  text-align: center;                          /* <- add */
+}
+.modal-box h2 {
+  font-size: 0.96rem; color: var(--text);       /* was var(--hot-pink) */
+  font-weight: 700;                             /* <- add */
+  margin-bottom: 12px; line-height: 1.4;
+}
+.modal-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }  /* was flex-end */
+.modal-buttons button {
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  border-radius: 8px; padding: 9px 24px; cursor: pointer; letter-spacing: 1px;
+}

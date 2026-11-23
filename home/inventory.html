@@ -7,8 +7,7 @@
 <title>Household Inventory</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-  :root { --hot-pink: #e10ab2; --now: #ff4d6d; }
-  .modal-box h2 { color: var(--text); font-weight: 700; }
+  :root { --hot-pink: #e10ab2; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -172,9 +171,6 @@
     .columns { grid-template-columns: 1fr; }
     .add-form { grid-template-columns: 1fr 1fr; }
   }
-  .modal-box { border: 1px solid var(--accent2); text-align: center; }
-.modal-buttons { justify-content: center; }
-.modal-yes.destructive { background: var(--now); color: #fff; }
 </style>
 </head>
 <body>
@@ -238,8 +234,9 @@
   <div class="modal-box">
     <h2 id="modal-title"></h2>
     <p id="modal-message"></p>
+    <div class="modal-buttons">
       <button class="modal-yes" id="modal-yes">YES</button>
-    <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-no" id="modal-no">NO</button>
     </div>
   </div>
 </div>

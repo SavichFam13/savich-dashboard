@@ -374,7 +374,8 @@ function renderListView() {
         if (row.classList.contains("done")) { await undoOverride(taskId, dateStr); renderListView(); }
         else { await markDone(taskId, dateStr); renderListView(); }
       } else if (t.is_note || ev.target.classList.contains("t-title")) {
-        openDetailPopup(ev, t);
+        if (t.is_note) openNotePopup(ev, t);
+        else openTitleToolbar(ev, t, dateStr, renderListView);
       }
     });
     const gkey = t.section || "";
@@ -385,12 +386,19 @@ function renderListView() {
     if (rDn) rDn.onclick = ev => { ev.stopPropagation(); ev.preventDefault(); nudgeTask(gkey, rowIds, t.id, 1); };
 
     row.oncontextmenu = t.is_note
-      ? ev => { ev.preventDefault(); openDetailPopup(ev, t); }
-      : ev => openTaskMenu(ev, {
-          task: t,
-          occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
-          date: dateStr, time: t.due_time
-        }, renderListView);
+      ? ev => { ev.preventDefault(); openNotePopup(ev, t); }
+      : ev => {
+          if (ev.target.classList.contains("t-title")) {
+            ev.preventDefault();
+            openDetailPopup(ev, t);
+            return;
+          }
+          openTaskMenu(ev, {
+            task: t,
+            occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
+            date: dateStr, time: t.due_time
+          }, renderListView);
+        };
   });
 }
 async function initListPage(pageScope) {
