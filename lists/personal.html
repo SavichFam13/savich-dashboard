@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Lists — Savich Tasks</title>
+<link rel="stylesheet" href="tasks.css">
+<link rel="stylesheet" href="listview.css">
+</head>
+<body>
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="tb-btn" onclick="location.href='today.html'" title="go to Today">Today</button>
+    <button class="tb-btn" onclick="location.href='household.html'" title="go to the Household lists">Household</button>
+    <div id="nav"></div>
+</nav>
+<h1>Personal</h1>
+<div class="layout">
+  <div>
+    <div class="rail-h">My Lists</div>
+    <div id="list-rail"></div>
+  </div>
+  <div>
+    <div class="add-bar">
+      <button class="add-btn" id="add-btn">+ add task</button>
+    </div>
+    <div class="hint">left-click checkbox = done / undone · right-click row = won't do / move / edit · click title = details</div>
+    <div id="task-area"></div>
+  </div>
+</div>
+<div class="panel" id="editor-panel">
+  <button class="panel-x" id="ed-close">✕</button>
+  <h2 id="ed-heading">New Task</h2>
+  <label for="ed-title">Title</label>
+  <input id="ed-title" type="text" placeholder="Renew library books">
+  <label for="ed-list">List</label>
+  <select id="ed-list"></select>
+  <label for="ed-section">Section (blank = none)</label>
+  <input id="ed-section" list="ed-section-list" placeholder="e.g. To Buy, Deliveries">
+  <datalist id="ed-section-list"></datalist>
+  <label for="ed-date">Starts on (blank = parked in list only)</label>
+  <input id="ed-date" type="text" placeholder="mm/dd/yyyy — click for calendar" autocomplete="off">
+  <label for="ed-time">Time of day (blank = anytime)</label>
+  <input id="ed-time" type="time">
+  <label for="ed-repeat">Repeat</label>
+  <select id="ed-repeat">
+    <option value="none">One time</option>
+    <option value="daily">Every day</option>
+    <option value="weekdays">Weekdays (Mon–Fri)</option>
+    <option value="weekly">Weekly</option>
+    <option value="biweekly">Every Nth weeks</option>
+    <option value="monthly">Monthly</option>
+    <option value="yearly">Yearly</option>
+    <option value="nthmonth">Nth month on the Nth day (12 = year)</option>
+    <option value="afterdone">Nth days after completion</option>
+  </select>
+  <div class="dow-row" id="ed-dow-row" style="display:none"></div>
+  <div id="ed-ends-row" style="display:none">
+    <label for="ed-count">Ends — after … times (blank = forever)</label>
+    <input id="ed-count" type="number" min="1" max="999">
+    <label for="ed-until">… or on date (blank = no end date)</label>
+    <input id="ed-until" type="text" placeholder="mm/dd/yyyy — click for calendar" autocomplete="off">
+  </div>
+  <div id="ed-mday-row" style="display:none">
+    <label for="ed-mday">Day of month</label>
+    <input id="ed-mday" type="number" min="1" max="31" readonly
+           style="cursor:pointer" title="click to pick the day">
+  </div>
+  <div id="ed-every-row" style="display:none">
+    <label for="ed-every" id="ed-every-label">Every …</label>
+    <input id="ed-every" type="number" min="1" max="120">
+  </div>
+  <div id="ed-nth-row" style="display:none">
+    <label for="ed-nth">On the …</label>
+    <select id="ed-nth">
+      <option value="1">First</option>
+      <option value="2">Second</option>
+      <option value="3">Third</option>
+      <option value="4">Fourth</option>
+      <option value="5">Last</option>
+    </select>
+  </div>
+  <label class="ed-note-flag"><input type="checkbox" id="ed-note">
+    note — never scheduled, never overdue</label>
+  <label for="ed-notes">Notes</label>
+  <textarea id="ed-notes" placeholder="optional details"></textarea>
+  <button class="btn" id="ed-save">SAVE</button>
+  <button class="btn btn-del" id="ed-delete">DELETE ENTIRE SERIES</button>
+  <div class="panel-note">Editing affects the whole series. To change just one day's copy, right-click it on the Today page instead.</div>
+</div>
+<div class="flash-msg" id="flash-msg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script src="../rollover.js"></script>
+<script src="tasks.js"></script>
+<script src="listpage.js"></script>
+<script src="../nav.js"></script>
+<script>
+  document.getElementById("add-btn").onclick = () => openEditor(null);
+  initListPage("personal");
+</script>
+</body>
+</html>

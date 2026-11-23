@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sticky Notes</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+  .sync-note.save-fail { color: var(--bad); }
+  .modal-overlay { z-index: 5000; }
+  .modal-yes { background: var(--bad); }
+  .toast { z-index: 6000; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 32px 20px;
+    max-width: 1340px;
+    margin: 0 auto;
+  }
+  .top {
+    display: flex; justify-content: flex-end; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+    position: relative; z-index: 4500;
+  }
+  h1.wall-title {
+    display: flex; align-items: flex-end; gap: 14px;
+    justify-content: center;
+    font-size: 2rem; letter-spacing: 0.5px;
+    margin: -34px auto 10px auto;
+  }
+  .wt { display: inline-block; font-weight: 400; }
+  .w1 { color: #e8c27a; transform: rotate(-7deg); }
+  .w2 {
+    color: #ff5ec4; transform: rotate(4deg);
+    font-size: 1.55rem; margin-bottom: 6px;
+  }
+  .w3 { color: #5fd3c4; transform: rotate(-3deg); }
+  .w4 { color: #c9a0ff; transform: rotate(6deg); margin-bottom: 3px; }
+  .nav-bar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .nav-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  p.sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 24px; }
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+  }
+  .toolbar-left { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 7px 14px; border-radius: 5px;
+    font-family: inherit; font-size: 0.78rem; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent2); }
+  .btn-primary { background: var(--accent2); color: #121016; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  #note-count { font-size: 0.79rem; color: var(--dim); }
+  #search-box {
+    background: #16131d; color: var(--text); border: 1px solid var(--border);
+    border-radius: 5px; padding: 8px 12px; font-family: inherit;
+    font-size: 0.82rem; width: 240px;
+  }
+  #search-box:focus { outline: none; border-color: var(--accent2); }
+  .board {
+    position: relative;
+    min-height: 72vh;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 12% 20%, rgba(201,160,255,0.03), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(95,211,196,0.03), transparent 40%);
+  }
+  .board-hint {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--dim); font-size: 0.85rem; text-align: center;
+    pointer-events: none; line-height: 2;
+  }
+  .note {
+    --nb: #2b2240;
+    --nbord: #c9a0ff;
+    position: absolute;
+    width: 245px;
+    background: var(--nb);
+    border: 1px solid var(--nbord);
+    border-radius: 4px 4px 16px 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    transform: rotate(var(--rot, -2deg));
+    transition: box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+  .note.dragging {
+    box-shadow: 0 16px 34px rgba(0,0,0,0.6);
+    transition: none;
+    z-index: 9999 !important;
+  }
+  .note.dimmed { opacity: 0.18; }
+  .note.c0 { --nb: #2b2240; --nbord: #c9a0ff; }
+  .note.c1 { --nb: #163a35; --nbord: #5fd3c4; }
+  .note.c2 { --nb: #3a1733; --nbord: #e10ab2; }
+  .note.c3 { --nb: #3a2222; --nbord: #ff8a8a; }
+  .note.c4 { --nb: #211d2b; --nbord: #a89bbd; }
+  .note.c5 { --nb: #352c1e; --nbord: #e8c27a; }
+  .note.c6 { --nb: #1c3328; --nbord: #7ddba3; }
+  .note.c7 { --nb: #22304a; --nbord: #8ab4ff; }
+  .note::before {
+    content: "";
+    position: absolute; top: -9px; left: 50%;
+    width: 64px; height: 18px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: rgba(242,238,247,0.13);
+    border: 1px solid rgba(242,238,247,0.06);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .note-grab {
+    height: 30px;
+    cursor: grab;
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 40px 0 10px;
+    border-bottom: 1px solid rgba(242,238,247,0.07);
+    touch-action: none;
+  }
+  .note-grab:active { cursor: grabbing; }
+  .grab-handle { color: var(--nbord); font-size: 0.75rem; opacity: 0.5; }
+  .note-del {
+    position: absolute; top: 5px; right: 6px;
+    background: none; border: 1px solid transparent; color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 2px 6px;
+    font-size: 0.72rem; font-family: inherit;
+    line-height: 1;
+    z-index: 5;
+  }
+  .note-del:hover { border-color: var(--bad); color: var(--bad); }
+  .note-body {
+    color: var(--text); font-family: inherit; font-size: 0.82rem;
+    line-height: 1.55; padding: 10px 12px 14px;
+    min-height: 130px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
+    cursor: pointer;
+  }
+  .note-body:empty::before {
+    content: "click to type\2026";
+    color: var(--dim); opacity: 0.6;
+  }
+  .hl.c1 { background: #ffd93d; color: #121016; border-radius: 2px; }
+  .hl.c2 { background: #3ddb84; color: #0d1a12; border-radius: 2px; }
+  .hl.c3 { background: #ff5ec4; color: #1a0d16; border-radius: 2px; }
+  .hl.c4 { background: #38b6ff; color: #0d1420; border-radius: 2px; }
+  .expand-overlay {
+    position: fixed; inset: 0; background: rgba(10, 8, 14, 0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 4000; padding: 20px;
+  }
+  .expand-overlay.open { display: flex; }
+  .expand-box {
+    --nbord: #c9a0ff;
+    background: var(--panel);
+    border: 1px solid var(--nbord);
+    border-radius: 6px;
+    width: 480px; max-width: 94vw;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    transform: rotate(-1deg);
+  }
+  .expand-box.c0 { --nbord: #c9a0ff; }
+  .expand-box.c1 { --nbord: #5fd3c4; }
+  .expand-box.c2 { --nbord: #e10ab2; }
+  .expand-box.c3 { --nbord: #ff8a8a; }
+  .expand-box.c4 { --nbord: #a89bbd; }
+  .expand-box.c5 { --nbord: #e8c27a; }
+  .expand-box.c6 { --nbord: #7ddba3; }
+  .expand-box.c7 { --nbord: #8ab4ff; }
+  .expand-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(242,238,247,0.08);
+    flex: 0 0 auto;
+  }
+  .expand-title {
+    font-size: 0.78rem; font-weight: 700;
+    color: var(--nbord); letter-spacing: 1px;
+  }
+  .expand-close {
+    background: none; border: 1px solid transparent;
+    color: var(--dim); border-radius: 4px; cursor: pointer;
+    font-size: 0.95rem; padding: 2px 8px; line-height: 1;
+    font-family: inherit;
+    margin-left: auto;
+  }
+  .expand-close:hover { border-color: var(--bad); color: var(--bad); }
+  .pen-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 2px;
+    flex: 0 0 auto;
+  }
+  .pen-title { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.5px; }
+  .pen-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.5);
+    cursor: pointer; padding: 0;
+    transition: transform 0.1s ease;
+  }
+  .pen-dot:hover { transform: scale(1.2); }
+  .pen-dot.k1 { background: #ffd93d; }
+  .pen-dot.k2 { background: #3ddb84; }
+  .pen-dot.k3 { background: #ff5ec4; }
+  .pen-dot.k4 { background: #38b6ff; }
+  .pen-x {
+    background: none; border: 1px solid var(--border); color: var(--dim);
+    border-radius: 4px; cursor: pointer; padding: 1px 7px;
+    font-size: 0.7rem; font-family: inherit; line-height: 1.4;
+  }
+  .pen-x:hover { border-color: var(--bad); color: var(--bad); }
+  #expand-ta {
+    color: var(--text); font-family: inherit; font-size: 0.95rem;
+    line-height: 1.6; padding: 12px 16px 16px;
+    min-height: 230px; outline: none;
+    white-space: pre-wrap; word-wrap: break-word;
+    overflow-y: auto; flex: 1 1 auto; min-height: 0;
+  }
+  #expand-ta:empty::before {
+    content: "type here\2026";
+    color: var(--dim); opacity: 0.6;
+  }
+  @media (max-width: 640px) {
+    .note { width: 210px; }
+    #search-box { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="top">
+<nav class="nav-bar">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <button class="nav-btn" id="import-btn" title="restore notes from a backup file">Import</button>
+    <button class="nav-btn" id="export-btn" title="download all notes as a backup file">Export</button>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none">
+    <div id="nav"></div>
+</nav>
+</div>
+<h1 class="wall-title">
+  <span class="wt w1">Wall</span>
+  <span class="wt w2">O'</span>
+  <span class="wt w3">Sticky</span>
+  <span class="wt w4">Notes</span>
+</h1>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <input type="search" id="search-box" placeholder="Search your notes&hellip;">
+    <span id="note-count">0 notes</span>
+  </div>
+  <button class="btn btn-primary" onclick="createNote()">&#43; NEW NOTE</button>
+</div>
+<div class="board" id="board">
+  <div class="board-hint" id="board-hint">
+    A blank wall.<br>Hit <strong style="color:var(--accent2)">+ NEW NOTE</strong> and start sticking things you want to remember.
+  </div>
+</div>
+<div class="expand-overlay" id="expand-overlay">
+  <div class="expand-box" id="expand-box">
+    <div class="expand-head">
+      <span class="expand-title">STICKY NOTE</span>
+      <button class="expand-close" id="expand-close" title="close">&#10005;</button>
+    </div>
+    <div class="pen-bar">
+      <span class="pen-title">HIGHLIGHTER:</span>
+      <button class="pen-dot k1" data-c="c1" title="yellow"></button>
+      <button class="pen-dot k2" data-c="c2" title="bright green"></button>
+      <button class="pen-dot k3" data-c="c3" title="bright pink"></button>
+      <button class="pen-dot k4" data-c="c4" title="bright blue"></button>
+      <button class="pen-x" id="pen-clear" title="erase highlight from selected text">&#9003;</button>
+    </div>
+    <div id="expand-ta" contenteditable="true" spellcheck="false"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <div class="modal-buttons">
+      <button class="modal-no" id="modal-no">NO</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script src="../rollover.js"></script>
+<script src="../nav.js"></script>
+<script>
+let notes = [];
+let uid = null;
+let zTop = 10;
+let draggingId = null;
+let popupOpenId = null;
+const textTimers = {};
+const PALETTE_COUNT = 8;
+const expandOverlay = document.getElementById("expand-overlay");
+const expandBox = document.getElementById("expand-box");
+const expandTa = document.getElementById("expand-ta");
+function esc(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function markedToHtml(txt) {
+  const s = esc(String(txt == null ? "" : txt));
+  let out = "";
+  const stack = [];
+  let i = 0;
+  const re = /\[\[(c[1-4]):/g;
+  while (i < s.length) {
+    re.lastIndex = i;
+    const m = re.exec(s);
+    const close = s.indexOf("]]", i);
+    if (m && (close === -1 || m.index < close)) {
+      out += s.slice(i, m.index);
+      out += '<span class="hl ' + m[1] + '">';
+      stack.push(m[1]);
+      i = m.index + m[0].length;
+    } else if (close !== -1) {
+      out += s.slice(i, close);
+      if (stack.length) {
+        out += "</span>";
+        stack.pop();
+      } else {
+        out += "]]";
+      }
+      i = close + 2;
+    } else {
+      out += s.slice(i);
+      i = s.length;
+    }
+  }
+  while (stack.length) {
+    out += "</span>";
+    stack.pop();
+  }
+  return out;
+}
+function stripMarked(t) {
+  return String(t == null ? "" : t)
+    .replace(/\[\[c[1-4]:/g, "").replace(/\]\]/g, "");
+}
+function readModel(root) {
+  const plainParts = [];
+  const nodes = [];
+  const spans = [];
+  function pushBoundary() {
+    if (plainParts.length &&
+        !plainParts[plainParts.length - 1].endsWith("\n")) {
+      plainParts.push("\n");
+    }
+  }
+  function currentLength() {
+    return plainParts.join("").length;
+  }
+  function walk(node, color) {
+    node.childNodes.forEach(ch => {
+      if (ch.nodeType === 3) {
+        nodes.push({ node: ch, start: currentLength() });
+        plainParts.push(ch.nodeValue);
+      } else if (ch.nodeType === 1) {
+        if (ch.tagName === "BR") {
+          plainParts.push("\n");
+        } else if (ch.tagName === "DIV" || ch.tagName === "P") {
+          pushBoundary();
+          walk(ch, color);
+        } else {
+          const cls = ch.getAttribute("class") || "";
+          const m = cls.match(/(?:^|\s)hl\s(c[1-4])(?:\s|$)/);
+
+          if (m) {
+            const start = currentLength();
+            walk(ch, color || m[1]);
+            const end = currentLength();
+            if (end > start && !color) {
+              spans.push({ start, end, color: m[1] });
+            }
+          } else {
+            walk(ch, color);
+          }
+        }
+      }
+    });
+  }
+  walk(root, null);
+  return {
+    plain: plainParts.join(""),
+    spans: spans.sort((a, b) => a.start - b.start),
+    nodes
+  };
+}
+function nodeLen(node) {
+  if (node.nodeType === 3) return node.nodeValue.length;
+  if (node.nodeType !== 1) return 0;
+  if (node.tagName === "BR") return 1;
+
+  let n = 0;
+  node.childNodes.forEach(ch => n += nodeLen(ch));
+  return n;
+}
+function charOffset(container, offset, model) {
+  for (const ent of model.nodes) {
+    if (ent.node === container) {
+      return Math.min(ent.start + offset,
+        ent.start + ent.node.nodeValue.length);
+    }
+  }
+  let acc = 0;
+  const kids = container.childNodes;
+  for (let i = 0; i < offset && i < kids.length; i++) {
+    acc += nodeLen(kids[i]);
+  }
+  acc = Math.max(0, Math.min(acc, model.plain.length));
+  for (const ent of model.nodes) {
+    const len = ent.node.nodeValue.length;
+    if (acc >= ent.start && acc <= ent.start + len) return acc;
+  }
+  for (const ent of model.nodes) {
+    if (ent.start >= acc) return ent.start;
+  }
+  return acc;
+}
+function offsetsFromSelection(model) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+  const rng = sel.getRangeAt(0);
+  const sn = rng.startContainer.nodeType === 1
+    ? rng.startContainer : rng.startContainer.parentNode;
+  const en = rng.endContainer.nodeType === 1
+    ? rng.endContainer : rng.endContainer.parentNode;
+  if (!expandTa.contains(sn) || !expandTa.contains(en)) return null;
+  let s = charOffset(rng.startContainer, rng.startOffset, model);
+  let e = charOffset(rng.endContainer, rng.endOffset, model);
+  if (s > e) [s, e] = [e, s];
+  return s === e ? null : { s, e };
+}
+function setSelectionByOffsets(model, s, e) {
+  try {
+    let sn = null, so = 0, en = null, eo = 0;
+    for (const ent of model.nodes) {
+      const len = ent.node.nodeValue.length;
+      if (!sn && s >= ent.start && s <= ent.start + len) {
+        sn = ent.node;
+        so = s - ent.start;
+      }
+      if (!en && e >= ent.start && e <= ent.start + len) {
+        en = ent.node;
+        eo = e - ent.start;
+      }
+      if (sn && en) break;
+    }
+    if (sn && en) {
+      const sel = window.getSelection();
+      const r = document.createRange();
+      r.setStart(sn, Math.min(so, sn.nodeValue.length));
+      r.setEnd(en, Math.min(eo, en.nodeValue.length));
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  } catch (err) {
+    console.debug("Could not restore text selection:", err);
+  }
+}
+function subtractRange(spans, s, e) {
+  const out = [];
+  for (const sp of spans) {
+    if (sp.end <= s || sp.start >= e) {
+      out.push(sp);
+      continue;
+    }
+    if (sp.start < s) {
+      out.push({ start: sp.start, end: s, color: sp.color });
+    }
+    if (sp.end > e) {
+      out.push({ start: e, end: sp.end, color: sp.color });
+    }
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+function spansIntersect(spans, s, e) {
+  return spans.some(sp => sp.end > s && sp.start < e);
+}
+let armed = null;
+function penOffsets(model) {
+  const live = offsetsFromSelection(model);
+  if (live) {
+    armed = live;
+    return live;
+  }
+  if (armed && armed.s < model.plain.length &&
+      armed.e <= model.plain.length) {
+    return armed;
+  }
+  return null;
+}
+function commitModel(model, keep) {
+  const n = notes.find(r => r.id === popupOpenId);
+  if (!n) return;
+  let out = "";
+  let last = 0;
+  for (const sp of model.spans) {
+    if (sp.start < last) continue;
+    out += model.plain.slice(last, sp.start);
+    out += "[[" + sp.color + ":" +
+      model.plain.slice(sp.start, sp.end) + "]]";
+    last = sp.end;
+  }
+  out += model.plain.slice(last);
+  n.text = out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n");
+  expandTa.innerHTML = markedToHtml(n.text);
+  const fresh = readModel(expandTa);
+  if (keep) setSelectionByOffsets(fresh, keep.s, keep.e);
+  armed = keep || null;
+  autosizeCe();
+  savePatch(n, { text: n.text });
+  updateTileText(n);
+}
+function applyHighlight(cls) {
+  if (popupOpenId === null) return;
+  const model = readModel(expandTa);
+  const r = penOffsets(model);
+  if (!r) {
+    showToast("Select a word inside the note, then tap a color.");
+    return;
+  }
+  model.spans = subtractRange(model.spans, r.s, r.e);
+  model.spans.push({ start: r.s, end: r.e, color: cls });
+  model.spans.sort((a, b) => a.start - b.start);
+  commitModel(model, r);
+}
+function clearHighlights() {
+  if (popupOpenId === null) return;
+  const model = readModel(expandTa);
+  const r = penOffsets(model);
+  if (!r) {
+    showToast("Select the highlighted text, then tap the eraser.");
+    return;
+  }
+  if (!spansIntersect(model.spans, r.s, r.e)) {
+    showToast("No highlight in that selection.");
+    return;
+  }
+  model.spans = subtractRange(model.spans, r.s, r.e);
+  commitModel(model, r);
+}
+function stashSelection() {
+  if (popupOpenId === null) return;
+  const off = offsetsFromSelection(readModel(expandTa));
+  if (off) armed = off;
+}
+expandTa.addEventListener("mouseup", stashSelection);
+expandTa.addEventListener("keyup", stashSelection);
+document.addEventListener("selectionchange", () => {
+  requestAnimationFrame(stashSelection);
+});
+document.querySelectorAll(".pen-dot").forEach(btn => {
+  btn.addEventListener("mousedown", e => e.preventDefault());
+  btn.addEventListener("click", () => applyHighlight(btn.dataset.c));
+});
+document.getElementById("pen-clear").addEventListener("mousedown",
+  e => e.preventDefault());
+document.getElementById("pen-clear").addEventListener("click",
+  clearHighlights);
+expandTa.addEventListener("paste", e => {
+  e.preventDefault();
+  document.execCommand("insertText", false,
+    e.clipboardData.getData("text/plain"));
+});
+async function ensureAuth() {
+  if (typeof requireAuth === "function") return await requireAuth();
+  const { data } = await sb().auth.getSession();
+  if (!data || !data.session) {
+    location.href = "../auth.html?next=" +
+      encodeURIComponent(location.pathname);
+    throw new Error("not signed in");
+  }
+}
+function setSync(ok, msg) {
+  const el = document.getElementById("sync-note");
+  el.textContent = ok ? (msg || "\u2713") :
+    (msg || "offline \u2014 changes NOT saved");
+  el.classList.toggle("live", !!ok);
+  el.classList.toggle("save-fail", !ok);
+}
+function setSaving() {
+  const el = document.getElementById("sync-note");
+  el.textContent = "saving\u2026";
+  el.classList.remove("live", "save-fail");
+}
+async function loadNotes() {
+  const { data, error } = await sb()
+    .from("sticky_notes")
+    .select("*")
+    .eq("user_id", uid)
+    .order("id", { ascending: true });
+
+  if (error) throw error;
+  notes = data || [];
+}
+function stampNow() {
+  return new Date().toISOString();
+}
+const saveQueues = new Map();
+const dirtyNotes = new Map();
+let pendingSaves = 0;
+
+function updateSyncStatus() {
+  if (pendingSaves > 0) {
+    setSaving();
+  } else if (dirtyNotes.size > 0) {
+    setSync(false, "unsaved \u2014 retrying every minute");
+  } else {
+    setSync(true);
+  }
+}
+function clearSavedFields(id, snapshot) {
+  const current = dirtyNotes.get(id);
+  if (!current) return;
+  for (const key of Object.keys(snapshot)) {
+    if (Object.prototype.hasOwnProperty.call(current, key) &&
+        Object.is(current[key], snapshot[key])) {
+      delete current[key];
+    }
+  }
+  if (Object.keys(current).length === 0) {
+    dirtyNotes.delete(id);
+  }
+}
+function savePatch(note, patch) {
+  if (!note || note.id == null) {
+    console.error("Cannot save note without an ID.");
+    return Promise.resolve(false);
+  }
+  const id = note.id;
+  note.updated_at = stampNow();
+  const previous = dirtyNotes.get(id) || {};
+  dirtyNotes.set(id, {
+    ...previous,
+    ...patch,
+    updated_at: note.updated_at
+  });
+  const existing = saveQueues.get(id);
+  if (existing) {
+    updateSyncStatus();
+    return existing;
+  }
+  pendingSaves++;
+  updateSyncStatus();
+  const job = Promise.resolve().then(async () => {
+    const delays = [800, 2000, 4000, 8000, 16000];
+    while (dirtyNotes.has(id)) {
+      if (!notes.some(n => n.id === id)) {
+        dirtyNotes.delete(id);
+        return false;
+      }
+      const snapshot = { ...dirtyNotes.get(id) };
+      let saved = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const { data, error } = await sb()
+            .from("sticky_notes")
+            .update(snapshot)
+            .eq("id", id)
+            .eq("user_id", uid)
+            .select("id");
+          if (!error && data && data.length > 0) {
+            clearSavedFields(id, snapshot);
+            saved = true;
+            break;
+          }
+          if (!error) {
+            console.error("Save affected 0 rows for note:", id);
+            return false;
+          }
+          console.error("Sticky note save failed:", error.message);
+        } catch (err) {
+          console.error("Sticky note save error:", err);
+        }
+        if (attempt < 4) {
+          await new Promise(resolve =>
+            setTimeout(resolve, delays[attempt]));
+        }
+      }
+      if (!saved) {
+        console.error("Sticky note save exhausted retries:", id);
+        return false;
+      }
+    }
+    return true;
+  }).finally(() => {
+    if (saveQueues.get(id) === job) {
+      saveQueues.delete(id);
+    }
+    pendingSaves--;
+    updateSyncStatus();
+  });
+  saveQueues.set(id, job);
+  return job;
+}
+window.addEventListener("online", () => {
+  for (const [id, patch] of dirtyNotes) {
+    const note = notes.find(n => n.id === id);
+    if (note) savePatch(note, patch);
+  }
+});
+window.addEventListener("beforeunload", e => {
+  if (pendingSaves > 0 || dirtyNotes.size > 0) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+setInterval(() => {
+  for (const [id, patch] of dirtyNotes) {
+    const note = notes.find(n => n.id === id);
+    if (note && !saveQueues.has(id)) savePatch(note, patch);
+  }
+}, 60000);
+function queueTextSave(note, text) {
+  note.text = text;
+  clearTimeout(textTimers[note.id]);
+  textTimers[note.id] = setTimeout(() => {
+    delete textTimers[note.id];
+    savePatch(note, { text: note.text });
+  }, 700);
+}
+function flushTextSave(note) {
+  if (!note) return;
+  if (textTimers[note.id]) {
+    clearTimeout(textTimers[note.id]);
+    delete textTimers[note.id];
+    savePatch(note, { text: note.text });
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && popupOpenId !== null) {
+    const n = notes.find(r => r.id === popupOpenId);
+    if (n) flushTextSave(n);
+  }
+});
+window.addEventListener("pagehide", () => {
+  if (popupOpenId !== null) {
+    const n = notes.find(r => r.id === popupOpenId);
+    if (n) flushTextSave(n);
+  }
+});
+async function createNote() {
+  const idx = notes.length;
+  const board = document.getElementById("board");
+  const x = Math.min(
+    30 + (idx % 6) * 262 + (Math.random() * 40 - 20),
+    Math.max(20, board.clientWidth - 265)
+  );
+  const y = 40 + Math.floor(idx / 6) * 270 +
+    (Math.random() * 40 - 20);
+  const color = Math.floor(Math.random() * PALETTE_COUNT);
+  try {
+    const { data, error } = await sb()
+      .from("sticky_notes")
+      .insert([{
+        user_id: uid,
+        text: "",
+        color,
+        x: Math.round(x),
+        y: Math.round(y)
+      }])
+      .select()
+      .single();
+    if (error) throw error;
+    notes.push(data);
+    renderNotes();
+    updateSyncStatus();
+    openExpand(data);
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Could not create the note.");
+  }
+}
+async function deleteNote(id) {
+  const n = notes.find(r => r.id === id);
+  if (!n) return;
+  if (popupOpenId === id) closeExpand();
+  const preview = stripMarked(n.text || "")
+    .split("\n")[0].slice(0, 60);
+
+  const ok = await askConfirm(
+    "Throw this sticky away?",
+    (preview ? '"' + preview + '"\n\n' : "") +
+    "This permanently deletes it from the cloud.",
+    true
+  );
+  if (!ok) return;
+  try {
+    flushTextSave(n);
+    const runningSave = saveQueues.get(id);
+    if (runningSave) await runningSave;
+    const { error } = await sb()
+      .from("sticky_notes")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", uid);
+    if (error) throw error;
+    dirtyNotes.delete(id);
+    notes = notes.filter(r => r.id !== id);
+    renderNotes();
+    updateSyncStatus();
+  } catch (e) {
+    console.error(e);
+    updateSyncStatus();
+    showToast("Could not delete the note.");
+  }
+}
+function autosizeCe() {
+  expandTa.style.height = "auto";
+  expandTa.style.height =
+    Math.max(230, expandTa.scrollHeight) + "px";
+}
+function openExpand(n) {
+  armed = null;
+  popupOpenId = n.id;
+  expandBox.className = "expand-box c" + (n.color || 0);
+  expandTa.innerHTML = markedToHtml(n.text || "");
+  expandOverlay.classList.add("open");
+  autosizeCe();
+  expandTa.focus();
+  const sel = window.getSelection();
+  const r = document.createRange();
+  r.selectNodeContents(expandTa);
+  r.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+function closeExpand() {
+  if (popupOpenId === null) return;
+  const n = notes.find(r => r.id === popupOpenId);
+  popupOpenId = null;
+  armed = null;
+  expandOverlay.classList.remove("open");
+  if (n) {
+    flushTextSave(n);
+    updateTileText(n);
+  }
+}
+function updateTileText(n) {
+  const tile = document.querySelector(
+    '.note[data-id="' + n.id + '"] .note-body'
+  );
+  if (tile) tile.innerHTML = markedToHtml(n.text || "");
+}
+function onExpandInput() {
+  const n = notes.find(r => r.id === popupOpenId);
+  if (!n) return;
+  armed = null;
+  autosizeCe();
+  const model = readModel(expandTa);
+  let out = "";
+  let last = 0;
+  for (const sp of model.spans) {
+    if (sp.start < last) continue;
+    out += model.plain.slice(last, sp.start);
+    out += "[[" + sp.color + ":" +
+      model.plain.slice(sp.start, sp.end) + "]]";
+    last = sp.end;
+  }
+  out += model.plain.slice(last);
+  queueTextSave(
+    n,
+    out.replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n")
+  );
+
+  updateTileText(n);
+}
+expandTa.addEventListener("input", onExpandInput);
+document.getElementById("expand-close").onclick = closeExpand;
+expandOverlay.addEventListener("click", e => {
+  if (e.target === expandOverlay) closeExpand();
+});
+function renderNotes() {
+  const board = document.getElementById("board");
+  board.querySelectorAll(".note").forEach(el => el.remove());
+  document.getElementById("board-hint").style.display =
+    notes.length ? "none" : "block";
+  document.getElementById("note-count").textContent =
+    notes.length + " note" + (notes.length === 1 ? "" : "s");
+  const q = document.getElementById("search-box")
+    .value.trim().toLowerCase();
+  for (const n of notes) {
+    const note = document.createElement("article");
+    note.className = "note c" + (n.color || 0) +
+      (draggingId === n.id ? " dragging" : "");
+    note.dataset.id = n.id;
+    const rot = ((n.id * 37) % 9) - 4;
+    note.style.left = n.x + "px";
+    note.style.top = n.y + "px";
+    note.style.setProperty("--rot", rot + "deg");
+    const grab = document.createElement("div");
+    grab.className = "note-grab";
+    grab.innerHTML = '<span class="grab-handle">&#9776;</span>';
+    const del = document.createElement("button");
+    del.className = "note-del";
+    del.title = "delete note";
+    del.innerHTML = "&#10005;";
+    del.onclick = e => {
+      e.stopPropagation();
+      deleteNote(n.id);
+    };
+    const body = document.createElement("div");
+    body.className = "note-body";
+    body.innerHTML = markedToHtml(n.text || "");
+    note.appendChild(grab);
+    note.appendChild(del);
+    note.appendChild(body);
+    attachDrag(note, grab, n);
+    note.addEventListener("click", e => {
+      if (e.target.closest(".note-del")) return;
+      if (note.__justDragged) {
+        note.__justDragged = false;
+        return;
+      }
+      openExpand(n);
+    });
+    board.appendChild(note);
+    if (q && !stripMarked(n.text).toLowerCase().includes(q)) {
+      note.classList.add("dimmed");
+    }
+  }
+}
+function bringToFront(el) {
+  if (zTop > 500) {
+    const sorted = [...document.querySelectorAll(".note")]
+      .sort((a, b) =>
+        ((+a.style.zIndex) || 0) - ((+b.style.zIndex) || 0)
+      );
+    sorted.forEach((nn, i) => {
+      nn.style.zIndex = 10 + i;
+    });
+    zTop = 10 + sorted.length;
+  }
+  el.style.zIndex = ++zTop;
+}
+function attachDrag(noteEl, grabEl, n) {
+  let startX = 0, startY = 0;
+  let origX = 0, origY = 0;
+  let moved = false;
+  grabEl.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    grabEl.setPointerCapture(e.pointerId);
+    startX = e.clientX;
+    startY = e.clientY;
+    origX = n.x;
+    origY = n.y;
+    moved = false;
+    draggingId = n.id;
+    noteEl.classList.add("dragging");
+    bringToFront(noteEl);
+    const onMove = ev => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      const board = document.getElementById("board");
+      n.x = Math.max(0, Math.min(
+        origX + dx,
+        board.clientWidth - noteEl.offsetWidth
+      ));
+      n.y = Math.max(0, origY + dy);
+      noteEl.style.left = n.x + "px";
+      noteEl.style.top = n.y + "px";
+    };
+    const onUp = () => {
+      grabEl.removeEventListener("pointermove", onMove);
+      grabEl.removeEventListener("pointerup", onUp);
+      grabEl.removeEventListener("pointercancel", onUp);
+      draggingId = null;
+      noteEl.classList.remove("dragging");
+      if (moved) {
+        noteEl.__justDragged = true;
+        n.x = Math.round(n.x);
+        n.y = Math.round(n.y);
+        noteEl.style.left = n.x + "px";
+        noteEl.style.top = n.y + "px";
+        savePatch(n, { x: n.x, y: n.y });
+      }
+    };
+    grabEl.addEventListener("pointermove", onMove);
+    grabEl.addEventListener("pointerup", onUp);
+    grabEl.addEventListener("pointercancel", onUp);
+  });
+  noteEl.addEventListener("mouseenter", () => bringToFront(noteEl));
+  noteEl.addEventListener("pointerdown", () => bringToFront(noteEl));
+}
+let rtTimer = null;
+function setupRealtime() {
+  sb()
+    .channel("sticky-notes-rt-" + uid)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "sticky_notes",
+      filter: "user_id=eq." + uid
+    }, () => scheduleRemoteReload())
+    .subscribe();
+}
+function scheduleRemoteReload() {
+  if (popupOpenId !== null || draggingId !== null ||
+      pendingSaves > 0 || dirtyNotes.size > 0) {
+    clearTimeout(rtTimer);
+    rtTimer = setTimeout(scheduleRemoteReload, 1000);
+    return;
+  }
+  clearTimeout(rtTimer);
+  rtTimer = setTimeout(async () => {
+    if (popupOpenId !== null || draggingId !== null ||
+        pendingSaves > 0 || dirtyNotes.size > 0) {
+      scheduleRemoteReload();
+      return;
+    }
+    try {
+      await loadNotes();
+      renderNotes();
+    } catch (e) {
+      console.warn("Sticky realtime reload skipped:", e);
+    }
+  }, 250);
+}
+let modalResolve = null;
+function askConfirm(title, message, destructive) {
+  return new Promise(resolve => {
+    modalResolve = resolve;
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-overlay").classList.add("open");
+  });
+}
+function closeModal(result) {
+  document.getElementById("modal-overlay").classList.remove("open");
+  if (modalResolve) {
+    modalResolve(result);
+    modalResolve = null;
+  }
+}
+document.getElementById("modal-yes").onclick = () => closeModal(true);
+document.getElementById("modal-no").onclick = () => closeModal(false);
+document.getElementById("modal-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-overlay")) {
+    closeModal(false);
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (expandOverlay.classList.contains("open")) {
+    closeExpand();
+    return;
+  }
+  if (document.getElementById("modal-overlay")
+      .classList.contains("open")) {
+    closeModal(false);
+  }
+});
+let toastTimer = null;
+function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.classList.remove("show");
+  }, 2600);
+}
+document.getElementById("search-box")
+  .addEventListener("input", renderNotes);
+function exportNotes() {
+  if (!notes.length) {
+    showToast("Nothing to export yet.");
+    return;
+  }
+  const payload = {
+    exported_at: new Date().toISOString(),
+    app: "wall-o-sticky-notes",
+    count: notes.length,
+    notes: notes.map(n => ({
+      text: n.text || "",
+      color: n.color || 0,
+      x: n.x,
+      y: n.y
+    }))
+  };
+  const blob = new Blob(
+    [JSON.stringify(payload, null, 2)],
+    { type: "application/json" }
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = d.getFullYear() + "-" +
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
+  a.href = url;
+  a.download = "sticky-notes-" + stamp + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded " + notes.length + " note" +
+    (notes.length === 1 ? "" : "s") + ".");
+}
+async function importNotes(file) {
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch (e) {
+    showToast("That file isn't a valid backup.");
+    return;
+  }
+  const incoming = Array.isArray(payload) ? payload : payload.notes;
+  if (!Array.isArray(incoming) || !incoming.length) {
+    showToast("No notes found in that file.");
+    return;
+  }
+  const rows = incoming
+    .filter(n => n && typeof n.text === "string")
+    .map(n => ({
+      user_id: uid,
+      text: n.text,
+      color: Number.isInteger(n.color) ? n.color : 0,
+      x: Math.max(0, Math.round(Number(n.x) || 0)),
+      y: Math.max(0, Math.round(Number(n.y) || 0))
+    }));
+  if (!rows.length) {
+    showToast("No usable notes in that file.");
+    return;
+  }
+  rows.forEach((r, i) => {
+    r.x += 16 + (i % 4) * 8;
+    r.y += 16;
+  });
+  try {
+    const { error } = await sb()
+      .from("sticky_notes")
+      .insert(rows);
+    if (error) throw error;
+    await loadNotes();
+    renderNotes();
+    updateSyncStatus();
+    showToast("Imported " + rows.length + " note" +
+      (rows.length === 1 ? "" : "s") + ".");
+  } catch (e) {
+    console.error(e);
+    setSync(false);
+    showToast("Import failed \u2014 open console (F12) for details.");
+  }
+}
+document.getElementById("export-btn")
+  .addEventListener("click", exportNotes);
+document.getElementById("import-btn")
+  .addEventListener("click", () => {
+    document.getElementById("import-file").click();
+  });
+document.getElementById("import-file")
+  .addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (f) importNotes(f);
+  });
+(async function init() {
+  try {
+    await ensureAuth();
+  } catch (e) {
+    return;
+  }
+  const session = await sb().auth.getSession();
+  uid = session.data && session.data.session &&
+    session.data.session.user.id;
+  if (!uid) return;
+  try {
+    await loadNotes();
+    setupRealtime();
+    updateSyncStatus();
+  } catch (err) {
+    console.error(err);
+    setSync(false);
+    showToast("Could not load your notes from the cloud.");
+  }
+  renderNotes();
+})();
+</script>
+</body>
+</html>
