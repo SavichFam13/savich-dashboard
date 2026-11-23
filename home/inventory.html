@@ -7,8 +7,8 @@
 <title>Household Inventory</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-  :root { --hot-pink: #e10ab2; }
-  .modal-box h2 { color: var(--hot-pink); }
+  :root { --hot-pink: #e10ab2; --now: #ff4d6d; }
+  .modal-box h2 { color: var(--text); font-weight: 700; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -172,6 +172,9 @@
     .columns { grid-template-columns: 1fr; }
     .add-form { grid-template-columns: 1fr 1fr; }
   }
+  .modal-box { border: 1px solid var(--accent2); text-align: center; }
+.modal-buttons { justify-content: center; }
+.modal-yes.destructive { background: var(--now); color: #fff; }
 </style>
 </head>
 <body>
@@ -235,9 +238,8 @@
   <div class="modal-box">
     <h2 id="modal-title"></h2>
     <p id="modal-message"></p>
-    <div class="modal-buttons">
-      <button class="modal-yes" id="modal-yes">DELETE</button>
-      <button class="modal-no" id="modal-no">KEEP IT</button>
+      <button class="modal-yes" id="modal-yes">YES</button>
+    <button class="modal-no" id="modal-no">NO</button>
     </div>
   </div>
 </div>
@@ -417,11 +419,12 @@ async function confirmDelete(id) {
   }
   const item = inventory.find(r => r.id === id);
   if (!item) return;
-  const ok = await askConfirm(
-    "Remove this item?",
-    item.name + "\nStore: " + item.store + "\n\nThis deletes it from the shared inventory permanently.",
-    true
-  );
+const ok = await askConfirm(
+  "Remove this item?",
+  item.name + "\nStore: " + item.store + "\n\nThis deletes it from the shared inventory permanently.",
+  true,
+  { yes: "DELETE", no: "KEEP IT" }
+);
   if (!ok) return;
   try {
     const { error } = await sb().from("inventory_items").delete().eq("id", id);
@@ -521,12 +524,13 @@ async function buyAll(id) {
 async function zeroAll() {
   const count = inventory.filter(i => i.qty > 0).length;
   if (count === 0) { showToast("Nothing to clear."); return; }
-  const ok = await askConfirm(
-    "Zero all quantities?",
-    count + " item" + (count === 1 ? "" : "s") +
-    " will be set to zero and the grocery list will empty (for BOTH of you — this is shared).",
-    true
-  );
+const ok = await askConfirm(
+  "Zero all quantities?",
+  count + " item" + (count === 1 ? "" : "s") +
+  " will be set to zero and the grocery list will empty (for BOTH of you — this is shared).",
+  true,
+  { yes: "ZERO ALL", no: "KEEP" }
+);
   if (!ok) return;
   try {
     for (const item of inventory.filter(i => i.qty > 0)) {
@@ -573,12 +577,13 @@ async function importData(e) {
   let data;
   try { data = JSON.parse(text); } catch { showToast("Couldn't read that file."); return; }
   if (!Array.isArray(data)) { showToast("That file isn't a valid backup."); return; }
-  const ok = await askConfirm(
-    "Replace shared inventory?",
-    "This DELETES every item currently in the cloud inventory and replaces them with the " +
-    data.length + " items from the backup file. Both accounts will see the result.",
-    true
-  );
+const ok = await askConfirm(
+  "Replace shared inventory?",
+  "This DELETES every item currently in the cloud inventory and replaces them with the " +
+  data.length + " items from the backup file. Both accounts will see the result.",
+  true,
+  { yes: "REPLACE", no: "CANCEL" }
+);
   if (!ok) return;
   try {
     const { error: delErr } = await sb()
@@ -610,11 +615,14 @@ async function importData(e) {
   }
 }
 let modalResolve = null;
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, labels) {
+  const L = labels || {};
   return new Promise(resolve => {
     modalResolve = resolve;
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-yes").textContent = L.yes || "YES";
+    document.getElementById("modal-no").textContent = L.no || "NO";
     document.getElementById("modal-yes")
       .classList.toggle("destructive", !!destructive);
     document.getElementById("modal-overlay").classList.add("open");
