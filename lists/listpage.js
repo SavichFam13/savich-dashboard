@@ -100,7 +100,7 @@ function getCollapsed() {
 }
 function saveCollapsed(set) {
   try { localStorage.setItem(collapsedStoreKey(), JSON.stringify(Array.from(set))); }
-  catch (e) { /* private mode etc. — just don't remember it */ }
+  catch (e) { /*NO PEAKING */ }
 }
 function taskOrderKey(section) {
   return "lp-task-order-" + (LP_SEL || "none") + "::" + (section || "__loose__");

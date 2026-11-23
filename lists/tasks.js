@@ -416,12 +416,10 @@ function openDetailPopup(ev, t) {
     document.removeEventListener("keydown", onEsc);
   }), 0);
 }
-// NEW: left-click title = mini move toolbar (Today + list pages)
 function openTitleToolbar(ev, t, dateStr, rerender) {
   closeMenus(); closeDetailPopup();
   const o = occCache.find(x => x.task_id === t.id && x.orig_date === dateStr);
   if (o && (o.status === "done" || o.status === "skipped")) {
-    // already resolved today — offer details instead of a move
     openDetailPopup(ev, t);
     return;
   }
@@ -429,8 +427,13 @@ function openTitleToolbar(ev, t, dateStr, rerender) {
   el.className = "item-menu";
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
+    '<button data-act="done">✓ Done</button>' +
+    '<button data-act="skip">✗ Won\'t do</button>' +
     '<button data-act="tomorrow">→ Move to tomorrow</button>' +
-    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>';
+    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>' +
+    '<button data-act="edit">✎ Edit series</button>' +
+    '<button data-act="delete" class="danger">🗑 Delete entire series</button>' +
+    '<button data-act="undo" class="danger">↺ Undo override</button>';
   document.body.appendChild(el);
   el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
   el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
