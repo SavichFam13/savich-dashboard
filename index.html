@@ -690,17 +690,15 @@
   function hideGate() {
     gate.classList.add("hidden");
   }
-  async function signOut() {
-    localStorage.removeItem(UNLOCK_FLAG);
-    try { await sb().auth.signOut(); } catch (e) {}
-    location.reload();
-  }
   const unlocked = localStorage.getItem(UNLOCK_FLAG);
   if (unlocked) hideGate();
   (async function initGate() {
     let session = null;
+    const check = sb().auth.getSession();
+    const bail = new Promise(res => setTimeout(() =>
+      res({ data: null, error: { message: "timed out" } }), 5000));
     try {
-      const { data, error } = await sb().auth.getSession();
+      const { data, error } = await Promise.race([check, bail]);
       session = data && data.session;
       if (error && !session) {
         if (unlocked) {
