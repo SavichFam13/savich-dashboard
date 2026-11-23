@@ -145,7 +145,6 @@
       if (!refreshLock(uid)) lostOwnership = true;
     }, LOCK_KEEPALIVE_MS);
     try {
-      if (!refreshLock(uid)) { lostOwnership = true; return false; }
       const fresh = await loadUserState(DAILY_KEY, null);
       const cur = fresh && fresh.state && fresh.state.daily;
       if (!isDayState(cur)) return false;      
@@ -169,7 +168,6 @@
         }
         if (changed) {
           hist.logs[year][dayKey] = day;
-          hist.updatedAt = hist.updatedAt || {};
           hist.updatedAt.logs = Date.now();
           await saveUserState(HISTORY_KEY, { savedAt: Date.now(), state: hist });
         }
