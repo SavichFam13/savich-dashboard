@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../common.css">
 <style>
   .sync-note.live { color: var(--lf-teal); }
-  .modal-box h2 { color: var(--lf-pink); }
+  .modal-box h2 { color: var(--text); font-weight: 700; }
   .toast { border-color: var(--lf-teal); color: var(--lf-teal); font-weight: 700; }
   :root {
     --bg: #121016;
@@ -25,6 +25,7 @@
     --lf-teal: #12d6b0;
     --lf-blue: #00c2e0;
     --lf-purple: #8b2fc9;
+    --now: #ff4d6d;
   }
   body {
     background: var(--bg);
@@ -246,6 +247,8 @@
     0% { transform: scale(.4) translateY(0); opacity: 1; }
     100% { transform: scale(1.6) translateY(-50px); opacity: 0; }
   }
+  .modal-box { border: 1px solid var(--accent2); text-align: center; }
+  .modal-buttons { justify-content: center; }
 </style>
 </head>
 <body>
@@ -409,11 +412,12 @@ function toggleDone(ev, kind, i) {
 }
 async function removeItem(kind, i) {
   const item = data[kind][i];
-  const ok = await askConfirm(
-    "Banish this one forever?",
-    item.txt + "\n\nThere's no take-backs on a banishing.",
-    true
-  );
+const ok = await askConfirm(
+  "Banish this one forever?",
+  item.txt + "\n\nThere's no take-backs on a banishing.",
+  true,
+  { yes: "DELETE", no: "KEEP IT" }
+);
   if (!ok) return;
   data[kind].splice(i, 1);
   save();
@@ -506,10 +510,11 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, labels) {
+  const L = labels || {};
   return askChoice(title, message, [
-    { label: "NO", value: false },
-    { label: "YES", value: true, primary: true, destructive: !!destructive }
+    { label: L.yes || "YES", value: true, primary: true, destructive: !!destructive },
+    { label: L.no || "NO", value: false }
   ]);
 }
 function closeModal(result) {
