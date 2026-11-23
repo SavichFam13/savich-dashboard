@@ -695,13 +695,17 @@ function importData(e) {
         "This overwrites the book with the contents of the backup file.",
         true
       );
-    recipes.forEach(r => {
-    r.calories = Number(r.calories) || 0;
-    r.carbs = Number(r.carbs) || 0;
-    r.id = parseInt(r.id, 10) || Date.now();
-    });
       if (!ok) return;
-      recipes = data;
+      recipes = data.map(r => {
+        const c = Number(r && r.calories);
+        const cb = Number(r && r.carbs);
+        const id = parseInt(r && r.id, 10);
+        return Object.assign({}, r, {
+          calories: Number.isFinite(c) && c > 0 ? c : null,
+          carbs: Number.isFinite(cb) && cb > 0 ? cb : null,
+          id: Number.isFinite(id) ? id : Date.now()
+        });
+      });
       navStack = [];
       await saveStorage();
       renderList();
