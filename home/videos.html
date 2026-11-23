@@ -963,6 +963,11 @@ function renderOwned() {
       });
     });
   });
+  cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      openAddItem("owned", null, b.dataset.addOwned);
+    });
+  });
   wireChips(cols);
 }
 function filteredWish() {
@@ -1088,7 +1093,7 @@ function renderCats() {
     b.addEventListener("click", function () {
       var c = b.dataset.catdel;
       var used = items.filter(function (i) { return i.cat === c; }).length;
-      askConfirm("Remove Category", '"' + c + '" has ' + used + ' item(s). Removing it moves those items to "Other".\n\nThe whole household sees this change.', true, { yes: "REMOVE", no: "KEEP" }).then(function (ok) {
+      askConfirm("Remove Category", '"' + c + '" has ' + used + ' item(s). Removing it moves those items to "Other".\n\nThe whole household sees this change.', true, { yes: "REMOVE", no: "KEEP IT" }).then(function (ok) {
         if (!ok) return;
         cats = cats.filter(function (x) { return x !== c; });
         if (cats.indexOf("Other") === -1) cats.push("Other");
