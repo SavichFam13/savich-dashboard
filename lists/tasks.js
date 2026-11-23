@@ -69,7 +69,8 @@ function rollingDueDate(task) {
   for (const o of occCache) {
     if (o.task_id !== task.id) continue;
     if (o.status !== "done" && o.status !== "skipped") continue;
-    if (!last || o.orig_date > last) last = o.orig_date;
+    const eff = o.moved_to || o.orig_date;
+    if (!last || eff > last) last = eff;
   }
   return last ? addDaysStr(last, n) : task.start_date;
 }
@@ -262,11 +263,14 @@ async function markDone(taskId, dateStr) {
   if (existing) {
     await updateRow("task_occurrences", existing.id, {
       status: "done", moved_to: existing.moved_to,
-      done_by: uid, updated_at: new Date().toISOString()
+      done_by: uid,
+      done_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
   } else {
     await insertRow("task_occurrences", {
-      task_id: taskId, orig_date: dateStr, status: "done", done_by: uid
+      task_id: taskId, orig_date: dateStr, status: "done", done_by: uid,
+      done_at: new Date().toISOString()
     });
   }
   const t = tasksCache.find(x => x.id === taskId);
@@ -287,11 +291,14 @@ async function markSkipped(taskId, dateStr) {
     o.task_id === taskId && o.orig_date === dateStr);
   if (existing) {
     await updateRow("task_occurrences", existing.id, {
-      status: "skipped", updated_at: new Date().toISOString()
+      status: "skipped",
+      done_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
   } else {
     await insertRow("task_occurrences", {
-      task_id: taskId, orig_date: dateStr, status: "skipped"
+      task_id: taskId, orig_date: dateStr, status: "skipped",
+      done_at: new Date().toISOString()
     });
   }
   const t = tasksCache.find(x => x.id === taskId);
@@ -356,6 +363,12 @@ let detailPopupEl = null;
 function closeDetailPopup() {
   if (detailPopupEl) { detailPopupEl.remove(); detailPopupEl = null; }
 }
+function histTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return " " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
 function openDetailPopup(ev, t) {
   closeMenus(); closeDetailPopup();
   const el = document.createElement("div");
@@ -363,16 +376,19 @@ function openDetailPopup(ev, t) {
   const HIST_SHOWN = 3;
   const hist = occCache
     .filter(o => o.task_id === t.id)
-    .sort((a, b) => a.orig_date > b.orig_date ? -1 :
-                    a.orig_date < b.orig_date ? 1 : 0)
+    .map(o => ({ o: o, eff: o.moved_to || o.orig_date }))
+    .sort((a, b) => a.eff > b.eff ? -1 : a.eff < b.eff ? 1 : 0)
     .slice(0, HIST_SHOWN);
-  const histHTML = hist.map(o => {
+  const histHTML = hist.map(({ o, eff }) => {
     let what;
-    if (o.status === "done")        what = "✓ done";
-    else if (o.status === "skipped") what = "✗ won't do";
-    else if (o.moved_to)            what = "→ moved to " + o.moved_to.slice(5);
+    if (o.status === "done")
+      what = "✓ done" + histTime(o.done_at || o.updated_at);
+    else if (o.status === "skipped")
+      what = "✗ won't do" + histTime(o.done_at || o.updated_at);
+    else if (o.moved_to)
+      what = "→ moved to " + o.moved_to.slice(5);
     else return "";
-    return "<div>" + o.orig_date.slice(5) + " · " + what + "</div>";
+    return "<div>" + eff.slice(5) + " · " + what + "</div>";
   }).join("");
   const histBlock = (histHTML && !t.is_note)
     ? '<div style="margin:10px 0 10px;padding:8px 0;' +

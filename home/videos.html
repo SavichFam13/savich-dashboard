@@ -431,6 +431,11 @@ tr:hover td { background: #1d1926; }
           <select id="aiCat" style="width:100%;"></select>
         </div>
         <div>
+          <label class="f-label">Collection / Series — keeps entries together (optional)</label>
+          <input type="text" id="aiColl" list="collList" style="width:100%;" placeholder="e.g. South Park, Lord of the Rings...">
+          <datalist id="collList"></datalist>
+        </div>
+        <div>
           <label class="f-label">Subtitles</label>
           <label class="check-row">
             <input type="checkbox" id="aiSubs">
@@ -439,9 +444,19 @@ tr:hover td { background: #1d1926; }
         </div>
       </div>
       <div class="ai-step" id="aiStep2">
-        <div>
-          <label class="f-label">Year it came out</label>
-          <input type="text" id="aiYear" inputmode="numeric" placeholder="e.g. 1994" style="width:100%;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label class="f-label">Year it came out</label>
+            <input type="text" id="aiYear" inputmode="numeric" placeholder="e.g. 1994" style="width:100%;">
+          </div>
+          <div>
+            <label class="f-label">Season # (TV only, optional)</label>
+            <input type="text" id="aiSeason" inputmode="numeric" placeholder="e.g. 3" style="width:100%;">
+          </div>
+          <div>
+            <label class="f-label">Episode # (optional)</label>
+            <input type="text" id="aiEp" inputmode="numeric" placeholder="e.g. 7" style="width:100%;">
+          </div>
         </div>
         <div>
           <label class="f-label">Our rating</label>
@@ -644,10 +659,16 @@ function renderSummary() {
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
-
-/* ===================== ADD ITEM — TWO-STEP WIZARD ===================== */
 var addItemCtx = null;
 var aiStars = 0;
+function uniqueColls() {
+  var seen = {}, out = [];
+  items.forEach(function (i) {
+    var c = (i.coll || "").trim();
+    if (c && !seen[c.toLowerCase()]) { seen[c.toLowerCase()] = true; out.push(c); }
+  });
+  return out.sort(function (a, b) { return a.localeCompare(b); });
+}
 function openAddItem(mode, existing) {
   addItemCtx = { mode: mode, editId: existing ? existing.id : null };
   document.getElementById("addItemHeading").textContent =
@@ -655,10 +676,17 @@ function openAddItem(mode, existing) {
   document.getElementById("aiTitle").value = existing ? existing.title : "";
   document.getElementById("aiType").value = existing ? existing.type : "movie";
   document.getElementById("aiSubs").checked = existing ? !!existing.subs : false;
+  document.getElementById("aiColl").value = existing && existing.coll ? existing.coll : "";
   document.getElementById("aiYear").value = existing && existing.year ? existing.year : "";
+  document.getElementById("aiSeason").value = existing && existing.season ? existing.season : "";
+  document.getElementById("aiEp").value = existing && existing.ep ? existing.ep : "";
   document.getElementById("aiNotes").value = existing && existing.notes ? existing.notes : "";
   aiStars = existing && existing.rating ? Number(existing.rating) || 0 : 0;
   fillCatSelect(document.getElementById("aiCat"), existing ? existing.cat : cats[0]);
+  var dl = document.getElementById("collList");
+  dl.innerHTML = uniqueColls().map(function (c) {
+    return '<option value="' + esc(c) + '">';
+  }).join("");
   setAiStep(1);
   document.getElementById("addItemOverlay").classList.add("show");
   document.getElementById("aiTitle").focus();
@@ -687,7 +715,7 @@ function renderAiStars() {
   el.querySelectorAll("[data-star]").forEach(function (b) {
     b.addEventListener("click", function () {
       var v = Number(b.dataset.star);
-      aiStars = (v === aiStars) ? 0 : v;   // click the lit star again to clear it
+      aiStars = (v === aiStars) ? 0 : v;
       renderAiStars();
     });
   });
@@ -716,7 +744,10 @@ on("aiSave", "click", function () {
   var type = document.getElementById("aiType").value;
   var cat = document.getElementById("aiCat").value;
   var subs = document.getElementById("aiSubs").checked;
+  var coll = document.getElementById("aiColl").value.trim() || null;
   var year = document.getElementById("aiYear").value.trim() || null;
+  var season = parseInt(document.getElementById("aiSeason").value, 10);
+  var ep = parseInt(document.getElementById("aiEp").value, 10);
   var rating = aiStars || null;
   var notes = document.getElementById("aiNotes").value.trim() || null;
   if (!title) { toast("Give it a title."); return; }
@@ -725,7 +756,10 @@ on("aiSave", "click", function () {
     var it = items.find(function (i) { return i.id === addItemCtx.editId; });
     if (it) {
       it.title = title; it.type = type; it.cat = cat; it.subs = subs;
-      it.year = year; it.rating = rating; it.notes = notes;
+      it.coll = coll; it.year = year;
+      it.season = isNaN(season) ? null : season;
+      it.ep = isNaN(ep) ? null : ep;
+      it.rating = rating; it.notes = notes;
     }
     toast("Updated.");
   } else {
@@ -733,7 +767,10 @@ on("aiSave", "click", function () {
       id: Date.now() + "-" + Math.floor(Math.random() * 1e6),
       title: title, type: type, cat: cat, subs: subs,
       owned: addItemCtx.mode === "owned",
-      year: year, rating: rating, notes: notes
+      coll: coll, year: year,
+      season: isNaN(season) ? null : season,
+      ep: isNaN(ep) ? null : ep,
+      rating: rating, notes: notes
     });
     toast(addItemCtx.mode === "owned" ? "Added to collection." : "Added to wishlist.");
   }
@@ -747,8 +784,6 @@ function fillCatSelect(sel, chosen) {
   }).join("");
 }
 on("btnAddWish", "click", function () { openAddItem("wishlist"); });
-
-/* ===================== TITLE-CLICK DETAIL CHIP ===================== */
 var mediaChipEl = null;
 function closeMediaChip() {
   if (mediaChipEl) { mediaChipEl.remove(); mediaChipEl = null; }
@@ -763,11 +798,16 @@ function openMediaChip(ev, it) {
   var el = document.createElement("div");
   el.className = "media-chip";
   var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
+  var se = "";
+  if (it.season != null && it.season !== "")
+    se = "S" + it.season + (it.ep != null && it.ep !== "" ? "E" + it.ep : "");
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="chip-title">' + esc(it.title) + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Category</span>' + esc(it.cat) + "</div>" +
+    (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span>' + esc(it.coll) + "</div>" : "") +
+    (se ? '<div class="chip-row"><span class="chip-k">Season/Ep</span>' + esc(se) + "</div>" : "") +
     '<div class="chip-row"><span class="chip-k">Year</span>' + (it.year ? esc(it.year) : "—") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Rating</span>' + stars + "</div>" +
     '<div class="chip-row"><span class="chip-k">Subtitles</span>' + (it.subs ? "✓ has them" : "needs them") + "</div>" +
@@ -802,8 +842,13 @@ function wireChips(container) {
     });
   });
 }
-
 var collapsedCats = {};
+function epSortKey(i) {
+  if (i.season != null && i.season !== "")
+    return "s" + String(i.season).padStart(4, "0") + "e" +
+      String(i.ep == null ? 0 : i.ep).padStart(4, "0");
+  return "y" + String(i.year || "0000");
+}
 function filteredOwned() {
   var q = document.getElementById("ownedSearch").value.trim().toLowerCase();
   var tf = document.getElementById("ownedTypeFilter").value;
@@ -822,6 +867,22 @@ function ccBadgeHTML(i) {
     ? '<span class="cc-badge cc-has" title="Has subtitles">CC ✓</span>'
     : '<span class="cc-badge cc-no" title="Needs subtitles">CC?</span>';
 }
+function rowHTML(i) {
+  var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
+  var se = "";
+  if (i.season != null && i.season !== "")
+    se = ' <span class="mi-year">S' + i.season + (i.ep != null && i.ep !== "" ? "E" + i.ep : "") + "</span>";
+  var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
+  return '<div class="media-item">' +
+    '<span class="mi-title">' + ccBadgeHTML(i) +
+      '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + "</span>" +
+    "</span>" +
+    '<span class="mi-actions">' +
+      '<button class="mini-btn cc-toggle" data-cctoggle="' + esc(i.id) + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
+      '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
+      '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
+    '</span></div>';
+}
 function renderOwned() {
   var list = filteredOwned();
   var cols = document.getElementById("ownedCols");
@@ -831,29 +892,43 @@ function renderOwned() {
     var typeCount = 0;
     var colHtml = "";
     cats.forEach(function (c) {
-      var g = list.filter(function (i) { return i.type === type && i.cat === c; })
-                  .sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
+      var g = list.filter(function (i) { return i.type === type && i.cat === c; });
       if (!g.length) return;
       typeCount += g.length;
       var key = type + "::" + c;
       var collapsed = !!collapsedCats[key];
+      var loose = g.filter(function (i) { return !i.coll; })
+                   .sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
+      var collMap = {};
+      var collNames = [];
+      g.forEach(function (i) {
+        if (!i.coll) return;
+        var nm = i.coll;
+        if (!collMap[nm]) { collMap[nm] = []; collNames.push(nm); }
+        collMap[nm].push(i);
+      });
+      collNames.sort(function (a, b) { return a.localeCompare(b, undefined, { sensitivity: "base" }); });
+      var inner = "";
+      loose.forEach(function (i) { inner += rowHTML(i); });
+      collNames.forEach(function (nm) {
+        var ck = type + "##" + c + "##" + nm.toLowerCase();
+        var ccollapsed = !!collapsedCats[ck];
+        var grp = collMap[nm].slice().sort(function (a, b) {
+          var ka = epSortKey(a), kb = epSortKey(b);
+          if (ka !== kb) return ka < kb ? -1 : 1;
+          return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+        });
+        inner += '<div class="cat-group" style="margin:10px 0 4px;">' +
+          '<div class="cat-head coll-head" data-ckey="' + esc(ck) + '" style="color:var(--accent2);letter-spacing:1px;">' +
+            '<span>📺 ' + esc(nm) + '</span><span class="chev">' + (ccollapsed ? "▸" : "▾") + ' ' + grp.length + '</span></div>' +
+          '<div class="cat-body' + (ccollapsed ? " collapsed" : "") + '">';
+        grp.forEach(function (i) { inner += rowHTML(i); });
+        inner += '</div></div>';
+      });
+      if (!inner) inner = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
       colHtml += '<div class="cat-group">' +
         '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
-        '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">';
-      g.forEach(function (i) {
-        var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
-        var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
-        colHtml += '<div class="media-item">' +
-          '<span class="mi-title">' + ccBadgeHTML(i) +
-            '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + st + "</span>" +
-          "</span>" +
-          '<span class="mi-actions">' +
-            '<button class="mini-btn cc-toggle" data-cctoggle="' + esc(i.id) + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
-            '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
-            '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
-          '</span></div>';
-      });
-      colHtml += '</div></div>';
+        '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">' + inner + '</div></div>';
     });
     if (!colHtml) {
       colHtml = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
@@ -864,9 +939,17 @@ function renderOwned() {
       colHtml + '</div>';
   });
   cols.innerHTML = html;
-  cols.querySelectorAll(".cat-head").forEach(function (h) {
+  cols.querySelectorAll(".cat-head[data-key]").forEach(function (h) {
     h.addEventListener("click", function () {
       var key = h.dataset.key;
+      collapsedCats[key] = !collapsedCats[key];
+      renderOwned();
+    });
+  });
+  cols.querySelectorAll(".coll-head[data-ckey]").forEach(function (h) {
+    h.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var key = h.dataset.ckey;
       collapsedCats[key] = !collapsedCats[key];
       renderOwned();
     });
@@ -907,7 +990,17 @@ function filteredWish() {
   var tf = document.getElementById("wishTypeFilter").value;
   return items.filter(function (i) {
     return !i.owned && (!tf || i.type === tf) && (!q || i.title.toLowerCase().indexOf(q) !== -1);
-  }).sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
+  }).sort(function (a, b) {
+    var ac = a.coll || "", bc = b.coll || "";
+    if (ac !== bc) {
+      if (!ac) return 1;      // loose titles sink below collection blocks
+      if (!bc) return -1;
+      return ac.localeCompare(bc, undefined, { sensitivity: "base" });
+    }
+    var ka = epSortKey(a), kb = epSortKey(b);
+    if (ka !== kb) return ka < kb ? -1 : 1;
+    return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+  });
 }
 function renderWish() {
   var list = filteredWish();
@@ -918,9 +1011,12 @@ function renderWish() {
   }
   body.innerHTML = list.map(function (i) {
     var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
+    var se = "";
+    if (i.season != null && i.season !== "")
+      se = ' <span class="mi-year">S' + i.season + (i.ep != null && i.ep !== "" ? "E" + i.ep : "") + "</span>";
     var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
     return '<tr>' +
-      '<td>' + ccBadgeHTML(i) + ' <span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + st + '</span></td>' +
+      '<td>' + ccBadgeHTML(i) + ' <span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + '</span></td>' +
       '<td><span class="badge ' + (i.type === "movie" ? "movie" : "tv") + '">' + (i.type === "movie" ? "Movie" : "TV") + '</span></td>' +
       '<td>' + esc(i.cat) + '</td>' +
       '<td style="text-align:right;">' +
@@ -982,6 +1078,7 @@ function doRandom(type) {
       document.getElementById("btnRandMovie").disabled = false;
       document.getElementById("btnRandTV").disabled = false;
       var extras = [];
+      if (r.coll) extras.push(r.coll);
       if (r.year) extras.push(r.year);
       if (r.rating) extras.push(chipStarLine(r.rating) + " " + r.rating + "/5");
       slotMeta.innerHTML = '<span class="badge ' + (r.type === "movie" ? "movie" : "tv") + '">' + (r.type === "movie" ? "Movie" : "TV") + '</span>' +
