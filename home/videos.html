@@ -220,7 +220,6 @@ tr:hover td { background: #1d1926; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .toolbar input[type="text"] { flex: 1; min-width: 160px; }
 .empty-note { color: var(--dim); font-size: 0.8rem; font-style: italic; padding: 8px 8px; }
-.modal-overlay.show { display: flex; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .step-tag {
   color: var(--dim);
@@ -387,7 +386,7 @@ tr:hover td { background: #1d1926; }
 </div>
 <div class="modal-overlay" id="addItemOverlay">
   <div class="modal-box">
-    <h2 id="addItemHeading">Add Item</h3>
+    <h2 id="addItemHeading">Add Item</h2>
     <div class="step-tag" id="aiStepTag">STEP 1 OF 2 — BASICS</div>
     <div style="display:grid; gap:12px;">
       <div class="ai-step show" id="aiStep1">
@@ -587,14 +586,18 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
 }
-function askConfirm(title, msg) {
+function askConfirm(title, msg, destructive, labels) {
+  var L = labels || {};
   return new Promise(function (resolve) {
     var ov = document.getElementById("modalOverlay");
     document.getElementById("modalTitle").textContent = title;
     document.getElementById("modalMsg").textContent = msg;
-    ov.classList.add("show");
+    document.getElementById("modalYes").textContent = L.yes || "YES";
+    document.getElementById("modalNo").textContent = L.no || "NO";
+    document.getElementById("modalYes").classList.toggle("destructive", !!destructive);
+    ov.classList.add("open");
     function done(val) {
-      ov.classList.remove("show");
+      ov.classList.remove("open");
       document.getElementById("modalYes").removeEventListener("click", yes);
       document.getElementById("modalNo").removeEventListener("click", no);
       ov.removeEventListener("click", overlay);
@@ -665,7 +668,7 @@ function openAddItem(mode, existing, presetType) {
     return '<option value="' + esc(c) + '">';
   }).join("");
   setAiStep(1);
-  document.getElementById("addItemOverlay").classList.add("show");
+  document.getElementById("addItemOverlay").classList.add("open");
   document.getElementById("aiTitle").focus();
 }
 function setAiStep(n) {
@@ -700,7 +703,7 @@ function renderAiStars() {
   if (cl) cl.addEventListener("click", function () { aiStars = 0; renderAiStars(); });
 }
 function closeAddItem() {
-  document.getElementById("addItemOverlay").classList.remove("show");
+  document.getElementById("addItemOverlay").classList.remove("open");
   addItemCtx = null;
 }
 on("aiCancel", "click", closeAddItem);
@@ -953,16 +956,11 @@ function renderOwned() {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.del; });
       if (!it) return;
-      askConfirm("Remove Title", 'Remove "' + it.title + '" from the collection?\n\nThe whole household sees this change.').then(function (ok) {
+      askConfirm("Remove Title", 'Remove "' + it.title + '" from the collection?\n\nThe whole household sees this change.', true, { yes: "DELETE", no: "KEEP IT" }).then(function (ok) {
         if (!ok) return;
         items = items.filter(function (i) { return i.id !== it.id; });
         persist(); renderAll(); toast("Removed.");
       });
-    });
-  });
-  cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      openAddItem("owned", null, b.dataset.addOwned);
     });
   });
   wireChips(cols);
@@ -1035,7 +1033,7 @@ function renderWish() {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.wdel; });
       if (!it) return;
-      askConfirm("Remove Title", 'Remove "' + it.title + '" from the wishlist?\n\nThe whole household sees this change.').then(function (ok) {
+      askConfirm("Remove Title", 'Remove "' + it.title + '" from the wishlist?\n\nThe whole household sees this change.', true, { yes: "DELETE", no: "KEEP IT" }).then(function (ok) {
         if (!ok) return;
         items = items.filter(function (i) { return i.id !== it.id; });
         persist(); renderAll(); toast("Removed.");
@@ -1090,7 +1088,7 @@ function renderCats() {
     b.addEventListener("click", function () {
       var c = b.dataset.catdel;
       var used = items.filter(function (i) { return i.cat === c; }).length;
-      askConfirm("Remove Category", '"' + c + '" has ' + used + ' item(s). Removing it moves those items to "Other".\n\nThe whole household sees this change.').then(function (ok) {
+      askConfirm("Remove Category", '"' + c + '" has ' + used + ' item(s). Removing it moves those items to "Other".\n\nThe whole household sees this change.', true, { yes: "REMOVE", no: "KEEP" }).then(function (ok) {
         if (!ok) return;
         cats = cats.filter(function (x) { return x !== c; });
         if (cats.indexOf("Other") === -1) cats.push("Other");
@@ -1147,7 +1145,7 @@ on("importFile", "change", function (e) {
       var inItems = Array.isArray(parsed) ? parsed : parsed.items;
       var inCats = (Array.isArray(parsed) ? null : parsed.cats);
       if (!Array.isArray(inItems)) throw 0;
-      askConfirm("Import Backup", "This overwrites EVERYONE'S collection with the backup file — the whole household sees this change. Continue?").then(function (ok) {
+      askConfirm("Import Backup", "This overwrites EVERYONE'S collection with the backup file — the whole household sees this change. Continue?", true, { yes: "IMPORT", no: "CANCEL" }).then(function (ok) {
         if (!ok) return;
         items = inItems;
         cats = (Array.isArray(inCats) && inCats.length) ? inCats : DEFAULT_CATS.slice();

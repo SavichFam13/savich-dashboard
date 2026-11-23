@@ -982,7 +982,11 @@ function wireRows(area, rerender, viewDate) {
       if (ev.target.classList.contains("cb")) {
         await markDone(taskId, dateStr); rerender();
       } else if (ev.target.classList.contains("t-title")) {
-        openTitleToolbar(ev, t, dateStr, rerender);
+        openTaskMenu(ev,
+          { task: t,
+            occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
+            date: dateStr, time: t.due_time },
+          rerender);
       }
     });
     row.oncontextmenu = ev => {

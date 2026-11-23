@@ -375,7 +375,11 @@ function renderListView() {
         else { await markDone(taskId, dateStr); renderListView(); }
       } else if (t.is_note || ev.target.classList.contains("t-title")) {
         if (t.is_note) openNotePopup(ev, t);
-        else openTitleToolbar(ev, t, dateStr, renderListView);
+        else openTaskMenu(ev, {
+          task: t,
+          occ: occCache.find(o => o.task_id === taskId && o.orig_date === dateStr),
+          date: dateStr, time: t.due_time
+        }, renderListView);
       }
     });
     const gkey = t.section || "";
