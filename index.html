@@ -591,7 +591,7 @@
   </div>
 </div>
 <div class="footer-note">
-  <span class="foot-who" id="who">Signed in</span>
+<span class="foot-who" id="who">checking…</span>
   <button onclick="signOut()">Sign out</button>
 </div>
 <div class="today-overlay" id="today-overlay">
@@ -706,13 +706,23 @@
         if (unlocked) {
           document.getElementById("who").textContent =
             "Offline mode — last known session";
+          document.getElementById("tw-next").textContent =
+            "Could not reach the cloud. The Today list needs a connection.";
+          document.getElementById("tw-count").textContent = "";
           return;
         }
         showLoginForm("Could not reach the cloud — check your connection.");
         return;
       }
     } catch (err) {
-      if (unlocked) return;
+      if (unlocked) {
+        document.getElementById("who").textContent =
+          "Offline — cloud unreachable";
+        document.getElementById("tw-next").textContent =
+          "Could not reach the cloud. The Today list needs a connection.";
+        document.getElementById("tw-count").textContent = "";
+        return;
+      }
       showLoginForm("Could not reach the cloud — check your connection.");
       return;
     }
