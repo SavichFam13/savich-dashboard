@@ -2,6 +2,7 @@
   --bg: #121016; --panel: #1c1922; --text: #f2eef7;
   --accent: #c9a0ff; --accent2: #5fd3c4; --dim: #a89bbd;
   --border: #332c3e; --good: #7ddba3; --bad: #ff8a8a; --hot-pink: #e10ab2;
+  --now: #ff4d6d;  
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -19,7 +20,7 @@ body {
 }
 .modal-overlay.open { display: flex; }
 .modal-box {
-  background: var(--panel); border: 1px solid var(--border);
+  background: var(--panel); border: 1px solid var(--accent2);
   border-radius: 10px; padding: 26px 28px 22px;
   max-width: 410px; width: 100%;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
@@ -38,7 +39,7 @@ body {
   border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
 }
 .modal-yes { background: var(--accent2); color: #121016; border: none; }
-.modal-yes.destructive { background: var(--bad); }
+.modal-yes.destructive { background: var(--now); color: #fff; }
 .modal-yes:hover { filter: brightness(1.1); }
 .modal-no {
   background: none; color: var(--dim);
