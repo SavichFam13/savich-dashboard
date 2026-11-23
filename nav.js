@@ -59,6 +59,11 @@
     });
 })();
 (function () {
+  const remScript = document.currentScript;
+  const REM_BASE = remScript && remScript.src
+    ? remScript.src.replace(/nav\.js.*$/, "")
+    : "/";
+  const REM_TODAY = REM_BASE + "lists/today.html";
   function remToday(d) {
     const dt = d || new Date();
     return dt.getFullYear() + "-" +
@@ -197,14 +202,18 @@
       ".task-rem.rem-hide { opacity: 0; transform: translateY(12px); transition: all 0.25s ease; }" +
       ".task-rem-title { font-size: 0.86rem; font-weight: 700; margin-bottom: 2px; }" +
       ".task-rem-sub { font-size: 0.72rem; color: var(--dim, #a89bbd); margin-bottom: 10px; }" +
-      ".task-rem-btns { display: flex; gap: 8px; }" +
+      ".task-rem-btns { display: flex; gap: 8px; align-items: center; }" +
       ".task-rem-btns button { font-family: inherit; font-size: 0.78rem; font-weight: 700;" +
       "  border-radius: 6px; padding: 6px 14px; cursor: pointer; }" +
       ".task-rem-done { background: var(--good, #7ddba3); color: #121016; border: none; }" +
       ".task-rem-done:hover { filter: brightness(1.1); }" +
       ".task-rem-dismiss { background: none; color: var(--dim, #a89bbd);" +
       "  border: 1px solid var(--border, #332c3e); }" +
-      ".task-rem-dismiss:hover { border-color: var(--accent, #c9a0ff); color: var(--text, #f2eef7); }";
+      ".task-rem-dismiss:hover { border-color: var(--accent, #c9a0ff); color: var(--text, #f2eef7); }" +
+      ".task-rem-today { background: none; border: none; color: var(--dim, #a89bbd);" +
+      "  font-weight: 600; font-size: 0.72rem; text-decoration: underline;" +
+      "  padding: 6px 2px; margin-left: 2px; }" +
+      ".task-rem-today:hover { color: var(--accent, #c9a0ff); }";
     document.head.appendChild(st);
   }
   function remStack() {
@@ -243,10 +252,18 @@
     const disBtn = document.createElement("button");
     disBtn.className = "task-rem-dismiss";
     disBtn.textContent = "Dismiss";
-    bb.appendChild(doneBtn); bb.appendChild(disBtn);
+    const todayBtn = document.createElement("button");
+    todayBtn.className = "task-rem-today";
+    todayBtn.textContent = "Open Today ↗";
+    todayBtn.title = "Go to the Today page";
+    bb.appendChild(doneBtn); bb.appendChild(disBtn); bb.appendChild(todayBtn);
     card.appendChild(tt); card.appendChild(ss); card.appendChild(bb);
     remStack().appendChild(card);
     disBtn.onclick = () => { markFired(t.id); remRemove(card); };
+    todayBtn.onclick = () => {
+      markFired(t.id);
+      window.location.href = REM_TODAY;
+    };
     doneBtn.onclick = async () => {
       markFired(t.id);
       doneBtn.disabled = true;
@@ -287,7 +304,7 @@
   let remBusy = false;
   async function remTick() {
     if (remBusy) return;
-    if (!window.sb) return;        
+    if (!window.sb) return;
     remBusy = true;
     try {
       const sbc = sb();
@@ -322,7 +339,7 @@
         if (dueMin <= nowMin) due.push(t);
       }
       for (const t of due) {
-        markFired(t.id);      
+        markFired(t.id);
         remShow(t, t.due_time);
       }
     } catch (e) {
