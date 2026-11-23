@@ -658,8 +658,6 @@ function renderSummary() {
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
-
-/* ===================== ADD ITEM — TWO-STEP WIZARD ===================== */
 var addItemCtx = null;
 var aiStars = 0;
 function uniqueColls() {
@@ -786,8 +784,6 @@ function fillCatSelect(sel, chosen) {
   }).join("");
 }
 on("btnAddWish", "click", function () { openAddItem("wishlist"); });
-
-/* ===================== TITLE-CLICK DETAIL CHIP ===================== */
 var mediaChipEl = null;
 function closeMediaChip() {
   if (mediaChipEl) { mediaChipEl.remove(); mediaChipEl = null; }
@@ -845,14 +841,13 @@ function openMediaChip(ev, it) {
 }
 function wireChips(container) {
   container.querySelectorAll("[data-chip]").forEach(function (el) {
-    el.addEventListener("click", function (ev) {
+    el.addEventListener("contextmenu", function (ev) {
+      ev.preventDefault();
       var it = items.find(function (i) { return i.id === el.dataset.chip; });
       if (it) openMediaChip(ev, it);
     });
   });
 }
-
-/* ===================== OWNED RENDER — CATEGORIES + COLLECTION BLOCKS ===================== */
 var collapsedCats = {};
 function epSortKey(i) {
   var s = i.season != null && i.season !== "";
