@@ -7,18 +7,6 @@
 <title>Media Collection</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-:root {
-  --bg: #121016;
-  --panel: #1c1922;
-  --text: #f2eef7;
-  --accent: #c9a0ff;
-  --accent2: #5fd3c4;
-  --hot-pink: #e10ab2;
-  --dim: #a89bbd;
-  --border: #332c3e;
-  --good: #7ddba3;
-  --bad: #ff8a8a;
-}
 body {
   background: var(--bg);
   color: var(--text);
@@ -232,18 +220,7 @@ tr:hover td { background: #1d1926; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .toolbar input[type="text"] { flex: 1; min-width: 160px; }
 .empty-note { color: var(--dim); font-size: 0.8rem; font-style: italic; padding: 8px 8px; }
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(10,8,14,0.75);
-  z-index: 100; align-items: center; justify-content: center;
-}
 .modal-overlay.show { display: flex; }
-.modal-box {
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: 8px; padding: 24px; max-width: 420px; width: 90%;
-}
-.modal-box h3 { color: var(--hot-pink); font-size: 1rem; margin-bottom: 10px; }
-.modal-box p { color: var(--dim); font-size: 0.84rem; margin-bottom: 18px; white-space: pre-line; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .step-tag {
   color: var(--dim);
@@ -400,17 +377,17 @@ tr:hover td { background: #1d1926; }
 </section>
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
-    <h3 id="modalTitle"></h3>
-    <p id="modalMsg"></p>
-    <div class="modal-actions">
-      <button class="btn" id="modalNo">No</button>
-      <button class="btn btn-danger" id="modalYes">Yes</button>
-    </div>
+<h2 id="modalTitle"></h2>
+<p id="modalMsg"></p>
+<div class="modal-buttons">
+  <button class="modal-yes" id="modalYes">YES</button>
+  <button class="modal-no" id="modalNo">NO</button>
+</div>
   </div>
 </div>
 <div class="modal-overlay" id="addItemOverlay">
   <div class="modal-box">
-    <h3 id="addItemHeading">Add Item</h3>
+    <h2 id="addItemHeading">Add Item</h3>
     <div class="step-tag" id="aiStepTag">STEP 1 OF 2 — BASICS</div>
     <div style="display:grid; gap:12px;">
       <div class="ai-step show" id="aiStep1">
