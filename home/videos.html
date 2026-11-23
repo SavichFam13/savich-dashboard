@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Media Collection</title>
 <link rel="stylesheet" href="../common.css">
@@ -155,10 +155,12 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
   font-size: 0.74rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 1.5px;
   padding-bottom: 4px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between;
+  display: flex; justify-content: space-between; gap: 10px;
   cursor: pointer; user-select: none;
 }
-.cat-head .chev { color: var(--dim); }
+/* FIXED: long collection names wrap instead of getting cut off */
+.cat-head > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.cat-head .chev { color: var(--dim); flex-shrink: 0; }
 .cat-body { padding-top: 4px; }
 .cat-body.collapsed { display: none; }
 .media-item {
@@ -253,7 +255,7 @@ tr:hover td { background: #1d1926; }
   margin-bottom: 12px;
 }
 .ai-step { display: none; }
-.ai-step.show { display: block; }
+.ai-step.show { display: grid; gap: 14px; align-content: start; }
 .star-row { display: flex; align-items: center; gap: 2px; }
 .star-btn {
   background: none; border: none;
@@ -444,7 +446,7 @@ tr:hover td { background: #1d1926; }
         </div>
       </div>
       <div class="ai-step" id="aiStep2">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
             <label class="f-label">Year it came out</label>
             <input type="text" id="aiYear" inputmode="numeric" placeholder="e.g. 1994" style="width:100%;">
@@ -454,8 +456,8 @@ tr:hover td { background: #1d1926; }
             <input type="text" id="aiSeason" inputmode="numeric" placeholder="e.g. 3" style="width:100%;">
           </div>
           <div>
-            <label class="f-label">Episode # (optional)</label>
-            <input type="text" id="aiEp" inputmode="numeric" placeholder="e.g. 7" style="width:100%;">
+            <label class="f-label">Movie / Episode # — order in the set (optional)</label>
+            <input type="text" id="aiEp" inputmode="numeric" placeholder="movies: 1, 2, 3 · TV: ep #" style="width:100%;">
           </div>
         </div>
         <div>
@@ -793,21 +795,26 @@ function chipStarLine(v) {
   if (!n) return "";
   return "★".repeat(n) + "☆".repeat(5 - n);
 }
+function epTag(i) {
+  var s = i.season != null && i.season !== "";
+  var e = i.ep != null && i.ep !== "";
+  if (s) return "S" + i.season + (e ? "E" + i.ep : "");
+  if (e) return "#" + i.ep;
+  return "";
+}
 function openMediaChip(ev, it) {
   closeMediaChip();
   var el = document.createElement("div");
   el.className = "media-chip";
   var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
-  var se = "";
-  if (it.season != null && it.season !== "")
-    se = "S" + it.season + (it.ep != null && it.ep !== "" ? "E" + it.ep : "");
+  var et = epTag(it);
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="chip-title">' + esc(it.title) + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Category</span>' + esc(it.cat) + "</div>" +
     (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span>' + esc(it.coll) + "</div>" : "") +
-    (se ? '<div class="chip-row"><span class="chip-k">Season/Ep</span>' + esc(se) + "</div>" : "") +
+    (et ? '<div class="chip-row"><span class="chip-k">Season/Ep</span>' + esc(et) + "</div>" : "") +
     '<div class="chip-row"><span class="chip-k">Year</span>' + (it.year ? esc(it.year) : "—") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Rating</span>' + stars + "</div>" +
     '<div class="chip-row"><span class="chip-k">Subtitles</span>' + (it.subs ? "✓ has them" : "needs them") + "</div>" +
@@ -844,9 +851,12 @@ function wireChips(container) {
 }
 var collapsedCats = {};
 function epSortKey(i) {
-  if (i.season != null && i.season !== "")
-    return "s" + String(i.season).padStart(4, "0") + "e" +
-      String(i.ep == null ? 0 : i.ep).padStart(4, "0");
+  var s = i.season != null && i.season !== "";
+  var e = i.ep != null && i.ep !== "";
+  if (s || e) {
+    return "s" + String(s ? i.season : 0).padStart(4, "0") +
+      "e" + String(e ? i.ep : 0).padStart(4, "0");
+  }
   return "y" + String(i.year || "0000");
 }
 function filteredOwned() {
@@ -869,9 +879,8 @@ function ccBadgeHTML(i) {
 }
 function rowHTML(i) {
   var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
-  var se = "";
-  if (i.season != null && i.season !== "")
-    se = ' <span class="mi-year">S' + i.season + (i.ep != null && i.ep !== "" ? "E" + i.ep : "") + "</span>";
+  var et = epTag(i);
+  var se = et ? ' <span class="mi-year">' + esc(et) + "</span>" : "";
   var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
   return '<div class="media-item">' +
     '<span class="mi-title">' + ccBadgeHTML(i) +
@@ -993,7 +1002,7 @@ function filteredWish() {
   }).sort(function (a, b) {
     var ac = a.coll || "", bc = b.coll || "";
     if (ac !== bc) {
-      if (!ac) return 1;      // loose titles sink below collection blocks
+      if (!ac) return 1;
       if (!bc) return -1;
       return ac.localeCompare(bc, undefined, { sensitivity: "base" });
     }
@@ -1011,9 +1020,8 @@ function renderWish() {
   }
   body.innerHTML = list.map(function (i) {
     var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
-    var se = "";
-    if (i.season != null && i.season !== "")
-      se = ' <span class="mi-year">S' + i.season + (i.ep != null && i.ep !== "" ? "E" + i.ep : "") + "</span>";
+    var et = epTag(i);
+    var se = et ? ' <span class="mi-year">' + esc(et) + "</span>" : "";
     var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
     return '<tr>' +
       '<td>' + ccBadgeHTML(i) + ' <span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + '</span></td>' +
