@@ -294,21 +294,13 @@
       const today = remToday();
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
-      let tasks = null, occs = null;
-      if (typeof tasksCache !== "undefined" && Array.isArray(tasksCache) &&
-          tasksCache.length > 0 &&
-          typeof occCache !== "undefined" && Array.isArray(occCache)) {
-        tasks = tasksCache;
-        occs = occCache;
-      } else {
-        const [tr, orr] = await Promise.all([
-          sbc.from("tasks").select("*"),
-          sbc.from("task_occurrences").select("*")
-        ]);
-        if (!tr.data) return;
-        tasks = tr.data || [];
-        occs = orr.data || [];
-      }
+      const [tr, or] = await Promise.all([
+        sbc.from("tasks").select("*"),
+        sbc.from("task_occurrences").select("*")
+      ]);
+      if (!tr.data) return;
+      const tasks = tr.data || [];
+      const occs = or.data || [];
       const occToday = {};
       for (const o of occs) {
         if (o.orig_date === today) occToday[o.task_id] = o;
@@ -339,5 +331,5 @@
     }
   }
   remTick();
-  setInterval(function () { if (!document.hidden) remTick(); }, 60000);
+  setInterval(remTick, 60000);
 })();

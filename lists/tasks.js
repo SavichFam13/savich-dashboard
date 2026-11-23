@@ -950,24 +950,14 @@ async function initTaskPage({ pageTitle, filterFn, rerender }) {
   }
   document.getElementById("sync-note").textContent = "✓";
   rerender();
-  let rtTimer = null;
-  let refreshing = false;
-  async function doRefresh() {
-    if (refreshing) return;
-    refreshing = true;
-    try {
-      await loadAll();
-      rerender();
-    } finally {
-      refreshing = false;
-    }
-  }
-  function scheduleRefresh() {
-    clearTimeout(rtTimer);
-    rtTimer = setTimeout(doRefresh, 300);
-  }
-  subscribeRealtime(scheduleRefresh);
-  window.addEventListener("focus", scheduleRefresh);
+  subscribeRealtime(async () => {
+    await loadAll();
+    rerender();
+  });
+  window.addEventListener("focus", async () => {
+    await loadAll();
+    rerender();
+  });
 }
 function confirmBox(title, body) {
   return new Promise(res => {
