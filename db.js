@@ -5,10 +5,17 @@ function sb() {
   if (!_sb) _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   return _sb;
 }
+var _DB_SRC = (document.currentScript && document.currentScript.src) ||
+              new URL("db.js", location.href).href;
+function gotoAuth(next) {
+  const url = new URL("auth.html", _DB_SRC);
+  if (next) url.searchParams.set("next", next);
+  location.href = url.href;
+}
 async function requireAuth() {
   const { data, error } = await sb().auth.getSession();
   if (error || !data.session) {
-    location.href = "/auth.html?next=" + encodeURIComponent(location.href);
+    gotoAuth(location.href);
     return null;
   }
   return data.session;
@@ -23,7 +30,7 @@ async function currentUserId() {
 }
 async function signOut() {
   await sb().auth.signOut();
-  location.href = "/auth.html";
+  gotoAuth();
 }
 async function loadDash(key, fallback = null) {
   const { data, error } = await sb()
