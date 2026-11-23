@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Media Collection</title>
 <link rel="stylesheet" href="../common.css">
@@ -177,13 +176,6 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
 }
 .mi-name:hover { color: var(--accent); border-bottom-color: var(--accent); }
 .mi-year { color: var(--dim); font-size: 0.72rem; }
-.cc-badge {
-  display: inline-block;
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px;
-  border-radius: 3px; padding: 0 5px; line-height: 1.5;
-}
-.cc-has { color: var(--good); border: 1px solid var(--good); }
-.cc-no { color: var(--dim); border: 1px dashed var(--border); }
 .mi-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .mini-btn {
   background: none; border: 1px solid var(--border); border-radius: 4px;
@@ -192,7 +184,12 @@ nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accen
 }
 .mini-btn:hover { border-color: var(--accent2); color: var(--accent2); }
 .mini-btn.del:hover { border-color: var(--bad); color: var(--bad); }
-.mini-btn.cc-toggle:hover { border-color: var(--good); color: var(--good); }
+/* CC toggle: green when the item has subtitles, not just on hover */
+.mini-btn.cc-toggle { min-width: 46px; }
+.mini-btn.cc-toggle.cc-on {
+  border-color: var(--good); color: var(--good); background: rgba(125,219,163,0.08);
+}
+.mini-btn.cc-toggle.cc-on:hover { filter: brightness(1.15); }
 table { width: 100%; border-collapse: collapse; }
 th {
   color: var(--dim); font-size: 0.7rem; font-weight: 700;
@@ -661,6 +658,8 @@ function renderSummary() {
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
+
+/* ===================== ADD ITEM — TWO-STEP WIZARD ===================== */
 var addItemCtx = null;
 var aiStars = 0;
 function uniqueColls() {
@@ -676,7 +675,6 @@ function openAddItem(mode, existing, presetType) {
   document.getElementById("addItemHeading").textContent =
     existing ? "Edit Item" : (mode === "wishlist" ? "Add to Wishlist" : "Add Owned");
   document.getElementById("aiTitle").value = existing ? existing.title : "";
-  // FIX: button-launched adds pre-select their type (Movie / TV Show)
   var typeVal = existing ? existing.type : (presetType === "tv" ? "tv" : "movie");
   document.getElementById("aiType").value = typeVal;
   document.getElementById("aiSubs").checked = existing ? !!existing.subs : false;
@@ -788,6 +786,8 @@ function fillCatSelect(sel, chosen) {
   }).join("");
 }
 on("btnAddWish", "click", function () { openAddItem("wishlist"); });
+
+/* ===================== TITLE-CLICK DETAIL CHIP ===================== */
 var mediaChipEl = null;
 function closeMediaChip() {
   if (mediaChipEl) { mediaChipEl.remove(); mediaChipEl = null; }
@@ -816,7 +816,7 @@ function openMediaChip(ev, it) {
     '<div class="chip-row"><span class="chip-k">Type</span><span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Category</span><span>' + esc(it.cat) + "</span></div>" +
     (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span><span>' + esc(it.coll) + "</span></div>" : "") +
-    (et ? '<div class="chip-row"><span class="chip-k">Season/Ep</span><span>' + esc(et) + "</span></div>" : "") +
+    (et ? '<div class="chip-row"><span class="chip-k">S</span><span>' + esc(et) + "</span></div>" : "") +
     '<div class="chip-row"><span class="chip-k">Year</span><span>' + (it.year ? esc(it.year) : "—") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Rating</span><span>' + stars + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Subtitles</span><span>' + (it.subs ? "✓ has them" : "needs them") + "</span></div>" +
@@ -851,6 +851,8 @@ function wireChips(container) {
     });
   });
 }
+
+/* ===================== OWNED RENDER — CATEGORIES + COLLECTION BLOCKS ===================== */
 var collapsedCats = {};
 function epSortKey(i) {
   var s = i.season != null && i.season !== "";
@@ -874,22 +876,17 @@ function filteredOwned() {
       (!q || i.title.toLowerCase().indexOf(q) !== -1);
   });
 }
-function ccBadgeHTML(i) {
-  return i.subs
-    ? '<span class="cc-badge cc-has" title="Has subtitles">CC ✓</span>'
-    : '<span class="cc-badge cc-no" title="Needs subtitles">CC?</span>';
-}
 function rowHTML(i) {
   var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
   var et = epTag(i);
   var se = et ? ' <span class="mi-year">' + esc(et) + "</span>" : "";
   var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
   return '<div class="media-item">' +
-    '<span class="mi-title">' + ccBadgeHTML(i) +
+    '<span class="mi-title">' +
       '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + "</span>" +
     "</span>" +
     '<span class="mi-actions">' +
-      '<button class="mini-btn cc-toggle" data-cctoggle="' + esc(i.id) + '" title="Toggle subtitles">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
+      '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-cctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
       '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
       '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
     '</span></div>';
@@ -991,7 +988,6 @@ function renderOwned() {
       });
     });
   });
-  // FIX: pass the button's own type into the wizard
   cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
     b.addEventListener("click", function () {
       openAddItem("owned", null, b.dataset.addOwned);
@@ -1029,15 +1025,25 @@ function renderWish() {
     var se = et ? ' <span class="mi-year">' + esc(et) + "</span>" : "";
     var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
     return '<tr>' +
-      '<td>' + ccBadgeHTML(i) + ' <span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + '</span></td>' +
+      '<td><span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + '</span></td>' +
       '<td><span class="badge ' + (i.type === "movie" ? "movie" : "tv") + '">' + (i.type === "movie" ? "Movie" : "TV") + '</span></td>' +
       '<td>' + esc(i.cat) + '</td>' +
       '<td style="text-align:right;">' +
+        '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-wcctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button> ' +
         '<button class="mini-btn" data-got="' + esc(i.id) + '">✔ Own It Now</button> ' +
         '<button class="mini-btn" data-wedit="' + esc(i.id) + '">Edit</button> ' +
         '<button class="mini-btn del" data-wdel="' + esc(i.id) + '">✕</button>' +
       '</td></tr>';
   }).join("");
+  body.querySelectorAll("[data-wcctoggle]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var it = items.find(function (i) { return i.id === b.dataset.wcctoggle; });
+      if (!it) return;
+      it.subs = !it.subs;
+      persist(); renderAll();
+      toast(it.subs ? '"' + it.title + '" marked as having subtitles.' : '"' + it.title + '" marked as needing subtitles.');
+    });
+  });
   body.querySelectorAll("[data-got]").forEach(function (b) {
     b.addEventListener("click", function () {
       var it = items.find(function (i) { return i.id === b.dataset.got; });
@@ -1194,7 +1200,7 @@ renderAll();
       throw new Error("db.js did not load (check the ../db.js path)");
     }
     var session = await requireAuth();
-    if (!session) return;
+    if (!session) return; // bounced to login
     var cloud = await loadDash(CLOUD_KEY);
     if (cloud && cloud.items) {
       adoptState(cloud);
