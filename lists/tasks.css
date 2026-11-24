@@ -59,7 +59,7 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .progress-inner.full { background: var(--accent2); }
 .progress-label { font-size: 0.78rem; color: var(--dim); }
 .hint {
-  font-size: 0.72rem; color: var(--dim);
+  font-size: 0.95rem; color: var(--dim);
   margin: 14px 0 20px 0; padding-top: 10px;
   border-top: 1px dashed var(--border);
 }
@@ -338,7 +338,7 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .t-icon { min-width: 20px; font-size: 0.9rem; }
   .t-list { max-width: 90px; }
   .panel { width: 100%; max-width: 100vw; }
-  .hint { font-size: 0.62rem; }
+  .hint { font-size: 0.8rem; }
 }
 .tb-btn {
   background: var(--panel);

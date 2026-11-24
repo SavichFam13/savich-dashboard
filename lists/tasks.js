@@ -1,3 +1,4 @@
+const DNAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function esc(s) {
   return String(s == null ? "" : s)
     .replace(/&/g, "&amp;")
@@ -273,16 +274,7 @@ async function markDone(taskId, dateStr) {
       done_at: new Date().toISOString()
     });
   }
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none") {
-    // one-time task completed: remove it entirely, instantly
-    for (const o of occCache)
-      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
-    await deleteRow("tasks", taskId);
-    flash("done — one-time task removed");
-  } else {
-    flash("done — shift-click to undo");
-  }
+  flash("done — click to undo");
   await refreshOcc();
   await loadAll();
 }
@@ -301,22 +293,13 @@ async function markSkipped(taskId, dateStr) {
       done_at: new Date().toISOString()
     });
   }
-  const t = tasksCache.find(x => x.id === taskId);
-  if (t && t.repeat_type === "none") {
-    for (const o of occCache)
-      if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
-    await deleteRow("tasks", taskId);
-    flash("won't do — one-time task removed");
-  } else {
-    flash("won't do — instance only, future repeats unchanged");
-  }
+  flash("won't do — instance only, future repeats unchanged");
   await refreshOcc();
   await loadAll();
 }
 async function moveTask(taskId, fromDate, toDate) {
   const t = tasksCache.find(x => x.id === taskId);
   if (t && t.repeat_type === "none") {
-    // one-time task: it only has one date, so moving = re-dating it
     await updateRow("tasks", taskId, { start_date: toDate });
     for (const o of occCache)
       if (o.task_id === taskId) await deleteRow("task_occurrences", o.id);
@@ -572,66 +555,6 @@ function drawMdayCal() {
     inp.value = "99"; closeMdayCal();
   };
 }
-function openDateCal() {
-  closeMenus(); openMiniCancel(); closeMdayCal();
-  const inp = document.getElementById("ed-date");
-  const el = document.createElement("div");
-  el.className = "item-menu mday-cal date-cal";
-  document.body.appendChild(el);
-  let y, m;
-  const cur = inp.value ? inp.value.split("-").map(Number) : todayStr().split("-").map(Number);
-  y = cur[0]; m = cur[1];
-  function draw() {
-    const first = new Date(y, m - 1, 1);
-    const days = new Date(y, m, 0).getDate();
-    let cells = "";
-    for (const n of ["Su","Mo","Tu","We","Th","Fr","Sa"])
-      cells += '<div class="mc-dow">' + n + "</div>";
-    for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
-    for (let d = 1; d <= days; d++) {
-      const iso = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-      cells += '<button type="button" class="mc-day' + (inp.value === iso ? " sel" : "") +
-        '" data-iso="' + iso + '">' + d + "</button>";
-    }
-    el.innerHTML =
-      '<button class="menu-x">✕</button>' +
-      '<div class="mc-nav">' +
-        '<button type="button" class="dc-prev">‹</button>' +
-        '<span class="mc-title">' +
-          first.toLocaleDateString(undefined, { month: "long", year: "numeric" }) +
-        '</span>' +
-        '<button type="button" class="dc-next">›</button>' +
-      '</div>' +
-      '<div class="mc-grid">' + cells + "</div>" +
-      '<button type="button" class="dc-today">today</button>';
-    el.querySelector(".menu-x").onclick = () => { el.remove(); };
-    el.querySelector(".dc-prev").onclick = () => { m--; if (m < 1) { m = 12; y--; } draw(); };
-    el.querySelector(".dc-next").onclick = () => { m++; if (m > 12) { m = 1; y++; } draw(); };
-    el.querySelector(".dc-today").onclick = () => { inp.value = todayStr(); el.remove(); };
-    el.querySelectorAll(".mc-day").forEach(b => {
-      b.onclick = () => { inp.value = b.getAttribute("data-iso"); el.remove(); };
-    });
-  }
-  draw();
-  const r = inp.getBoundingClientRect();
-  el.style.left = Math.min(r.left, window.innerWidth - 290) + "px";
-  el.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px";
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
-    if (!el.isConnected || (!el.contains(ev.target) &&
-        ev.target !== document.getElementById("ed-date-cal"))) { el.remove(); }
-    document.removeEventListener("mousedown", onDoc);
-  }), 0);
-}
-  function wireDateCalRedirect() {
-  const inp = document.getElementById("ed-date");
-  if (!inp) return;
-  inp.addEventListener("mousedown", ev => {
-    if (ev.offsetX > inp.clientWidth - 30) {
-      ev.preventDefault(); ev.stopImmediatePropagation();
-      openDateCal();
-    }
-  }, true);
-}
   function openMdayCal() {
   closeMenus(); openMiniCancel(); closeMdayCal();
   const inp = document.getElementById("ed-mday");
@@ -771,7 +694,7 @@ function closeEditor() {
 }
 function renderDows() {
   const row = document.getElementById("ed-dow-row");
-  const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const names = DNAMES;
   row.innerHTML = names.map((n, i) =>
     '<button type="button" class="dow-btn' +
     (selectedDows.includes(i) ? " sel" : "") + '" data-dow="' + i + '">' +
@@ -865,7 +788,6 @@ async function deleteSeries() {
   flash("series deleted");
 }
 function initEditorUI() {
-    wireDateCalRedirect();
   document.getElementById("ed-save").onclick = saveEditor;
   document.getElementById("ed-close").onclick = closeEditor;
   const del = document.getElementById("ed-delete");
@@ -956,7 +878,7 @@ function renderDay({ filterFn, rerender, containerId = "task-area" }) {
 }
 function taskRowHTML(it, isOverdue, rerender) {
   const t = it.task;
-  const li = it.list || { name: "?", color: "c9a0ff" };
+  const li = it.list || { name: "?" };
   const movedTag = it.moved
     ? ' <span style="color:var(--accent);font-size:0.7rem">(moved)</span>' : "";
   const odAttr = isOverdue ? " overdue" : "";
@@ -1003,7 +925,7 @@ function wireRows(area, rerender, viewDate) {
     };
   });
 }
-async function initTaskPage({ pageTitle, filterFn, rerender }) {
+async function initTaskPage({ rerender }) {
   initEditorUI();
   document.addEventListener("keydown", ev => {
     if (ev.key === "Escape") closeEditor();

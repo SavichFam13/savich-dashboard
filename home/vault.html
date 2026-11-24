@@ -515,30 +515,6 @@ async function deleteCycle(id, btn) {
     showToast("Could not delete — check your connection.");
   }
 }
-async function clearHistory() {
-  if (!IS_ADMIN) {
-    showToast("Only the household admin can clear history.");
-    return;
-  }
-  const ok = await askConfirm(
-    "Delete entire history?",
-    "This cannot be undone. Every pay cycle on every device will be gone.",
-    true
-  );
-  if (!ok) return;
-  try {
-    const { error } = await sb().from("vault_history").delete().eq("owner", "shared");
-    if (error) throw error;
-    await loadHistoryRows();
-    renderHistory();
-    setSync(true);
-    showToast("History cleared.");
-  } catch (err) {
-    console.error(err);
-    setSync(false);
-    showToast("Could not clear history.");
-  }
-}
 function exportHistory() {
   const payload = {
     vaults: vaults,

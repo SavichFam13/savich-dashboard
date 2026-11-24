@@ -1,4 +1,3 @@
-const DNAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function nthName(n) {
   if (n === 5) return "last";
   return ["1st", "2nd", "3rd", "4th"][n - 1] || n + "th";
@@ -38,15 +37,6 @@ function repeatDescr(t) {
     default:         return "";
   }
 }
-function nextFireDate(t, fromStr, maxDays) {
-  maxDays = maxDays || 550;
-  for (let i = 1; i <= maxDays; i++) {
-    const d = addDaysStr(fromStr, i);
-    if (ruleFiresOn(t, d)) return d;
-  }
-  return null;
-}
-let LP_SCOPE = null;
 let LP_SEL = null;
 function pageLists() {
   return listsCache.filter(l => l.page === LP_SCOPE);
@@ -255,9 +245,11 @@ function renderListView() {
     if (t.repeat_type === "none") {
       const d = taskDoneOcc(t);
       if (d) {
-        finRows.push({ t: t, effDate: d.orig_date,
-          label: (d.status === "skipped" ? "won't do · " : "done · ") + d.orig_date.slice(5) });
         finIds.add(t.id);
+        if (d.orig_date === today) {
+          finRows.push({ t: t, effDate: d.orig_date,
+            label: (d.status === "skipped" ? "won't do · " : "done · ") + d.orig_date.slice(5) });
+        }
       }
     } else if (seriesEnded(t, today)) {
       finRows.push({ t: t, effDate: today, label: "series ended" });
@@ -287,7 +279,7 @@ function renderListView() {
       : "";
     return '<div class="task-row' + (note ? " note" : "") + (done ? " done" : "") +
       '" data-task="' + t.id + '" data-date="' + effDate + '">' +
-      '<span class="cb" title="click = done · shift-click = undo"></span>' +
+      '<span class="cb" title="click = done"></span>' +
       '<span class="t-title">' + esc(t.title) + "</span>" +
       '<span class="t-meta">' + esc(repeatDescr(t)) + "</span>" +
       '<span class="t-next">' + esc(meta) + "</span>" + mv +

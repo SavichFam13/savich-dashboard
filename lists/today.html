@@ -43,7 +43,7 @@
 <div class="add-bar">
   <button class="add-btn" id="add-btn">+ add task</button>
 </div>
-<div class="hint">left-click checkbox = done / undone · right-click row = won't do / move / edit · click title = details</div>
+<div class="hint">left-click checkbox = done / undone · click title = menu · right-click title = details</div>
 <div id="task-area"></div>
 <div class="panel" id="editor-panel">
   <button class="panel-x" id="ed-close">✕</button>
@@ -123,9 +123,6 @@
       rerender: rerender
     });
     const todays = buildDayModel(tasksCache, listsCache, occCache, today, today);
-    const doneCount = todays.filter(it =>
-      it.occ && it.occ.status === "done").length; 
-    const total = todays.length;
     let scheduled = 0, completed = 0;
     const seen = new Set();
     for (const o of occCache) {

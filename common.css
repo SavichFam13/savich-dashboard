@@ -19,25 +19,6 @@ body {
   z-index: 100; padding: 20px;
 }
 .modal-overlay.open { display: flex; }
-.modal-box {
-  background: var(--panel); border: 1px solid var(--accent2);
-  border-radius: 10px; padding: 26px 28px 22px;
-  max-width: 410px; width: 100%;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-.modal-box h2 {
-  font-size: 0.96rem; color: var(--hot-pink);
-  margin-bottom: 12px; line-height: 1.4;
-}
-.modal-box p {
-  font-size: 0.81rem; color: var(--dim);
-  line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
-}
-.modal-buttons { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-.modal-buttons button {
-  font-family: inherit; font-size: 0.81rem; font-weight: 700;
-  border-radius: 5px; padding: 8px 22px; cursor: pointer; letter-spacing: 1px;
-}
 .modal-yes { background: var(--accent2); color: #121016; border: none; }
 .modal-yes.destructive { background: var(--now); color: #fff; }
 .modal-yes:hover { filter: brightness(1.1); }
@@ -82,6 +63,10 @@ body {
   font-size: 0.96rem; color: var(--text);     
   font-weight: 700;                          
   margin-bottom: 12px; line-height: 1.4;
+}
+.modal-box p {
+  font-size: 0.81rem; color: var(--dim);
+  line-height: 1.6; margin-bottom: 22px; white-space: pre-line;
 }
 .modal-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .modal-yes { order: -1; }

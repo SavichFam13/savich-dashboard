@@ -20,15 +20,12 @@ async function requireAuth() {
   }
   return data.session;
 }
-async function currentUser() {
-  const { data } = await sb().auth.getUser();
-  return data.user || null;
-}
 async function currentUserId() {
   const { data } = await sb().auth.getSession();
   return (data && data.session && data.session.user) ? data.session.user.id : null;
 }
 async function signOut() {
+  localStorage.removeItem("savich-unlocked");
   await sb().auth.signOut();
   gotoAuth();
 }
@@ -426,11 +423,6 @@ async function insertRow(table, obj) {
   if (error) throw error;
   return data;
 }
-async function insertRows(table, objs) {
-  const { data, error } = await sb().from(table).insert(objs).select();
-  if (error) throw error;
-  return data;
-}
 async function updateRow(table, id, patch) {
   const { data, error } = await sb().from(table).update(patch).eq("id", id).select().single();
   if (error) throw error;
@@ -439,12 +431,6 @@ async function updateRow(table, id, patch) {
 async function deleteRow(table, id) {
   const { error } = await sb().from(table).delete().eq("id", id);
   if (error) throw error;
-}
-async function upsertRow(table, obj, conflictCol = "id") {
-  const { data, error } = await sb()
-    .from(table).upsert(obj, { onConflict: conflictCol }).select().single();
-  if (error) throw error;
-  return data;
 }
 window.addEventListener("unhandledrejection", e => {
   if (e.reason && e.reason.message) console.error("Unhandled sync failure:", e.reason.message);

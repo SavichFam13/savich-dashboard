@@ -238,6 +238,7 @@
     remEnsureStyle();
     const card = document.createElement("div");
     card.className = "task-rem";
+        card.dataset.task = t.id;
     const tt = document.createElement("div");
     tt.className = "task-rem-title";
     tt.textContent = t.title;
@@ -289,10 +290,6 @@
             done_by: uid, done_at: new Date().toISOString()
           });
         }
-        if (t.repeat_type === "none") {
-          await sbc.from("task_occurrences").delete().eq("task_id", t.id);
-          await sbc.from("tasks").delete().eq("id", t.id);
-        }
       } catch (e) {
         doneBtn.textContent = "failed — do it on the page";
         setTimeout(() => remRemove(card), 2200);
@@ -321,6 +318,17 @@
       const occToday = {};
       for (const o of occs) {
         if (o.orig_date === today) occToday[o.task_id] = o;
+      }
+      const stack = document.getElementById("task-rem-stack");
+      if (stack) {
+        for (const card of Array.from(stack.children)) {
+          const tid = card.dataset && card.dataset.task;
+          const o = tid ? occToday[tid] : null;
+          if (o && (o.status === "done" || o.status === "skipped")) {
+            markFired(tid);
+            remRemove(card);
+          }
+        }
       }
       const fired = firedSet();
       const due = [];
