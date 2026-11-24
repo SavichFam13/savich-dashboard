@@ -655,7 +655,7 @@ async function deleteRecipe(id) {
   const ok = await askConfirm(
     "Delete this recipe?",
     r.name + "\n\nThis permanently removes it from the book.",
-    true
+    true, "DELETE", "CANCEL"
   );
   if (!ok) return;
   recipes = recipes.filter(x => x.id !== id);
@@ -689,7 +689,7 @@ function importData(e) {
       const ok = await askConfirm(
         "Replace all recipes?",
         "This overwrites the book with the contents of the backup file.",
-        true
+        true, "IMPORT", "CANCEL"
       );
       if (!ok) return;
       recipes = data.map(r => {
@@ -713,13 +713,16 @@ function importData(e) {
   e.target.value = "";
 }
 let modalResolve = null;
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, yesLabel, noLabel) {
   return new Promise(resolve => {
     modalResolve = resolve;
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
-    document.getElementById("modal-yes")
-      .classList.toggle("destructive", !!destructive);
+    const yes = document.getElementById("modal-yes");
+    const no = document.getElementById("modal-no");
+    yes.classList.toggle("destructive", !!destructive);
+    yes.textContent = yesLabel || "YES";
+    no.textContent = noLabel || "CANCEL";
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
