@@ -1031,11 +1031,13 @@ function scheduleRemoteReload() {
   }, 250);
 }
 let modalResolve = null;
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, yesLabel, noLabel) {
   return new Promise(resolve => {
     modalResolve = resolve;
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
+    document.getElementById("modal-yes").textContent = yesLabel || "DELETE";
+    document.getElementById("modal-no").textContent = noLabel || "KEEP IT";
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
@@ -1137,6 +1139,13 @@ async function importNotes(file) {
     showToast("No usable notes in that file.");
     return;
   }
+  const ok = await askConfirm(
+    "Import this backup?",
+    "Adds " + rows.length + " note" + (rows.length === 1 ? "" : "s") +
+    " from \"" + file.name + "\" on top of your current wall. Continue?",
+    true, "IMPORT", "CANCEL"
+  );
+  if (!ok) return;
   rows.forEach((r, i) => {
     r.x += 16 + (i % 4) * 8;
     r.y += 16;

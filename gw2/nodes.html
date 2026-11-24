@@ -618,8 +618,8 @@ function askChoice(title, message, choices) {
 }
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
-    { label: "NO", value: false },
-    { label: "YES", value: true, primary: true, destructive: !!destructive }
+    { label: "Cancel", value: false },
+    { label: "REPLACE", value: true, primary: true, destructive: !!destructive }
   ]);
 }
 function closeModal(result) {

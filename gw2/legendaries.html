@@ -260,7 +260,7 @@ function importState(e) {
       text: "Backup: " + data.legs.length + " legendaries\n" +
         "Current: " + legs.length + " legendaries\n\n" +
         "This replaces everything on this page with the backup contents.",
-      yes: "RESTORE",
+      yes: "REPLACE",
       no: "CANCEL",
       onYes: () => {
         legs = normalizeLegs(data.legs);

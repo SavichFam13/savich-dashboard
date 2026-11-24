@@ -345,5 +345,5 @@
     }
   }
   remTick();
-  setInterval(remTick, 60000);
+  setInterval(remTick, 30000);
 })();
