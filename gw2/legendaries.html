@@ -259,9 +259,10 @@ function importState(e) {
       title: "Restore backup over current data?",
       text: "Backup: " + data.legs.length + " legendaries\n" +
         "Current: " + legs.length + " legendaries\n\n" +
-        "This replaces everything on this page with the backup contents.",
+        "This overwrites everything on this page with the contents of the backup file. Continue?",
       yes: "REPLACE",
       no: "CANCEL",
+      danger: true,
       onYes: () => {
         legs = normalizeLegs(data.legs);
         save(true);

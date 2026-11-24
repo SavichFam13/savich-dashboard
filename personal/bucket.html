@@ -471,7 +471,7 @@ function importData(e) {
       }
       const ok = await askConfirm(
         "Replace current bucket list?",
-        "This overwrites everything on this page with the contents of the backup file.",
+        "This overwrites everything on this page with the contents of the backup file. Continue?",
         true
       );
       if (!ok) return;

@@ -1150,7 +1150,7 @@ on("importFile", "change", function (e) {
       var inItems = Array.isArray(parsed) ? parsed : parsed.items;
       var inCats = (Array.isArray(parsed) ? null : parsed.cats);
       if (!Array.isArray(inItems)) throw 0;
-      askConfirm("Import Backup", "This overwrites EVERYONE'S collection with the backup file — the whole household sees this change. Continue?", true, { yes: "IMPORT", no: "CANCEL" }).then(function (ok) {
+      askConfirm("Import Backup", "This overwrites everything on this page with the contents of the backup file. Continue?", true, { yes: "IMPORT", no: "CANCEL" }).then(function (ok) {
         if (!ok) return;
         items = inItems;
         cats = (Array.isArray(inCats) && inCats.length) ? inCats : DEFAULT_CATS.slice();

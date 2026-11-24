@@ -688,7 +688,7 @@ function importData(e) {
       if (!Array.isArray(data)) { showToast("That file isn't a valid backup."); return; }
       const ok = await askConfirm(
         "Replace all recipes?",
-        "This overwrites the book with the contents of the backup file.",
+        "This overwrites everything on this page with the contents of the backup file. Continue?",
         true, "IMPORT", "CANCEL"
       );
       if (!ok) return;

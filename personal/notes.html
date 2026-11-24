@@ -1142,7 +1142,7 @@ async function importNotes(file) {
   const ok = await askConfirm(
     "Import this backup?",
     "Adds " + rows.length + " note" + (rows.length === 1 ? "" : "s") +
-    " from \"" + file.name + "\" — this REPLACES your current notes! Continue?",
+    " from \"" + file.name + "\". This overwrites everything on this page with the contents of the backup file. Continue?",
     true, "IMPORT", "CANCEL"
   );
   if (!ok) return;

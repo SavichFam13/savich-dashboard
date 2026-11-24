@@ -373,7 +373,7 @@ function importState(e) {
         "Current: " + curOwned + " owned, " +
         (state.custom || []).length + " custom nodes, " +
         Object.keys(state.locs || {}).length + " saved codes\n\n" +
-        "This replaces everything on this page with the backup contents.",
+        "This overwrites everything on this page with the contents of the backup file. Continue?",
         true
       );
       if (!ok) { e.target.value = ""; return; }

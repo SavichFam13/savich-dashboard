@@ -562,7 +562,7 @@ async function importHistory(input) {
   }
   const ok = await askConfirm(
     "Import this backup?",
-    "Will add to the shared cloud data:\n" + lines.join("\n"),
+    "This overwrites everything on this page with the contents of the backup file. Continue?",
     true, "IMPORT", "CANCEL"
   );
   if (!ok) return;
