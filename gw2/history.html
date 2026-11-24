@@ -445,7 +445,7 @@ async function importYear(e) {
           "Restore " + year + " archive from backup?",
           details + "\n\nMERGE adds the backup's days on top of what's here (backup wins on overlapping days). REPLACE wipes the year and uses only the backup.",
           [
-            { label: "MERGE", value: "MERGE", primary: true },
+            { label: "MERGE", value: "MERGE", primary: true, destructive: true },
             { label: "REPLACE", value: "REPLACE", destructive: true },
             { label: "CANCEL", value: null }
           ]
@@ -455,7 +455,7 @@ async function importYear(e) {
           "Restore " + year + " archive from backup?",
           details + "\n\nNo existing data for " + year + " — nothing will be overwritten.",
           [
-            { label: "RESTORE", value: "REPLACE", primary: true },
+            { label: "RESTORE", value: "REPLACE", primary: true, destructive: true },
             { label: "CANCEL", value: null }
           ]
         );
