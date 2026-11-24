@@ -581,13 +581,7 @@ expandTa.addEventListener("paste", e => {
     e.clipboardData.getData("text/plain"));
 });
 async function ensureAuth() {
-  if (typeof requireAuth === "function") return await requireAuth();
-  const { data } = await sb().auth.getSession();
-  if (!data || !data.session) {
-    location.href = "../auth.html?next=" +
-      encodeURIComponent(location.pathname);
-    throw new Error("not signed in");
-  }
+  return await requireAuth();
 }
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");

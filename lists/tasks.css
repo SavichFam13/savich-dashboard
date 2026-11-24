@@ -21,7 +21,6 @@ body {
   margin: 0 auto;
 }
 .nav,
-.nav,
 .nav-bar {
   display: flex; align-items: center; justify-content: flex-start; gap: 8px;
   padding-bottom: 14px; margin-bottom: 22px;
@@ -96,7 +95,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .t-time.none { color: var(--dim); font-weight: 400; }
 .t-title { flex: 1; cursor: pointer; overflow-wrap: anywhere; }
 .t-title:hover { color: var(--accent); }
-.t-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; }
 .t-list { color: var(--dim); font-size: 0.68rem; flex: 0 0 auto; max-width: 160px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-row.overdue { border-color: var(--bad); }
@@ -222,7 +220,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .item-menu .mc-day.sel { background: var(--accent2); color: #121016; font-weight: 700; }
 .task-row.note { opacity: 0.8; border-style: dashed; }
 .task-row.note .cb { visibility: hidden; }
-.task-row.note .t-meta { color: var(--accent); }
 .panel .ed-note-flag {
   display: flex; gap: 8px; align-items: center;
   font-size: 0.74rem; color: var(--dim);
@@ -259,7 +256,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   font-size: 0.74rem;
   white-space: nowrap;
 }
-.task-row.note .t-meta { color: #ff01d9; }
 .t-icon {
   flex: 0 0 auto;
   min-width: 26px;
@@ -275,24 +271,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .sec-block.closed .task-row { display: none; }
 .rail-chip { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .rail-chip .t-icon { flex: 0 0 auto; }
-.new-list-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
-  display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh;
-}
-.nl-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
-.nl-btns button {
-  background: transparent; color: var(--text); border: 1px solid var(--border);
-  border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 0.8rem;
-}
-.nl-btns .nl-create { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
-.nl-msg { font-size: 0.72rem; color: #e06c75; margin-top: 10px; min-height: 1em; }
-.rail-chip { max-width: 100%; overflow: hidden; }
-.rail-chip .rail-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .sec-move { margin-left: auto; display: none; }
 .sec-head:hover .sec-move { display: inline-flex; gap: 4px; }
 .sec-move button {
@@ -323,8 +301,6 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 }
 @media (max-width: 700px) {
   body { padding: 12px 10px 40px 10px; }
-  .to-panel { max-height: 92vh; }
-  .to-head, .to-hint, .to-body { padding-left: 14px; padding-right: 14px; }
   .task-row { padding: 9px 10px; gap: 8px; }
   .task-row .t-time { flex: 0 0 42px; font-size: 0.72rem; }
   .task-row .t-title { padding-right: 0; }

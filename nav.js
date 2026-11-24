@@ -11,17 +11,6 @@
         const href = a.getAttribute("href");
         if (href && !/^(https?:|\/)/.test(href)) a.setAttribute("href", BASE + href);
       });
-      const parent = host.parentElement;
-      const neighbor = parent && parent.querySelector("button:not(.menu-btn)");
-      const mb = host.querySelector(".menu-btn");
-      if (neighbor && mb) {
-        const cs = getComputedStyle(neighbor);
-        mb.style.fontSize = cs.fontSize;
-        mb.style.paddingTop = cs.paddingTop;
-        mb.style.paddingBottom = cs.paddingBottom;
-        mb.style.lineHeight = cs.lineHeight;
-        mb.style.fontWeight = cs.fontWeight;
-      }
       const wrap = host.querySelector(".nav-menu");
       const btn = host.querySelector(".menu-btn");
       btn.addEventListener("click", e => {

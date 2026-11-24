@@ -44,4 +44,3 @@ body { max-width: 1060px; }
 }
 .rail-chip .rail-count { flex: 0 0 auto; }
 .task-row.done .t-meta, .task-row.done .t-next { opacity: 0.6; }
-#page-title { font-size: 1.2rem; color: var(--accent); margin: 18px 0 12px 0; }
