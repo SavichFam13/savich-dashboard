@@ -795,7 +795,7 @@ async function removeStuffie(i) {
   const ok = await askConfirm(
     "Re-home this stufty?",
     item.name + " 🥺\n\nThis banishes them from the playpen FOREVER. No take-backs on a banishing.",
-    true
+    true, "RE-HOME", "KEEP IT"
   );
   if (!ok) return;
   data.list.splice(i, 1);
@@ -843,9 +843,8 @@ function importData(e) {
         return;
       }
       const ok = await askConfirm(
-        "Empty the playpen and start over?",
-        "This overwrites EVERYONE'S playpen with the contents of the backup file — the whole household sees this list.",
-        true
+        "Restuff all the Stufties?",
+        true, "IMPORT", "CANCEL"
       );
       if (!ok) return;
       data = normalizeState(parsed);
@@ -880,10 +879,10 @@ function askChoice(title, message, choices) {
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, yesLabel, noLabel) {
   return askChoice(title, message, [
-    { label: "KEEP IT", value: false },
-    { label: "DELETE", value: true, primary: true, destructive: !!destructive }
+    { label: noLabel || "KEEP IT", value: false },
+    { label: yesLabel || "DELETE", value: true, primary: true, destructive: !!destructive }
   ]);
 }
 function closeModal(result) {
