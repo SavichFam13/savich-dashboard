@@ -173,7 +173,7 @@
             throw new Error("not a task backup file");
           if (!(await confirmBox("Import task backup?",
             "Restores " + parsed.lists.length + " lists and " + parsed.tasks.length +
-            " tasks from \"" + f.name + "\". Existing matching rows get overwritten. Continue?"))) return;
+            " tasks from \"" + f.name + "\". Existing matching rows get overwritten. Continue?", "IMPORT", "CANCEL"))) return;
           var sbc = sb();
           await sbc.from("task_lists").upsert(parsed.lists, { onConflict: "id" });
           await sbc.from("tasks").upsert(parsed.tasks, { onConflict: "id" });

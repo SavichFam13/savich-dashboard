@@ -274,7 +274,7 @@ async function markDone(taskId, dateStr) {
       done_at: new Date().toISOString()
     });
   }
-  flash("done — click to undo");
+  flash("done");
   await refreshOcc();
   await loadAll();
 }
@@ -907,7 +907,7 @@ async function initTaskPage({ rerender }) {
     rerender();
   });
 }
-function confirmBox(title, body) {
+function confirmBox(title, body, yesLabel, noLabel) {
   return new Promise(res => {
     const ov = document.createElement("div");
     ov.className = "cbox-overlay";
@@ -916,9 +916,8 @@ function confirmBox(title, body) {
       '<div class="cbox-title">' + esc(title) + "</div>" +
       '<div class="cbox-body">' + esc(body) + "</div>" +
       '<div class="cbox-btns">' +
-      '<button type="button" class="cbox-no">NO</button>' +
-      '<button type="button" class="cbox-yes">YES, DELETE</button>' +
-      "</div></div>";
+      '<button type="button" class="cbox-yes">' + esc(yesLabel || "DELETE") + '</button>' +
+      '<button type="button" class="cbox-no">' + esc(noLabel || "KEEP IT") + '</button>' +
     document.body.appendChild(ov);
     const done = v => {
       ov.remove();
