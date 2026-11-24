@@ -882,8 +882,8 @@ function askChoice(title, message, choices) {
 }
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
-    { label: "CANCEL", value: false },
-    { label: "IMPORT", value: true, primary: true, destructive: !!destructive }
+    { label: "KEEP IT", value: false },
+    { label: "DELETE", value: true, primary: true, destructive: !!destructive }
   ]);
 }
 function closeModal(result) {
