@@ -918,6 +918,7 @@ function confirmBox(title, body, yesLabel, noLabel) {
       '<div class="cbox-btns">' +
       '<button type="button" class="cbox-yes">' + esc(yesLabel || "DELETE") + '</button>' +
       '<button type="button" class="cbox-no">' + esc(noLabel || "KEEP IT") + '</button>' +
+      "</div></div>";
     document.body.appendChild(ov);
     const done = v => {
       ov.remove();
