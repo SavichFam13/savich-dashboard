@@ -399,53 +399,6 @@ function openDetailPopup(ev, t) {
     document.removeEventListener("keydown", onEsc);
   }), 0);
 }
-function openTitleToolbar(ev, t, dateStr, rerender) {
-  closeMenus(); closeDetailPopup();
-  const o = occCache.find(x => x.task_id === t.id && x.orig_date === dateStr);
-  if (o && (o.status === "done" || o.status === "skipped")) {
-    openDetailPopup(ev, t);
-    return;
-  }
-  const el = document.createElement("div");
-  el.className = "item-menu";
-  el.innerHTML =
-    '<button class="menu-x">✕</button>' +
-    '<button data-act="done">✓ Done</button>' +
-    '<button data-act="skip">✗ Won\'t do</button>' +
-    '<button data-act="tomorrow">→ Move to tomorrow</button>' +
-    '<button data-act="moveto">\uD83D\uDDD3\uFE0F Move to date…</button>' +
-    '<button data-act="edit">✎ Edit series</button>' +
-    '<button data-act="delete" class="danger">🗑 Delete entire series</button>' +
-    '<button data-act="undo" class="danger">↺ Undo override</button>';
-  document.body.appendChild(el);
-  el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
-  el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
-  el.querySelector(".menu-x").onclick = () => el.remove();
-  el.addEventListener("click", async mev => {
-    const act = mev.target.getAttribute("data-act");
-    if (!act) return;
-    el.remove();
-    if (act === "tomorrow") {
-      const base = window.VIEW_DATE || todayStr();
-      const anchor = dateStr > base ? dateStr : base;
-      await moveTask(t.id, dateStr, addDaysStr(anchor, 1));
-      if (rerender) rerender();
-    }
-    if (act === "moveto") {
-      openMiniDate(ev, async d => {
-        if (d) { await moveTask(t.id, dateStr, d); if (rerender) rerender(); }
-      });
-    }
-  });
-  setTimeout(() => document.addEventListener("mousedown", function onDoc(mev2) {
-    if (el.isConnected && !el.contains(mev2.target)) el.remove();
-    if (!el.isConnected) document.removeEventListener("mousedown", onDoc);
-  }), 0);
-  setTimeout(() => document.addEventListener("keydown", function onEsc(kev) {
-    if (kev.key === "Escape") el.remove();
-    if (!el.isConnected) document.removeEventListener("keydown", onEsc);
-  }), 0);
-}
 function openTaskMenu(e, item, rerender) {
   e.preventDefault();
   closeMenus();
