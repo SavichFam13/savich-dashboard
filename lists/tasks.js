@@ -136,7 +136,7 @@ function ruleFiresOn(task, dateStr) {
 }
 function movedHereOn(occRows, taskId, dateStr) {
   return occRows.find(o =>
-    o.task_id === taskId && o.moved_to === dateStr && o.status !== "done");
+        o.task_id === taskId && o.moved_to === dateStr && !o.status);
 }
 function countRemaining(t, occRows, onDate) {
   if (!t.repeat_count) return Infinity;
