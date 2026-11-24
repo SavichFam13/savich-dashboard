@@ -87,12 +87,11 @@ function ruleFiresOn(task, dateStr) {
       return true;
     case "weekdays":
       return wd >= 1 && wd <= 5;
-    case "weekly":
-      return Array.isArray(task.repeat_days) && task.repeat_days.includes(wd);
-    case "biweekly": {
+    case "weekly": {
       if (!Array.isArray(task.repeat_days) || !task.repeat_days.includes(wd))
         return false;
-      const every = task.repeat_every || 2;
+      const every = task.repeat_every || 1;
+      if (every === 1) return true;
       const a = parseDateStr(start);
       const b = parseDateStr(dateStr);
       const weekOf = dt => {
@@ -606,23 +605,23 @@ function openEditor(task) {
   document.getElementById("ed-time").value = t.due_time ? t.due_time.slice(0, 5) : "";
   document.getElementById("ed-repeat").value = rt;
   document.getElementById("ed-dow-row").style.display =
-    (rt === "weekly" || rt === "biweekly" || rt === "nthmonth") ? "flex" : "none";
+    (rt === "weekly" || rt === "nthmonth") ? "flex" : "none";
   document.getElementById("ed-mday").value =
     t.repeat_mday || Number((t.start_date || todayStr()).split("-")[2]);
   document.getElementById("ed-mday").dataset.own = t.repeat_mday || "";
   document.getElementById("ed-mday-row").style.display =
     (rt === "monthly" || rt === "yearly") ? "block" : "none";
   document.getElementById("ed-every").value = t.repeat_every ||
-    (rt === "yearly" ? 12 : rt === "afterdone" ? 3 : rt === "biweekly" ? 2 :
+    (rt === "yearly" ? 12 : rt === "afterdone" ? 3 : rt === "weekly" ? 1 :
      rt === "monthly" ? 1 : 6);
   document.getElementById("ed-every").dataset.own = t.repeat_every || "";
   document.getElementById("ed-every").dataset.rt0 = rt;
   document.getElementById("ed-every-row").style.display =
     (rt !== "yearly" &&
-     (rt === "nthmonth" || rt === "biweekly" || rt === "afterdone" || rt === "monthly")) ? "block" : "none";
+     (rt === "nthmonth" || rt === "weekly" || rt === "afterdone" || rt === "monthly")) ? "block" : "none";
   document.getElementById("ed-every-label").textContent =
     (rt === "nthmonth" || rt === "monthly") ? "Every … months" :
-    rt === "biweekly" ? "Every … weeks" :
+    rt === "weekly" ? "Every … weeks" :
     rt === "afterdone" ? "Every … days after completion" : "Every …";
   document.getElementById("ed-nth-row").style.display =
     (rt === "nthmonth") ? "block" : "none";
@@ -668,8 +667,8 @@ async function saveEditor() {
   let repeat = document.getElementById("ed-repeat").value;
   const isYearly = repeat === "yearly";
   if (isYearly) repeat = "monthly";
-  const needsDow = repeat === "weekly" || repeat === "biweekly" || repeat === "nthmonth";
-  const needsEvery = repeat === "nthmonth" || repeat === "biweekly" ||
+  const needsDow = repeat === "weekly" || repeat === "nthmonth";
+  const needsEvery = repeat === "nthmonth" || repeat === "weekly" ||
     repeat === "afterdone" || repeat === "monthly";
   const isNote = document.getElementById("ed-note").checked;
   const dateVal = document.getElementById("ed-date").value;
@@ -748,7 +747,7 @@ function initEditorUI() {
   document.getElementById("ed-repeat").addEventListener("change", function () {
     const v = this.value;
     document.getElementById("ed-dow-row").style.display =
-      (v === "weekly" || v === "biweekly" || v === "nthmonth") ? "flex" : "none";
+      (v === "weekly" || v === "nthmonth") ? "flex" : "none";
     document.getElementById("ed-mday-row").style.display =
       (v === "monthly" || v === "yearly") ? "block" : "none";
     const evEl = document.getElementById("ed-every");
@@ -756,24 +755,24 @@ function initEditorUI() {
     const rt0 = evEl.dataset.rt0 || "none";
     if (v === rt0) {
       evEl.value = evEl.dataset.own ||
-        (v === "yearly" ? 12 : v === "afterdone" ? 3 : v === "biweekly" ? 2 :
+        (v === "yearly" ? 12 : v === "afterdone" ? 3 : v === "weekly" ? 1 :
          v === "monthly" ? 1 : 6);
       if (v === "monthly" || v === "yearly")
         mdEl.value = mdEl.dataset.own ||
           Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
     } else {
       evEl.value = v === "yearly" ? 12 : v === "monthly" ? 1 :
-        v === "biweekly" ? 2 : v === "afterdone" ? 3 :
+        v === "weekly" ? 1 : v === "afterdone" ? 3 :
         v === "nthmonth" ? 6 : evEl.value;
       if (v === "monthly" || v === "yearly")
         mdEl.value = Number((document.getElementById("ed-date").value || todayStr()).split("-")[2]);
     }
     document.getElementById("ed-every-row").style.display =
       (v !== "yearly" &&
-       (v === "nthmonth" || v === "biweekly" || v === "afterdone" || v === "monthly")) ? "block" : "none";
+       (v === "nthmonth" || v === "weekly" || v === "afterdone" || v === "monthly")) ? "block" : "none";
     document.getElementById("ed-every-label").textContent =
       (v === "nthmonth" || v === "monthly") ? "Every … months" :
-      v === "biweekly" ? "Every … weeks" :
+      v === "weekly" ? "Every … weeks" :
       v === "afterdone" ? "Every … days after completion" : "Every …";
     document.getElementById("ed-nth-row").style.display =
       (v === "nthmonth") ? "block" : "none";

@@ -15,9 +15,11 @@ function repeatDescr(t) {
     case "none":     return "One-time" + tm;
     case "daily":    return "Every day" + tm;
     case "weekdays": return "Weekdays Mon–Fri" + tm;
-    case "weekly":   return "Weekly on " + dowsText(t) + tm;
-    case "biweekly": return "Every " + (t.repeat_every || 2) +
-                      " weeks on " + dowsText(t) + tm;
+    case "weekly": {
+      const wk = t.repeat_every || 2;
+      return (wk === 1 ? "Weekly on " : "Every " + wk + " weeks on ") +
+             dowsText(t) + tm;
+    }
     case "monthly": {
       const fb = Number((t.start_date || todayStr()).split("-")[2]);
       const md = t.repeat_mday || fb;

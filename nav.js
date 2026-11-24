@@ -101,12 +101,11 @@
       case "none":     return dateStr === start;
       case "daily":    return true;
       case "weekdays": return wd >= 1 && wd <= 5;
-      case "weekly":
-        return Array.isArray(t.repeat_days) && t.repeat_days.includes(wd);
-      case "biweekly": {
+      case "weekly": {
         if (!Array.isArray(t.repeat_days) || !t.repeat_days.includes(wd))
           return false;
-        const every = t.repeat_every || 2;
+        const every = t.repeat_every || 1;
+        if (every === 1) return true;
         const weekOf = dt => {
           const d = new Date(dt);
           d.setDate(d.getDate() - d.getDay());
