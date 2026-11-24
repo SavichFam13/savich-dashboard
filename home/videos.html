@@ -7,8 +7,7 @@
 <title>Media Collection</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-body {
-  background: var(--bg);
+body {background: var(--bg);
   color: var(--text);
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-size: 13px;
@@ -17,10 +16,7 @@ body {
   margin: 0 auto;
   padding: 32px 20px;
 }
-.masthead {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
-}
+.masthead { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
 .masthead h1 { font-size: 1.4rem; }
 .masthead .sub { margin-top: 2px; }
 .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
@@ -829,6 +825,7 @@ function wireChips(container) {
   });
 }
 var collapsedCats = {};
+try { collapsedCats = JSON.parse(localStorage.getItem("savich-media-collapsed")) || {}; } catch (e) { collapsedCats = {}; }
 function epSortKey(i) {
   var s = i.season != null && i.season !== "";
   var e = i.ep != null && i.ep !== "";
@@ -926,6 +923,7 @@ function renderOwned() {
     h.addEventListener("click", function () {
       var key = h.dataset.key;
       collapsedCats[key] = !collapsedCats[key];
+      try { localStorage.setItem("savich-media-collapsed", JSON.stringify(collapsedCats)); } catch (e) {}
       renderOwned();
     });
   });
@@ -934,6 +932,7 @@ function renderOwned() {
       ev.stopPropagation();
       var key = h.dataset.ckey;
       collapsedCats[key] = !collapsedCats[key];
+      try { localStorage.setItem("savich-media-collapsed", JSON.stringify(collapsedCats)); } catch (e) {}
       renderOwned();
     });
   });
