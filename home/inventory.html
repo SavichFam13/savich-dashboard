@@ -574,7 +574,7 @@ const ok = await askConfirm(
   "This DELETES every item currently in the cloud inventory and replaces them with the " +
   data.length + " items from the backup file. Both accounts will see the result.",
   true,
-  { yes: "REPLACE", no: "CANCEL" }
+  { yes: "IMPORT", no: "CANCEL" }
 );
   if (!ok) return;
   try {
