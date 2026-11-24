@@ -7,7 +7,6 @@
 <title>Vault Distribution</title>
 <link rel="stylesheet" href="../common.css">
 <style>
-  .modal-box h2 { color: #e10ab2; }
   body {
     background: var(--bg);
     color: var(--text);
@@ -285,13 +284,16 @@ function poolAmount() {
   return Number.isFinite(v) ? v : "";
 }
 let modalResolve = null;
-function askConfirm(title, message, destructive) {
+function askConfirm(title, message, destructive, yesLabel, noLabel) {
   return new Promise(resolve => {
     modalResolve = resolve;
     document.getElementById("modal-title").textContent = title;
     document.getElementById("modal-message").textContent = message;
     const yes = document.getElementById("modal-yes");
+    const no = document.getElementById("modal-no");
     yes.classList.toggle("destructive", !!destructive);
+    yes.textContent = yesLabel || "YES";
+    no.textContent = noLabel || "CANCEL";
     document.getElementById("modal-overlay").classList.add("open");
   });
 }
@@ -403,7 +405,7 @@ async function saveCycle() {
     "Save this Pay Cycle to History?",
     "Extra Savings: " + money(amount) + "\n" +
     "Vaults distributed: " + vaults.length,
-    false
+    false, "SAVE", "CANCEL"
   );
   if (!ok) return;
   const d = new Date();
@@ -437,7 +439,7 @@ async function resetCycle() {
   const ok = await askConfirm(
     "Reset Vault Distribution?",
     "This does NOT save the pay cycle to history. Save first if you want to keep it.",
-    false
+    true, "RESET", "CANCEL"
   );
   if (!ok) return;
   current = { amount: "", done: {} };
@@ -494,7 +496,7 @@ async function deleteCycle(id, btn) {
   const ok = await askConfirm(
     "Delete this pay cycle?",
     label + " will be removed from the shared history on every device. This cannot be undone.",
-    true
+    true, "DELETE", "CANCEL"
   );
   if (!ok) return;
   try {
@@ -561,7 +563,7 @@ async function importHistory(input) {
   const ok = await askConfirm(
     "Import this backup?",
     "Will add to the shared cloud data:\n" + lines.join("\n"),
-    false
+    true, "IMPORT", "CANCEL"
   );
   if (!ok) return;
     if (impVaults) {
