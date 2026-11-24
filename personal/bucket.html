@@ -510,7 +510,7 @@ function askConfirm(title, message, destructive, labels) {
   const L = labels || {};
   return askChoice(title, message, [
     { label: L.yes || "IMPORT", value: true, primary: true, destructive: !!destructive },
-    { label: L.no || "Cancel", value: false }
+    { label: L.no || "CANCEL", value: false }
   ]);
 }
 function closeModal(result) {

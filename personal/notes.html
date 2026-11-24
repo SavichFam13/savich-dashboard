@@ -1142,15 +1142,16 @@ async function importNotes(file) {
   const ok = await askConfirm(
     "Import this backup?",
     "Adds " + rows.length + " note" + (rows.length === 1 ? "" : "s") +
-    " from \"" + file.name + "\" on top of your current wall. Continue?",
+    " from \"" + file.name + "\" — this REPLACES your current notes! Continue?",
     true, "IMPORT", "CANCEL"
   );
   if (!ok) return;
-  rows.forEach((r, i) => {
-    r.x += 16 + (i % 4) * 8;
-    r.y += 16;
-  });
   try {
+    const { error: delErr } = await sb()
+      .from("sticky_notes")
+      .delete()
+      .eq("user_id", uid);
+    if (delErr) throw delErr;
     const { error } = await sb()
       .from("sticky_notes")
       .insert(rows);
@@ -1158,8 +1159,8 @@ async function importNotes(file) {
     await loadNotes();
     renderNotes();
     updateSyncStatus();
-    showToast("Imported " + rows.length + " note" +
-      (rows.length === 1 ? "" : "s") + ".");
+    showToast("Restored " + rows.length + " note" +
+      (rows.length === 1 ? "" : "s") + " — wall replaced.");
   } catch (e) {
     console.error(e);
     setSync(false);

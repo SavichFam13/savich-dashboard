@@ -882,7 +882,7 @@ function askChoice(title, message, choices) {
 }
 function askConfirm(title, message, destructive) {
   return askChoice(title, message, [
-    { label: "Cancel", value: false },
+    { label: "CANCEL", value: false },
     { label: "IMPORT", value: true, primary: true, destructive: !!destructive }
   ]);
 }
