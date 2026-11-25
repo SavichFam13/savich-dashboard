@@ -165,8 +165,8 @@
     catch (e) { arr = []; }
     return new Set(arr.filter(x => typeof x === "string" && x.endsWith("|" + today)));
   }
-  function markFired(id) {
-    const today = remToday();
+  function markFired(id, day) {
+    const today = day || remToday();
     const set = firedSet();
     const key = id + "|" + today;
     if (set.has(key)) return;
@@ -247,6 +247,7 @@
     const card = document.createElement("div");
     card.className = "task-rem";
         card.dataset.task = t.id;
+        card.dataset.day = remToday();
     const tt = document.createElement("div");
     tt.className = "task-rem-title";
     tt.textContent = t.title;
@@ -275,12 +276,12 @@
       window.location.href = REM_TODAY;
     };
     doneBtn.onclick = async () => {
-      markFired(t.id);
+      markFired(t.id, card.dataset.day);
       doneBtn.disabled = true;
       doneBtn.textContent = "…";
       try {
         const sbc = sb();
-        const today = remToday();
+        const today = card.dataset.day || remToday();
         const { data: occs } = await sbc
           .from("task_occurrences")
           .select("*")
@@ -324,15 +325,16 @@
       if (!tr.data) return;
       const tasks = tr.data || [];
       const occs = or.data || [];
-      const occToday = {};
+      const occByDay = {};
       for (const o of occs) {
-        if (o.orig_date === today) occToday[o.task_id] = o;
+        occByDay[o.task_id + "|" + o.orig_date] = o;
       }
       const stack = document.getElementById("task-rem-stack");
       if (stack) {
         for (const card of Array.from(stack.children)) {
           const tid = card.dataset && card.dataset.task;
-          const o = tid ? occToday[tid] : null;
+          const day = (card.dataset && card.dataset.day) || today;
+          const o = tid ? occByDay[tid + "|" + day] : null;
           if (o && (o.status === "done" || o.status === "skipped")) {
             markFired(tid);
             remRemove(card);
