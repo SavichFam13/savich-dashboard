@@ -350,7 +350,7 @@
         if (fired.has(key)) continue;
         if (!remFiresOn(t, today, occs)) continue;
         if (remCountRemaining(t, occs, today) <= 0) continue;
-        const o = occToday[t.id];
+        const o = occByDay[t.id + "|" + today];
         if (o && (o.status === "done" || o.status === "skipped")) continue;
         if (o && o.moved_to && o.moved_to !== today) continue;
         const parts = t.due_time.slice(0, 5).split(":").map(Number);
@@ -362,6 +362,7 @@
         remShow(t, t.due_time);
       }
     } catch (e) {
+      console.error("reminder tick failed:", e);
     } finally {
       remBusy = false;
     }

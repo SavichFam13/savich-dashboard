@@ -15,7 +15,7 @@
     <button class="tb-btn" id="backup-exp" title="download a backup file of ALL lists, tasks, and history">Export</button>
     <div id="nav"></div>
 </nav>
-<h1>Today</h1>
+<h1 id="page-title">Today</h1>
 <div class="date-nav">
   <button id="prev-day">←</button>
   <span class="date-line" id="date-line"></span>
@@ -102,8 +102,8 @@
   function rerender() {
     const view = window.VIEW_DATE;
     const today = todayStr();
-    document.getElementById("date-line").textContent = fmtDateLong(view) +
-      (view === today ? "" : "  (viewing another day)");
+    document.getElementById("page-title").textContent =
+      view === today ? "Today" : fmtDateLong(view);
     renderDay({
       filterFn: list => !!list,  
       rerender: rerender

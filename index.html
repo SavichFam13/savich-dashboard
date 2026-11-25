@@ -157,16 +157,24 @@
     box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   }
   .to-head {
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px;
     padding: 18px 22px 6px;
     border-bottom: 1px solid var(--border);
+  }
+  .to-info {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    min-width: 0;
+  }
+  .to-actions {
+    display: flex; align-items: center; gap: 6px;
+    flex-shrink: 0; margin-left: auto;
   }
   .to-title { color: var(--accent2); font-size: 1.2rem; font-weight: 700; }
   .to-date { color: var(--dim); font-size: 0.85rem; }
   .to-count { color: var(--dim); font-size: 0.85rem; }
   .to-count.over { color: var(--bad); font-weight: 700; }
   .to-full {
-    margin-left: auto; align-self: center;
     color: var(--dim); font-size: 0.75rem; text-decoration: none;
     padding-right: 10px;
   }
@@ -597,11 +605,15 @@
 <div class="today-overlay" id="today-overlay">
   <div class="to-panel">
     <div class="to-head">
-      <span class="to-title">Today</span>
-      <span class="to-date" id="ov-date"></span>
-      <span class="to-count" id="ov-count"></span>
-      <a href="lists/today.html" class="to-full" id="ov-fullpage">open full page ↗</a>
-      <button class="to-x" id="ov-close" title="close (Esc)">✕</button>
+      <div class="to-info">
+        <span class="to-title">Today</span>
+        <span class="to-date" id="ov-date"></span>
+        <span class="to-count" id="ov-count"></span>
+      </div>
+      <div class="to-actions">
+        <a href="lists/today.html" class="to-full" id="ov-fullpage">open full page ↗</a>
+        <button class="to-x" id="ov-close" title="close (Esc)">✕</button>
+      </div>
     </div>
     <div class="to-hint">click checkbox = done · click title = menu · right-click title = details</div>
     <div class="to-body" id="overlay-tasks"></div>
