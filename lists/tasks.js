@@ -455,9 +455,9 @@ function openTaskMenu(e, item, rerender) {
     if (ev.key === "Escape") { closeMenus(); openMiniCancel(); }
     document.removeEventListener("keydown", onEsc);
   }), 0);
-  setTimeout(() => document.addEventListener("click", function onDoc(ev) {
+  setTimeout(() => document.addEventListener("mousedown", function onDoc(ev) {
     if (!menu.contains(ev.target)) { closeMenus(); openMiniCancel(); }
-    document.removeEventListener("click", onDoc);
+    document.removeEventListener("mousedown", onDoc);
   }), 0);
 }
 let miniDateEl = null;

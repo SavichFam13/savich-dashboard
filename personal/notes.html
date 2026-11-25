@@ -147,6 +147,13 @@
     min-height: 130px; outline: none;
     white-space: pre-wrap; word-wrap: break-word;
     cursor: pointer;
+    max-height: 240px; overflow-y: auto;
+  }
+  .note-body.fade {
+    -webkit-mask-image: linear-gradient(to bottom,
+      #000 82%, transparent 98%);
+    mask-image: linear-gradient(to bottom,
+      #000 82%, transparent 98%);
   }
   .note-body:empty::before {
     content: "click to type\2026";

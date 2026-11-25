@@ -15,16 +15,16 @@
     <button class="tb-btn" id="backup-exp" title="download a backup file of ALL lists, tasks, and history">Export</button>
     <div id="nav"></div>
 </nav>
-<h1 id="page-title">Today</h1>
 <div class="date-nav">
-  <button id="prev-day">←</button>
-  <span class="date-line" id="date-line"></span>
-  <button id="next-day">→</button>
+  <button id="prev-day" title="previous day">←</button>
+  <h1 id="page-title">Today</h1>
+  <button id="next-day" title="next day">→</button>
   <span class="spacer"></span>
   <button id="jump-today">Back to Today</button>
   <button onclick="location.href='household.html'" title="go to the Household lists">Household</button>
   <button onclick="location.href='personal.html'" title="go to your Personal lists">Personal</button>
 </div>
+<div class="date-line" id="date-line"></div>
 <div class="progress-outer"><div class="progress-inner" id="prog"></div></div>
 <div class="progress-label" id="prog-label"></div>
 <div class="add-bar">
@@ -104,6 +104,8 @@
     const today = todayStr();
     document.getElementById("page-title").textContent =
       view === today ? "Today" : fmtDateLong(view);
+    document.getElementById("date-line").textContent =
+      view === today ? "" : "(viewing another day)";
     renderDay({
       filterFn: list => !!list,  
       rerender: rerender
