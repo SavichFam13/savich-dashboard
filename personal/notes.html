@@ -92,7 +92,7 @@
     width: 245px;
     background: var(--nb);
     border: 1px solid var(--nbord);
-    border-radius: 4px 4px 16px 4px;
+    border-radius: 4px 4px 4px 4px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.45);
     transform: rotate(var(--rot, -2deg));
     transition: box-shadow 0.15s ease;
@@ -977,7 +977,8 @@ function attachDrag(noteEl, grabEl, n) {
         origX + dx,
         board.clientWidth - noteEl.offsetWidth
       ));
-      n.y = Math.max(0, origY + dy);
+      n.y = Math.max(0, Math.min(origY + dy,
+        board.clientHeight - noteEl.offsetHeight));
       noteEl.style.left = n.x + "px";
       noteEl.style.top = n.y + "px";
     };

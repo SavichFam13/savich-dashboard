@@ -314,7 +314,8 @@ function renderListView() {
       '<div class="sec-head" data-sec="' + key + '"><span class="sec-arrow">▾</span> ' +
       esc(label) + ' <span class="sec-count">· ' + groups[s].length +
       '</span><span class="sec-move"><button type="button" class="sec-up" title="move section up">▲</button>' +
-      '<button type="button" class="sec-down" title="move section down">▼</button></span></div>';
+      '<button type="button" class="sec-down" title="move section down">▼</button>' +
+      '<button type="button" class="sec-reset" title="reset task order to automatic (date, time, A–Z)">⟲</button></span></div>';
     for (const t of groups[s]) html += rowFor(t, false);
     html += "</div>";
   }
@@ -355,8 +356,16 @@ function renderListView() {
     };
     const up = h.querySelector(".sec-up");
     const dn = h.querySelector(".sec-down");
+    const rs = h.querySelector(".sec-reset");
     if (up) up.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), -1); };
     if (dn) dn.onclick = ev => { ev.stopPropagation(); moveSection(h.getAttribute("data-sec"), 1); };
+    if (rs) rs.onclick = ev => {
+      ev.stopPropagation();
+      const key = h.getAttribute("data-sec");
+      localStorage.removeItem(taskOrderKey(key === "__loose__" ? "" : key));
+      renderListView();
+      flash("task order reset to automatic");
+    };
   });
   area.querySelectorAll(".task-row").forEach(row => {
     const taskId = row.getAttribute("data-task");

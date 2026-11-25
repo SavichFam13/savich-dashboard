@@ -7,6 +7,9 @@
 <title>Today — Savich Tasks</title>
 <link rel="stylesheet" href="../common.css">
 <link rel="stylesheet" href="tasks.css">
+<style>
+  #page-title { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; }
+</style>
 </head>
 <body>
 <nav class="nav-bar">
@@ -24,7 +27,6 @@
   <button onclick="location.href='household.html'" title="go to the Household lists">Household</button>
   <button onclick="location.href='personal.html'" title="go to your Personal lists">Personal</button>
 </div>
-<div class="date-line" id="date-line"></div>
 <div class="progress-outer"><div class="progress-inner" id="prog"></div></div>
 <div class="progress-label" id="prog-label"></div>
 <div class="add-bar">
@@ -98,14 +100,13 @@
 <script src="tasks.js"></script>
 <script src="../nav.js"></script>
 <script>
+  
   window.VIEW_DATE = todayStr();
   function rerender() {
     const view = window.VIEW_DATE;
     const today = todayStr();
     document.getElementById("page-title").textContent =
       view === today ? "Today" : fmtDateLong(view);
-    document.getElementById("date-line").textContent =
-      view === today ? "" : "(viewing another day)";
     renderDay({
       filterFn: list => !!list,  
       rerender: rerender
