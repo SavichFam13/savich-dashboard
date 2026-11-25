@@ -218,6 +218,26 @@
     h = h % 12; if (h === 0) h = 12;
     return h + ":" + String(m).padStart(2, "0") + " " + ap;
   }
+    function remAskNotifyOnce() {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "default") Notification.requestPermission();
+  }
+  function remPing(t, dueTimeStr) {
+    try {
+      const a = new Audio(REM_BASE + "chimes.wav");
+      a.volume = 0.9;
+      a.play().catch(() => {});
+    } catch (e) {}
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      try {
+        const n = new Notification(t.title, {
+          body: "due " + remFmtTime(dueTimeStr),
+          tag: t.id
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch (e) {}
+    }
+  }
   function remRemove(card) {
     card.classList.add("rem-hide");
     setTimeout(() => { card.remove(); if (!remStack().children.length) remStack().remove(); }, 260);
@@ -248,6 +268,7 @@
     bb.appendChild(doneBtn); bb.appendChild(disBtn); bb.appendChild(todayBtn);
     card.appendChild(tt); card.appendChild(ss); card.appendChild(bb);
     remStack().appendChild(card);
+        remPing(t, dueTimeStr);
     disBtn.onclick = () => { markFired(t.id); remRemove(card); };
     todayBtn.onclick = () => {
       markFired(t.id);
@@ -345,4 +366,5 @@
   }
   remTick();
   setInterval(remTick, 30000);
+    document.addEventListener("click", remAskNotifyOnce, { once: true });
 })();
