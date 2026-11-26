@@ -762,8 +762,11 @@ on("aiSave", "click", function () {
   closeAddItem();
   renderAll();
 });
+function sortedCats() {
+  return cats.slice().sort(function (a, b) { return a.localeCompare(b, undefined, { sensitivity: "base" }); });
+}
 function fillCatSelect(sel, chosen) {
-  sel.innerHTML = cats.map(function (c) {
+  sel.innerHTML = sortedCats().map(function (c) {
     return '<option value="' + esc(c) + '"' + (c === chosen ? " selected" : "") + '>' + esc(c) + '</option>';
   }).join("");
 }
@@ -878,7 +881,7 @@ function renderOwned() {
     var label = type === "movie" ? "Movies" : "TV Shows";
     var typeCount = 0;
     var colHtml = "";
-    cats.forEach(function (c) {
+    sortedCats().forEach(function (c) {
       var g = list.filter(function (i) { return i.type === type && i.cat === c; });
       if (!g.length) return;
       if (type === "tv") {
@@ -1084,7 +1087,7 @@ on("btnRandMovie", "click", function () { doRandom("movie"); });
 on("btnRandTV", "click", function () { doRandom("tv"); });
 function renderCats() {
   var el = document.getElementById("catList");
-  el.innerHTML = cats.map(function (c) {
+  el.innerHTML = sortedCats().map(function (c) {
     return '<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:0.78rem;">' +
       esc(c) + '<button class="mini-btn del" data-catdel="' + esc(c) + '" title="Remove category">✕</button></span>';
   }).join("");
@@ -1114,7 +1117,7 @@ on("btnAddCat", "click", function () {
 function refreshFilters() {
   var oc = document.getElementById("ownedCatFilter");
   var cur = oc.value;
-  oc.innerHTML = '<option value="">All Categories</option>' + cats.map(function (c) {
+  oc.innerHTML = '<option value="">All Categories</option>' + sortedCats().map(function (c) {
     return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
   }).join("");
   oc.value = cur;
