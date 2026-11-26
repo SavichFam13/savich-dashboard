@@ -229,6 +229,9 @@ const CATEGORIES = {
   "Homestead / Keys": ["warkeys","kodankeys","fractalkeys","banditkeys","peasants"],
   "Fractals & Raids": ["frecs", "raids", "refa", "fractalincursion"]
 };
+const EXCLUDE = new Set([
+  "warkeys", "kodankeys", "fractalkeys", "banditkeys", "peasants", "talent", "princess", "purple"
+]);
 const CAT_COLORS = {
   "World Bosses": "#ff8a8a",
   "Convergences": "#ff9f43",
@@ -277,6 +280,7 @@ function render() {
     const done = log[d] || {};
     const ids = Object.keys(done);
     ids.forEach(t => {
+      if (EXCLUDE.has(t)) return;
       const n = Array.isArray(done[t]) ? done[t].length : 1;
       totalPerDay += n;
       taskCounts[t] = (taskCounts[t] || 0) + n;
@@ -315,7 +319,7 @@ function render() {
   dl.innerHTML = "";
   days.slice(-7).reverse().forEach(d => {
     const done = log[d] || {};
-    const ids = Object.keys(done);
+    const ids = Object.keys(done).filter(t => !EXCLUDE.has(t));
     let n = 0;
     ids.forEach(t => { n += Array.isArray(done[t]) ? done[t].length : 1; });
     const row = document.createElement("div");
