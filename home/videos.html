@@ -789,19 +789,20 @@ function openMediaChip(ev, it) {
   var el = document.createElement("div");
   el.className = "media-chip";
   var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
-  var et = epTag(it);
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
     '<div class="chip-title">' + esc(it.title) + (it.coll ? ' <span style="font-weight:400;color:var(--dim);">— ' + esc(it.coll) + (epTag(it) ? " " + epTag(it) : "") + "</span>" : "") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span><span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Category</span><span>' + esc(it.cat) + "</span></div>" +
     (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span><span>' + esc(it.coll) + "</span></div>" : "") +
-    (et ? '<div class="chip-row"><span class="chip-k">S</span><span>' + esc(et) + "</span></div>" : "") +
     '<div class="chip-row"><span class="chip-k">Year</span><span>' + (it.year ? esc(it.year) : "—") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Rating</span><span>' + stars + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Subtitles</span><span>' + (it.subs ? "✓ has them" : "needs them") + "</span></div>" +
     '<div class="chip-notes">' + esc(it.notes || "no notes on this one") + "</div>" +
-    '<button class="mini-btn chip-edit" data-chipedit="' + esc(it.id) + '">✎ edit</button>';
+    '<div style="display:flex;justify-content:space-between;margin-top:8px;">' +
+      '<button class="mini-btn chip-edit" data-chipedit="' + esc(it.id) + '">✎ edit</button>' +
+      '<button class="mini-btn del chip-del" data-chipdel="' + esc(it.id) + '">✕ delete</button>' +
+    '</div>';
   document.body.appendChild(el);
   mediaChipEl = el;
   el.style.left = Math.max(8, Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12)) + "px";
@@ -811,6 +812,15 @@ function openMediaChip(ev, it) {
   if (eb) eb.onclick = function () {
     closeMediaChip();
     openAddItem(it.owned ? "owned" : "wishlist", it);
+  };
+  var db = el.querySelector("[data-chipdel]");
+  if (db) db.onclick = function () {
+    closeMediaChip();
+    askConfirm("Remove Title", 'Remove "' + it.title + '" from ' + (it.owned ? "the collection" : "the wishlist") + '?\n\nThe whole household sees this change.', true, { yes: "DELETE", no: "KEEP IT" }).then(function (ok) {
+      if (!ok) return;
+      items = items.filter(function (i) { return i.id !== it.id; });
+      persist(); renderAll(); toast("Removed.");
+    });
   };
   setTimeout(function () {
     document.addEventListener("mousedown", function onDoc(me) {
@@ -867,7 +877,6 @@ function rowHTML(i) {
     "</span>" +
     '<span class="mi-actions">' +
       '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-cctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
-      '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
     '</span></div>';
 }
 function renderOwned() {
@@ -955,17 +964,7 @@ function renderOwned() {
       toast(it.subs ? '"' + it.title + '" marked as having subtitles.' : '"' + it.title + '" marked as needing subtitles.');
     });
   });
-  cols.querySelectorAll("[data-del]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var it = items.find(function (i) { return i.id === b.dataset.del; });
-      if (!it) return;
-      askConfirm("Remove Title", 'Remove "' + it.title + '" from the collection?\n\nThe whole household sees this change.', true, { yes: "DELETE", no: "KEEP IT" }).then(function (ok) {
-        if (!ok) return;
-        items = items.filter(function (i) { return i.id !== it.id; });
-        persist(); renderAll(); toast("Removed.");
-      });
-    });
-  });
+
   cols.querySelectorAll("[data-add-owned]").forEach(function (b) {
     b.addEventListener("click", function () {
       openAddItem("owned", null, b.dataset.addOwned);
@@ -1009,7 +1008,6 @@ function renderWish() {
       '<td style="text-align:right;">' +
         '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-wcctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button> ' +
         '<button class="mini-btn" data-got="' + esc(i.id) + '">✔ Own It Now</button> ' +
-        '<button class="mini-btn del" data-wdel="' + esc(i.id) + '">✕</button>' +
       '</td></tr>';
   }).join("");
   body.querySelectorAll("[data-wcctoggle]").forEach(function (b) {
@@ -1028,17 +1026,6 @@ function renderWish() {
       it.owned = true;
       persist(); renderAll();
       toast('"' + it.title + '" moved to your collection (' + it.cat + ")!");
-    });
-  });
-  body.querySelectorAll("[data-wdel]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var it = items.find(function (i) { return i.id === b.dataset.wdel; });
-      if (!it) return;
-      askConfirm("Remove Title", 'Remove "' + it.title + '" from the wishlist?\n\nThe whole household sees this change.', true, { yes: "DELETE", no: "KEEP IT" }).then(function (ok) {
-        if (!ok) return;
-        items = items.filter(function (i) { return i.id !== it.id; });
-        persist(); renderAll(); toast("Removed.");
-      });
     });
   });
   wireChips(body);

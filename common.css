@@ -28,15 +28,15 @@ body {
 }
 .modal-no:hover { border-color: var(--accent); color: var(--text); }
 .toast {
-  position: fixed; bottom: 26px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  position: fixed; top: 26px; right: 26px;
+  transform: translateX(12px);
   background: var(--panel); border: 1px solid var(--accent2);
   color: var(--good); border-radius: 8px; padding: 12px 22px;
   font-size: 0.81rem; opacity: 0; pointer-events: none;
   transition: opacity 0.25s ease, transform 0.25s ease;
-  z-index: 110; max-width: 90vw; text-align: center;
+  z-index: 110; max-width: 90vw; text-align: right;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.show { opacity: 1; transform: translateX(0); }
 .nav-bar .nav-btn,
 .menu-btn,
 .help-row .filter-btn,
