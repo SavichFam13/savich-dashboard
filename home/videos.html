@@ -670,7 +670,8 @@ function openAddItem(mode, existing, presetType) {
   dl.innerHTML = uniqueColls().map(function (c) {
     return '<option value="' + esc(c) + '">';
   }).join("");
-  document.getElementById("aiStepTag").textContent = "";
+  setAiStep(1);
+  document.getElementById("addItemOverlay").classList.add("open");
   document.getElementById("aiTitle").focus();
 }
 function setAiStep(n) {
