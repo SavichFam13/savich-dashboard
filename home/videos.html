@@ -74,6 +74,7 @@ input[type="text"], select {
   padding: 8px 10px;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent2); }
+input[type="checkbox"]:focus { outline: 2px solid var(--accent2); outline-offset: 2px; }
 input[type="checkbox"] { accent-color: var(--accent2); width: 16px; height: 16px; cursor: pointer; }
 textarea {
   background: #16131d;
@@ -622,8 +623,15 @@ tabBtns.forEach(function (b) {
 function countBy(type, owned) {
   return items.filter(function (i) { return i.type === type && !!i.owned === owned; }).length;
 }
+function countShows(type) {
+  var seen = {};
+  items.forEach(function (i) {
+    if (i.type === type && i.owned) seen[i.coll || i.id] = true;
+  });
+  return Object.keys(seen).length;
+}
 function renderSummary() {
-  var m = countBy("movie", true), t = countBy("tv", true);
+  var m = countBy("movie", true), t = countShows("tv");
   var wm = countBy("movie", false), wt = countBy("tv", false);
   var needSubs = items.filter(function (i) { return i.owned && !i.subs; }).length;
   document.getElementById("summaryStrip").innerHTML =
@@ -859,7 +867,6 @@ function rowHTML(i) {
     "</span>" +
     '<span class="mi-actions">' +
       '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-cctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
-      '<button class="mini-btn" data-edit="' + esc(i.id) + '">Edit</button>' +
       '<button class="mini-btn del" data-del="' + esc(i.id) + '">✕</button>' +
     '</span></div>';
 }
@@ -874,7 +881,13 @@ function renderOwned() {
     cats.forEach(function (c) {
       var g = list.filter(function (i) { return i.type === type && i.cat === c; });
       if (!g.length) return;
-      typeCount += g.length;
+      if (type === "tv") {
+        var showKeys = {};
+        g.forEach(function (i) { showKeys[i.coll || i.id] = true; });
+        typeCount += Object.keys(showKeys).length;
+      } else {
+        typeCount += g.length;
+      }
       var key = type + "::" + c;
       var collapsed = !!collapsedCats[key];
       var loose = g.filter(function (i) { return !i.coll; })
@@ -907,7 +920,7 @@ function renderOwned() {
       });
       if (!inner) inner = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
       colHtml += '<div class="cat-group">' +
-        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
+        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + (type === "tv" ? Object.keys((function(){var s={};g.forEach(function(i){s[i.coll||i.id]=true;});return s;})()) : g.length) + '</span></div>' +
         '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">' + inner + '</div></div>';
     });
     if (!colHtml) {
@@ -943,12 +956,6 @@ function renderOwned() {
       it.subs = !it.subs;
       persist(); renderAll();
       toast(it.subs ? '"' + it.title + '" marked as having subtitles.' : '"' + it.title + '" marked as needing subtitles.');
-    });
-  });
-  cols.querySelectorAll("[data-edit]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var it = items.find(function (i) { return i.id === b.dataset.edit; });
-      if (it) openAddItem(it.owned ? "owned" : "wishlist", it);
     });
   });
   cols.querySelectorAll("[data-del]").forEach(function (b) {
@@ -1005,7 +1012,6 @@ function renderWish() {
       '<td style="text-align:right;">' +
         '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-wcctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button> ' +
         '<button class="mini-btn" data-got="' + esc(i.id) + '">✔ Own It Now</button> ' +
-        '<button class="mini-btn" data-wedit="' + esc(i.id) + '">Edit</button> ' +
         '<button class="mini-btn del" data-wdel="' + esc(i.id) + '">✕</button>' +
       '</td></tr>';
   }).join("");
@@ -1025,12 +1031,6 @@ function renderWish() {
       it.owned = true;
       persist(); renderAll();
       toast('"' + it.title + '" moved to your collection (' + it.cat + ")!");
-    });
-  });
-  body.querySelectorAll("[data-wedit]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var it = items.find(function (i) { return i.id === b.dataset.wedit; });
-      if (it) openAddItem("wishlist", it);
     });
   });
   body.querySelectorAll("[data-wdel]").forEach(function (b) {
