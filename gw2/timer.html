@@ -563,24 +563,23 @@ const EVS = {
   joras:      { interval: 120, offset: 105 }
 };
 const DAILIES = [
-  { id: "nakedman",   name: "Naked Man",                   color: "#959393", zone: "",                            reward: "1 Mystic Coin and 6 unbound magic", ev: true },
-  { id: "facehugger", name: "Face Hugger",                 color: "#b5e48c", zone: "Tangled Depths",             reward: "Chance to drop a Chak Egg Sac Infusion", ev: true },
-  { id: "brahmance",  name: "Brahmance",                   color: "#2c21cc", zone: "Eye of the North",           reward: "2 g and a chance at Pristine Dragon's Left/Right Eye Infusion", ev: true },
+  { id: "vault",      name: "Daily Wizards Vault",         color: "#00b7b7", reward: "Astral acclaim" },
   { id: "talent",     name: "Pretend I have Talent",  reward: "Xunlai Electrum/Deldrimor Steel Ingot, Spiritwood Plank, Elonian Leather" },
-  { id: "witch",      name: "Cum Stained Witch",           color: "#ff9f43", zone: "The Condom",                 reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
-  { id: "pinata",     name: "Chode Pinata",                color: "#e10ab2", zone: "Crystal Oasis",             reward: "Chance to drop Festive Confetti Infusion & Unopened Endless Choya Pinata Tonic", ev: true },
-  { id: "bigg",       name: "The Big G (Not Georgia)",     color: "#94a3ff", zone: "Janthir Syntri",             reward: "Chance to drop the Pale Branch Spear", ev: true },
-  { id: "squid",      name: "Forest Squid",                color: "#b5e48c", zone: "Auric Basin (West)",         reward: "27 chests with a chance at a Vial of Liquid Aurillium Infusion", ev: true },
-  { id: "bear",       name: "Cum Stained Bear",            color: "#94a3ff", zone: "Lowland Shores",              reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
-  { id: "twatwaffle", name: "Twatwaffle the Spineless",    color: "#9b486c", zone: "Sparkfly Fen",               reward: "2 g and a chance at an ascended chest", ev: true },
   { id: "peasants",   name: "Rob my Peasants",  reward: "Daily goodies" },
   { id: "princess",   name: "Princess", reward: "5 Gunk-Covered Pellets" },
-  { id: "purple",     name: "Daily Purple Shiny",          color: "#66e0ff", reward: "between 4-8 Jade Runestones" },
+  { id: "twatwaffle", name: "Twatwaffle the Spineless",    color: "#9b486c", zone: "Sparkfly Fen",               reward: "2 g and a chance at an ascended chest", ev: true },
   { id: "frecs",      name: "Daily Frecs",                 color: "#7c01ff", reward: "Lot'O Gold and lootsies" },
   { id: "fmlife",     name: "Fuck My Life for Eternity!",  color: "#e43710", zone: "Leyspring Hollows",         reward: "2 g and chance to drop Volatile Ascension Infusion", ev: true },
   { id: "family",     name: "Family Time",                 color: "#e43710", zone: "Shipwreck Strand",          reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
   { id: "furby",      name: "Bondage Furby",               color: "#e43710", zone: "Starlit Weald",              reward: "Chance to drop the Chromatic bubble wand Infusion", ev: true },
-  { id: "vault",      name: "Daily Wizards Vault",         color: "#00b7b7", reward: "Astral acclaim" }
+  { id: "purple",     name: "Daily Purple Shiny",          color: "#66e0ff", reward: "between 4-8 Jade Runestones" },
+  { id: "nakedman",   name: "Naked Man",                   color: "#959393", zone: "",                            reward: "1 Mystic Coin and 6 unbound magic", ev: true },
+  { id: "facehugger", name: "Face Hugger",                 color: "#b5e48c", zone: "Tangled Depths",             reward: "Chance to drop a Chak Egg Sac Infusion", ev: true },
+  { id: "brahmance",  name: "Brahmance",                   color: "#2c21cc", zone: "Eye of the North",           reward: "2 g and a chance at Pristine Dragon's Left/Right Eye Infusion", ev: true },
+  { id: "witch",      name: "Cum Stained Witch",           color: "#ff9f43", zone: "The Condom",                 reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
+  { id: "pinata",     name: "Chode Pinata",                color: "#e10ab2", zone: "Crystal Oasis",             reward: "Chance to drop Festive Confetti Infusion & Unopened Endless Choya Pinata Tonic", ev: true },
+  { id: "squid",      name: "Forest Squid",                color: "#b5e48c", zone: "Auric Basin (West)",         reward: "27 chests with a chance at a Vial of Liquid Aurillium Infusion", ev: true },
+  { id: "bear",       name: "Cum Stained Bear",            color: "#94a3ff", zone: "Lowland Shores",              reward: "2 g and chance of supreme rune of holding, amalgamated gemstone, skyscale weapon box", ev: true },
 ];
 const TASK_BY_ID = {};
 DAILIES.forEach(t => { TASK_BY_ID[t.id] = t; });
