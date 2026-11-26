@@ -365,3 +365,9 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .nav-bar #nav {
   margin-left: 0;
 }
+.item-menu.note-popup {
+  position: fixed;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+}
