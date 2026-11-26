@@ -255,13 +255,16 @@ tr:hover td { background: #1d1926; }
   max-width: 320px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-.media-chip .menu-x {
-  background: none; border: none;
-  color: var(--dim); cursor: pointer;
-  font-size: 0.8rem;
-  float: right; margin: -4px -4px 4px 8px;
+\.media-chip .menu-x {
+  position: absolute; top: -12px; right: -12px;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--panel); color: var(--dim);
+  border: 1px solid var(--accent);
+  font-family: inherit; font-weight: 400;
+  cursor: pointer; font-size: 0.85rem;
+  display: block; margin: 0; padding: 0; text-align: center;
 }
-.media-chip .menu-x:hover { color: var(--text); }
+.media-chip .menu-x:hover { color: var(--accent2); border-color: var(--accent2); }
 .chip-title {
   color: var(--accent);
   font-weight: 700; font-size: 0.9rem;
@@ -867,14 +870,22 @@ function filteredOwned() {
       (!q || i.title.toLowerCase().indexOf(q) !== -1);
   });
 }
+function splitAltTitle(full) {
+  var m = full.match(/^(.*?)\s*\(([^)]{1,60})\)\s*$/);
+  return m ? { main: m[1], alt: m[2] } : { main: full, alt: null };
+}
 function rowHTML(i) {
+  var parts = splitAltTitle(i.title);
   var yr = i.year ? ' <span class="mi-year">' + esc(i.year) + "</span>" : "";
   var et = epTag(i);
   var se = et ? ' <span class="mi-year">' + esc(et) + "</span>" : "";
   var st = i.rating ? ' <span class="chip-stars" style="letter-spacing:1px;">' + chipStarLine(i.rating) + "</span>" : "";
+  var alt = parts.alt
+    ? '<br><span class="mi-year">' + esc(parts.alt) + "</span>"
+    : "";
   return '<div class="media-item">' +
     '<span class="mi-title">' +
-      '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(i.title) + yr + se + st + "</span>" +
+      '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(parts.main) + alt + yr + se + st + "</span>" +
     "</span>" +
     '<span class="mi-actions">' +
       '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-cctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +

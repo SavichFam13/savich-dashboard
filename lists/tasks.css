@@ -117,11 +117,13 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .item-menu input[type="date"] { color-scheme: dark; cursor: text; }
 .item-menu .menu-x {
   position: absolute; top: -12px; right: -12px;
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--bad); color: #121016; border: none;
-  font-weight: bold; cursor: pointer; font-size: 0.8rem;
+  width: 26px; height: 26px; border-radius: 999px;
+  background: var(--panel); color: var(--dim);
+  border: 1px solid var(--accent);
+  font-weight: 400; cursor: pointer; font-size: 0.85rem;
   display: block; margin: 0; padding: 0; text-align: center;
 }
+.item-menu .menu-x:hover { color: var(--accent2); border-color: var(--accent2); }
 .panel {
   position: fixed; top: 0; right: -420px; width: 380px; max-width: 92vw;
   height: 100%; z-index: 400;
@@ -364,10 +366,4 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 }
 .nav-bar #nav {
   margin-left: 0;
-}
-.item-menu.note-popup {
-  position: fixed;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%);
 }
