@@ -671,8 +671,6 @@ function openAddItem(mode, existing, presetType) {
     return '<option value="' + esc(c) + '">';
   }).join("");
   document.getElementById("aiStepTag").textContent = "";
-  setAiStep(1);
-  document.getElementById("addItemOverlay").classList.add("open");
   document.getElementById("aiTitle").focus();
 }
 function setAiStep(n) {
@@ -877,18 +875,10 @@ function renderOwned() {
   var html = "";
   ["movie", "tv"].forEach(function (type) {
     var label = type === "movie" ? "Movies" : "TV Shows";
-    var typeCount = 0;
     var colHtml = "";
     sortedCats().forEach(function (c) {
       var g = list.filter(function (i) { return i.type === type && i.cat === c; });
       if (!g.length) return;
-      if (type === "tv") {
-        var showKeys = {};
-        g.forEach(function (i) { showKeys[i.coll || i.id] = true; });
-        typeCount += Object.keys(showKeys).length;
-      } else {
-        typeCount += g.length;
-      }
       var key = type + "::" + c;
       var collapsed = !!collapsedCats[key];
       var headCount = g.length;
@@ -934,8 +924,7 @@ function renderOwned() {
       colHtml = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
     }
     html += '<div class="type-col"><h2>' + label + '</h2>' +
-      '<div class="type-count">' + typeCount + ' owned</div>' +
-      '<button class="btn btn-pink" data-add-owned="' + type + '" style="margin-bottom:14px;">+ Add ' + label.slice(0, -1) + '</button>' +
+      '<button class="btn btn-pink" data-add-owned="' + type + '" style="margin:14px 0;">+ Add ' + label.slice(0, -1) + '</button>' +
       colHtml + '</div>';
   });
   cols.innerHTML = html;
