@@ -425,7 +425,7 @@ tr:hover td { background: #1d1926; }
             <input type="text" id="aiSeason" inputmode="numeric" placeholder="e.g. 3" style="width:100%;">
           </div>
           <div>
-            <label class="f-label">Movie / Episode # — order in the set (optional)</label>
+            <label class="f-label">Movie # / Episode # (OPTIONAL)</label>
             <input type="text" id="aiEp" inputmode="numeric" placeholder="movie # · TV: ep #" style="width:100%;">
           </div>
         </div>
@@ -792,7 +792,7 @@ function openMediaChip(ev, it) {
   var et = epTag(it);
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
-    '<div class="chip-title">' + esc(it.title) + "</div>" +
+    '<div class="chip-title">' + esc(it.title) + (it.coll ? ' <span style="font-weight:400;color:var(--dim);">— ' + esc(it.coll) + (epTag(it) ? " " + epTag(it) : "") + "</span>" : "") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span><span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Category</span><span>' + esc(it.cat) + "</span></div>" +
     (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span><span>' + esc(it.coll) + "</span></div>" : "") +
@@ -1098,7 +1098,15 @@ function doRandom(type) {
       slotMeta.innerHTML = '<span class="badge ' + (r.type === "movie" ? "movie" : "tv") + '">' + (r.type === "movie" ? "Movie" : "TV") + '</span>' +
         '<span>' + esc(r.cat) + (extras.length ? " · " + esc(extras.join(" · ")) : "") +
         (r.subs ? " · subtitles ready" : " · needs subtitles") + "</span>";
-      askConfirm("Will you watch it?", '"' + r.title + '" is up.', false, { yes: "YES", no: "NO" }).then(function (go) {
+      var rollHeading, rollMsg;
+      if (r.coll) {
+        rollHeading = "Will you watch: " + esc(r.coll);
+        rollMsg = esc(r.title) + "\n" + (epTag(r) || "");
+      } else {
+        rollHeading = "Will you watch it?";
+        rollMsg = '"' + esc(r.title) + '"' + (r.year ? " (" + esc(r.year) + ")" : "") + " is up.";
+      }
+      askConfirm(rollHeading, rollMsg, false, { yes: "YES", no: "NO" }).then(function (go) {
         if (!go) return;
         r.watched = true;
         persist();
