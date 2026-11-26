@@ -116,14 +116,14 @@ h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
 .item-menu button.danger:hover { border-color: var(--bad); color: var(--bad); }
 .item-menu input[type="date"] { color-scheme: dark; cursor: text; }
 .item-menu .menu-x {
-  position: absolute; top: -12px; right: -12px;
-  width: 26px; height: 26px; border-radius: 999px;
-  background: var(--panel); color: var(--dim);
-  border: 1px solid var(--accent);
-  font-weight: 400; cursor: pointer; font-size: 0.85rem;
-  display: block; margin: 0; padding: 0; text-align: center;
+  display: block; width: 100%;
+  background: none; border: none;
+  color: var(--dim);
+  font-family: inherit; font-size: 0.9rem;
+  text-align: right; padding: 0; margin: 0 0 4px;
+  cursor: pointer;
 }
-.item-menu .menu-x:hover { color: var(--accent2); border-color: var(--accent2); }
+.item-menu .menu-x:hover { color: #ff8a8a; }
 .panel {
   position: fixed; top: 0; right: -420px; width: 380px; max-width: 92vw;
   height: 100%; z-index: 400;

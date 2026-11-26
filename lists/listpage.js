@@ -64,7 +64,7 @@ function openNotePopup(ev, t) {
   const el = document.createElement("div");
   el.className = "item-menu note-popup";
   el.innerHTML =
-    '<button class="menu-x">✕</button>' +
+    '<button class="menu-x">close ×</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
     '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
     '<button data-act="edit">✎ edit this note</button>';

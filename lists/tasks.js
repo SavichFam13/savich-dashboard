@@ -378,7 +378,7 @@ function openDetailPopup(ev, t) {
       'font-size:0.72rem;color:var(--dim)">recent:' + histHTML + "</div>"
     : "";
   el.innerHTML =
-    '<button class="menu-x">✕</button>' +
+    '<button class="menu-x">close ×</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
     '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
     histBlock +
@@ -406,7 +406,7 @@ function openTaskMenu(e, item, rerender) {
   const menu = document.createElement("div");
   menu.className = "item-menu";
   menu.innerHTML =
-    '<button class="menu-x">✕</button>' +
+    '<button class="menu-x">close ×</button>' +
     '<button data-act="done">✓ Done</button>' +
     '<button data-act="skip">✗ Won\'t do</button>' +
     '<button data-act="tomorrow">→ Move to tomorrow</button>' +
@@ -483,7 +483,7 @@ function drawMdayCal() {
       '" data-d="' + d + '">' + d + "</button>";
   }
   el.innerHTML =
-    '<button class="menu-x">✕</button>' +
+    '<button class="menu-x">close ×</button>' +
     '<div class="mc-nav">' +
       '<button type="button" id="mc-prev">‹</button>' +
       '<span class="mc-title">' +
@@ -549,7 +549,7 @@ function openMiniDate(anchorEvent, cb) {
         '" data-iso="' + iso + '">' + d + "</button>";
     }
     el.innerHTML =
-      '<button class="menu-x">✕</button>' +
+      '<button class="menu-x">close ×</button>' +
       '<div class="mc-nav">' +
         '<button type="button" class="dc-prev">‹</button>' +
         '<span class="mc-title">MOVE TO</span>' +
@@ -960,7 +960,7 @@ function openDateCalFor(inpId) {
         '" data-iso="' + iso + '">' + d + "</button>";
     }
     el.innerHTML =
-      '<button class="menu-x">✕</button>' +
+      '<button class="menu-x">close ×</button>' +
       '<div class="mc-nav">' +
         '<button type="button" class="dc-prev">‹</button>' +
         '<span class="mc-title">' +

@@ -255,21 +255,19 @@ tr:hover td { background: #1d1926; }
   max-width: 320px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-\.media-chip .menu-x {
-  position: absolute; top: -12px; right: -12px;
-  width: 26px; height: 26px; border-radius: 999px;
-  background: var(--panel); color: var(--dim);
-  border: 1px solid var(--accent);
-  font-family: inherit; font-weight: 400;
-  cursor: pointer; font-size: 0.85rem;
-  display: block; margin: 0; padding: 0; text-align: center;
+.media-chip .menu-x {
+  background: none; border: none;
+  color: var(--dim); cursor: pointer;
+  font-family: inherit; font-size: 0.9rem;
+  float: right; margin: -2px -2px 4px 10px; padding: 0;
 }
+.media-chip .menu-x:hover { color: #ff8a8a; }
 .media-chip .menu-x:hover { color: var(--accent2); border-color: var(--accent2); }
 .chip-title {
   color: var(--accent);
   font-weight: 700; font-size: 0.9rem;
   margin-bottom: 8px;
-  padding-right: 18px;
+  padding-right: 70px;
 }
 .chip-row { font-size: 0.8rem; margin-bottom: 4px; display: flex; align-items: baseline; gap: 10px; }
 .chip-k {
@@ -796,7 +794,7 @@ function openMediaChip(ev, it) {
   el.className = "media-chip";
   var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
   el.innerHTML =
-    '<button class="menu-x">✕</button>' +
+    '<button class="menu-x">close ×</button>' +
     '<div class="chip-title">' + esc(it.title) + (it.coll ? '<br><span style="font-weight:400;color:var(--dim);">' + esc(it.coll) + (epTag(it) ? " " + epTag(it) : "") + "</span>" : "") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span><span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Category</span><span>' + esc(it.cat) + "</span></div>" +
