@@ -403,8 +403,8 @@ tr:hover td { background: #1d1926; }
           <select id="aiCat" style="width:100%;"></select>
         </div>
         <div>
-          <label class="f-label">Collection / Series — keeps entries together (optional)</label>
-          <input type="text" id="aiColl" list="collList" style="width:100%;" placeholder="e.g. South Park, Lord of the Rings...">
+          <label class="f-label">Collection / Series</label>
+          <input type="text" id="aiColl" list="collList" style="width:100%;" placeholder="e.g. Doctor Who, Matrix">
           <datalist id="collList"></datalist>
         </div>
         <div>
@@ -418,16 +418,16 @@ tr:hover td { background: #1d1926; }
       <div class="ai-step" id="aiStep2">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
-            <label class="f-label">Year it came out</label>
+            <label class="f-label">Year Released:</label>
             <input type="text" id="aiYear" inputmode="numeric" placeholder="e.g. 1994" style="width:100%;">
           </div>
           <div>
-            <label class="f-label">Season # (TV only, optional)</label>
+            <label class="f-label">Season # (TV SHOW ONLY)</label>
             <input type="text" id="aiSeason" inputmode="numeric" placeholder="e.g. 3" style="width:100%;">
           </div>
           <div>
             <label class="f-label">Movie / Episode # — order in the set (optional)</label>
-            <input type="text" id="aiEp" inputmode="numeric" placeholder="movies: 1, 2, 3 · TV: ep #" style="width:100%;">
+            <input type="text" id="aiEp" inputmode="numeric" placeholder="movie # · TV: ep #" style="width:100%;">
           </div>
         </div>
         <div>
@@ -436,14 +436,14 @@ tr:hover td { background: #1d1926; }
         </div>
         <div>
           <label class="f-label">Notes</label>
-          <textarea id="aiNotes" rows="4" style="width:100%;" placeholder="Thoughts, favorite scenes, who loved it, anything..."></textarea>
+          <textarea id="aiNotes" rows="4" style="width:100%;" placeholder="Thoughts, favorite scenes, etc..."></textarea>
         </div>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:18px;">
       <button class="btn" id="aiCancel">Cancel</button>
-      <button class="btn" id="aiBack" style="display:none;">← Back</button>
-      <button class="btn btn-primary" id="aiNext">Next: Details →</button>
+      <button class="btn" id="aiBack" style="display:none;">Back</button>
+      <button class="btn btn-primary" id="aiNext">Next</button>
       <button class="btn btn-primary" id="aiSave" style="display:none;">Save</button>
     </div>
   </div>
@@ -679,7 +679,7 @@ function setAiStep(n) {
   document.getElementById("aiStep1").classList.toggle("show", n === 1);
   document.getElementById("aiStep2").classList.toggle("show", n === 2);
   document.getElementById("aiStepTag").textContent =
-    n === 1 ? "STEP 1 OF 2 — BASICS" : "STEP 2 OF 2 — DETAILS";
+    n === 1 ? "BASICS" : "DETAILS";
   document.getElementById("aiBack").style.display = n === 2 ? "inline-block" : "none";
   document.getElementById("aiNext").style.display = n === 1 ? "inline-block" : "none";
   document.getElementById("aiSave").style.display = n === 2 ? "inline-block" : "none";
