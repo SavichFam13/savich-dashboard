@@ -920,7 +920,7 @@ function renderOwned() {
       });
       if (!inner) inner = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
       colHtml += '<div class="cat-group">' +
-        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + (type === "tv" ? Object.keys((function(){var s={};g.forEach(function(i){s[i.coll||i.id]=true;});return s;})()) : g.length) + '</span></div>' +
+        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
         '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">' + inner + '</div></div>';
     });
     if (!colHtml) {
