@@ -882,7 +882,7 @@ function rowHTML(i) {
     : "";
   return '<div class="media-item">' +
     '<span class="mi-title">' +
-      '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(parts.main) + alt + yr + se + st + "</span>" +
+      '<span class="mi-name" data-chip="' + esc(i.id) + '" title="Click for details">' + esc(parts.main) + alt + "<br>" + yr + se + st + "</span>" +
     "</span>" +
     '<span class="mi-actions">' +
       '<button class="mini-btn cc-toggle' + (i.subs ? " cc-on" : "") + '" data-cctoggle="' + esc(i.id) + '" title="' + (i.subs ? "Has subtitles — click to mark as needing them" : "Needs subtitles — click to mark as having them") + '">' + (i.subs ? "CC ✓" : "CC?") + '</button>' +
