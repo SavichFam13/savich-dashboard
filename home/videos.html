@@ -244,9 +244,6 @@ tr:hover td { background: #1d1926; }
 .star-clear:hover { color: var(--text); }
 .media-chip {
   position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   z-index: 150;
   background: var(--panel);
   border: 1px solid var(--accent);
@@ -809,6 +806,8 @@ function openMediaChip(ev, it) {
     '</div>';
   document.body.appendChild(el);
   mediaChipEl = el;
+  el.style.left = Math.max(8, Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12)) + "px";
+  el.style.top = Math.max(8, Math.min(ev.clientY + 10, window.innerHeight - el.offsetHeight - 12)) + "px";
   el.querySelector(".menu-x").onclick = closeMediaChip;
   var eb = el.querySelector("[data-chipedit]");
   if (eb) eb.onclick = function () {
