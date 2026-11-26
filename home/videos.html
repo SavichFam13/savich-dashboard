@@ -893,6 +893,12 @@ function renderOwned() {
       }
       var key = type + "::" + c;
       var collapsed = !!collapsedCats[key];
+      var headCount = g.length;
+      if (type === "tv") {
+        var showKeys = {};
+        g.forEach(function (i) { showKeys[i.coll || i.id] = true; });
+        headCount = Object.keys(showKeys).length;
+      }
       var loose = g.filter(function (i) { return !i.coll; })
                    .sort(function (a, b) { return a.title.localeCompare(b.title, undefined, { sensitivity: "base" }); });
       var collMap = {};
@@ -923,7 +929,7 @@ function renderOwned() {
       });
       if (!inner) inner = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
       colHtml += '<div class="cat-group">' +
-        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + g.length + '</span></div>' +
+        '<div class="cat-head" data-key="' + esc(key) + '"><span>' + esc(c) + '</span><span class="chev">' + (collapsed ? "▸" : "▾") + ' ' + headCount + '</span></div>' +
         '<div class="cat-body' + (collapsed ? " collapsed" : "") + '">' + inner + '</div></div>';
     });
     if (!colHtml) {
