@@ -1044,6 +1044,29 @@ function renderWish() {
   wireChips(body);
 }
 var spinning = false;
+function rollPick(type) {
+  var pool = items.filter(function (i) { return i.owned && i.type === type; });
+  if (!pool.length) return null;
+  var series = {};
+  var singles = [];
+  pool.forEach(function (i) {
+    var k = (i.coll || "").trim();
+    if (k) { (series[k] = series[k] || []).push(i); }
+    else if (!i.watched) singles.push(i);
+  });
+  var candidates = singles.slice();
+  Object.keys(series).forEach(function (k) {
+    var eps = series[k].slice().sort(function (a, b) {
+      var ka = epSortKey(a), kb = epSortKey(b);
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+    });
+    var next = eps.find(function (i) { return !i.watched; });
+    if (next) candidates.push(next);
+  });
+  if (candidates.length) return candidates[Math.floor(Math.random() * candidates.length)];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 function doRandom(type) {
   var pool = items.filter(function (i) { return i.owned && i.type === type; });
   var slotTitle = document.getElementById("slotTitle");
@@ -1054,15 +1077,16 @@ function doRandom(type) {
     return;
   }
   if (spinning) return;
+  var target = rollPick(type);
   spinning = true;
   document.getElementById("btnRandMovie").disabled = true;
   document.getElementById("btnRandTV").disabled = true;
   var ticks = 0, maxTicks = 16;
   slotMeta.innerHTML = '<span class="spinning">Rolling...</span>';
   var iv = setInterval(function () {
-    var r = pool[Math.floor(Math.random() * pool.length)];
+    var r = (++ticks >= maxTicks) ? target : pool[Math.floor(Math.random() * pool.length)];
     slotTitle.textContent = r.title;
-    if (++ticks >= maxTicks) {
+    if (ticks >= maxTicks) {
       clearInterval(iv);
       spinning = false;
       document.getElementById("btnRandMovie").disabled = false;
@@ -1074,6 +1098,13 @@ function doRandom(type) {
       slotMeta.innerHTML = '<span class="badge ' + (r.type === "movie" ? "movie" : "tv") + '">' + (r.type === "movie" ? "Movie" : "TV") + '</span>' +
         '<span>' + esc(r.cat) + (extras.length ? " · " + esc(extras.join(" · ")) : "") +
         (r.subs ? " · subtitles ready" : " · needs subtitles") + "</span>";
+      askConfirm("Will you watch it?", '"' + r.title + '" is up.', false, { yes: "YES", no: "NO" }).then(function (go) {
+        if (!go) return;
+        r.watched = true;
+        persist();
+        renderAll();
+        toast('"' + r.title + '" logged as watched.');
+      });
     }
   }, 90);
 }
