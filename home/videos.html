@@ -243,7 +243,10 @@ tr:hover td { background: #1d1926; }
 }
 .star-clear:hover { color: var(--text); }
 .media-chip {
-  position: absolute;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 150;
   background: var(--panel);
   border: 1px solid var(--accent);
@@ -791,7 +794,7 @@ function openMediaChip(ev, it) {
   var stars = it.rating ? '<span class="chip-stars">' + chipStarLine(it.rating) + "</span> " + it.rating + "/5" : "not rated yet";
   el.innerHTML =
     '<button class="menu-x">✕</button>' +
-    '<div class="chip-title">' + esc(it.title) + (it.coll ? ' <span style="font-weight:400;color:var(--dim);">— ' + esc(it.coll) + (epTag(it) ? " " + epTag(it) : "") + "</span>" : "") + "</div>" +
+    '<div class="chip-title">' + esc(it.title) + (it.coll ? '<br><span style="font-weight:400;color:var(--dim);">' + esc(it.coll) + (epTag(it) ? " " + epTag(it) : "") + "</span>" : "") + "</div>" +
     '<div class="chip-row"><span class="chip-k">Type</span><span>' + (it.type === "movie" ? "Movie" : "TV Show") + "</span></div>" +
     '<div class="chip-row"><span class="chip-k">Category</span><span>' + esc(it.cat) + "</span></div>" +
     (it.coll ? '<div class="chip-row"><span class="chip-k">Collection</span><span>' + esc(it.coll) + "</span></div>" : "") +
@@ -805,8 +808,6 @@ function openMediaChip(ev, it) {
     '</div>';
   document.body.appendChild(el);
   mediaChipEl = el;
-  el.style.left = Math.max(8, Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12)) + "px";
-  el.style.top = Math.max(8, Math.min(ev.clientY + 10, window.innerHeight - el.offsetHeight - 12)) + "px";
   el.querySelector(".menu-x").onclick = closeMediaChip;
   var eb = el.querySelector("[data-chipedit]");
   if (eb) eb.onclick = function () {
