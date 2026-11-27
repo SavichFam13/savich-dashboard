@@ -849,8 +849,11 @@ function epSortKey(i) {
   var s = i.season != null && i.season !== "";
   var e = i.ep != null && i.ep !== "";
   if (s || e) {
-    return "s" + String(s ? i.season : 0).padStart(4, "0") +
-      "e" + String(e ? i.ep : 0).padStart(4, "0");
+    var sn = parseFloat(i.season) || 0;
+    var en = parseFloat(i.ep);
+    if (isNaN(en)) en = 0;
+    return "s" + String(sn).padStart(4, "0") +
+      "e" + String(en).padStart(4, "0");
   }
   return "y" + String(i.year || "0000");
 }
