@@ -950,7 +950,7 @@ function renderOwned() {
           var eps = seasonMap[sn];
           collInner += '<div class="cat-group" style="margin:10px 0 4px;">' +
             '<div class="cat-head season-head" data-skey="' + esc(sk) + '" style="color:var(--dim);letter-spacing:1px;">' +
-              '<span>S' + esc(sn) + '</span><span class="chev">' + (sopen ? "▾" : "▸") + ' ' + eps.length + '</span></div>' +
+              '<span>Season ' + esc(String(parseFloat(sn)).padStart(2, "0")) + '</span><span class="chev">' + (sopen ? "▾" : "▸") + ' ' + eps.length + '</span></div>' +
             '<div class="cat-body' + (sopen ? "" : " collapsed") + '">';
           eps.forEach(function (i) { collInner += rowHTML(i); });
           collInner += '</div></div>';
