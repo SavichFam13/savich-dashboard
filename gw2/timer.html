@@ -1345,7 +1345,8 @@ function openInfo(task, evt, isWeekly) {
     }
   } else if (ev) {
     const nx = evNextMs(ev, now);
-    let nextTxt = "next @ " + fmtClock(nx) + " \u00B7 in " + fmtCDShort((nx - now) / 60000);
+    let nextTxt = "next @ " + fmtClock(nx) + ' <span style="color:var(--accent2);">\u00B7 in ' +
+                  fmtCDShort((nx - now) / 60000) + "</span>";
     if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
     line('<span class="lab">Status:</span> ' + nextTxt);
   }
