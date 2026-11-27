@@ -633,12 +633,10 @@ function countShows(type) {
 function renderSummary() {
   var m = countBy("movie", true), t = countShows("tv");
   var wm = countBy("movie", false), wt = countBy("tv", false);
-  var needSubs = items.filter(function (i) { return i.owned && !i.subs; }).length;
   document.getElementById("summaryStrip").innerHTML =
     '<div class="sum-item"><div class="sum-num">' + m + '</div><div class="sum-label">Movies Owned</div></div>' +
     '<div class="sum-item"><div class="sum-num">' + t + '</div><div class="sum-label">TV Shows Owned</div></div>' +
-    '<div class="sum-item"><div class="sum-num">' + (wm + wt) + '</div><div class="sum-label">On Wishlist</div></div>' +
-    '<div class="sum-item"><div class="sum-num" style="color:var(--bad);">' + needSubs + '</div><div class="sum-label">Need Subtitles</div></div>';
+    '<div class="sum-item"><div class="sum-num">' + (wm + wt) + '</div><div class="sum-label">On Wishlist</div></div>';
   document.getElementById("randStats").textContent =
     "Pool for picking: " + m + " movies · " + t + " TV shows (owned)";
 }
