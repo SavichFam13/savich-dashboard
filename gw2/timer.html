@@ -1396,9 +1396,7 @@ function renderDailyChips(now) {
       (since !== null && since < 15 ? " active" : "");
     let inner = (t.color ? '<span class="dot" style="background:' + t.color + '"></span>' : '') + t.name;
     if (ts !== undefined) {
-      let stampTxt = fmtClock(ts);
-      if (t.id === "nakedman") stampTxt += " \u00B7 " + nakedMap(ts);
-      inner += ' <span class="tick">\u2713</span><span class="stamp-info">@ ' + stampTxt + '</span>';
+      inner += ' <span class="tick">\u2713</span>';
       if (dailyEpoch(ts) < dailyEpoch(now)) {
         inner += ' <span class="chip-cd" style="color:var(--accent2)">(yesterday)</span>';
       }
