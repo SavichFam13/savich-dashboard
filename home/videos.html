@@ -930,12 +930,35 @@ function renderOwned() {
           if (ka !== kb) return ka < kb ? -1 : 1;
           return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
         });
+        var collInner = "";
+        var noSeason = grp.filter(function (i) {
+          return i.season == null || String(i.season).trim() === "";
+        });
+        var seasonMap = {};
+        var seasonNums = [];
+        grp.forEach(function (i) {
+          if (i.season == null || String(i.season).trim() === "") return;
+          var sn = String(parseFloat(i.season));
+          if (!seasonMap[sn]) { seasonMap[sn] = []; seasonNums.push(sn); }
+          seasonMap[sn].push(i);
+        });
+        seasonNums.sort(function (a, b) { return parseFloat(a) - parseFloat(b); });
+        noSeason.forEach(function (i) { collInner += rowHTML(i); });
+        seasonNums.forEach(function (sn) {
+          var sk = ck + "##s" + sn;
+          var sopen = !!collapsedCats[sk];
+          var eps = seasonMap[sn];
+          collInner += '<div class="cat-group" style="margin:10px 0 4px;">' +
+            '<div class="cat-head season-head" data-skey="' + esc(sk) + '" style="color:var(--dim);letter-spacing:1px;">' +
+              '<span>S' + esc(sn) + '</span><span class="chev">' + (sopen ? "▾" : "▸") + ' ' + eps.length + '</span></div>' +
+            '<div class="cat-body' + (sopen ? "" : " collapsed") + '">';
+          eps.forEach(function (i) { collInner += rowHTML(i); });
+          collInner += '</div></div>';
+        });
         inner += '<div class="cat-group" style="margin:10px 0 4px;">' +
           '<div class="cat-head coll-head" data-ckey="' + esc(ck) + '" style="color:var(--accent2);letter-spacing:1px;">' +
             '<span>📺 ' + esc(nm) + '</span><span class="chev">' + (ccollapsed ? "▸" : "▾") + ' ' + grp.length + '</span></div>' +
-          '<div class="cat-body' + (ccollapsed ? " collapsed" : "") + '">';
-        grp.forEach(function (i) { inner += rowHTML(i); });
-        inner += '</div></div>';
+          '<div class="cat-body' + (ccollapsed ? " collapsed" : "") + '">' + collInner + '</div></div>';
       });
       if (!inner) inner = '<div class="empty-note">Nothing here yet. Add something with the button below.</div>';
       colHtml += '<div class="cat-group">' +
@@ -962,6 +985,15 @@ function renderOwned() {
     h.addEventListener("click", function (ev) {
       ev.stopPropagation();
       var key = h.dataset.ckey;
+      collapsedCats[key] = !collapsedCats[key];
+      try { localStorage.setItem("savich-media-collapsed", JSON.stringify(collapsedCats)); } catch (e) {}
+      renderOwned();
+    });
+  });
+  cols.querySelectorAll(".season-head[data-skey]").forEach(function (h) {
+    h.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var key = h.dataset.skey;
       collapsedCats[key] = !collapsedCats[key];
       try { localStorage.setItem("savich-media-collapsed", JSON.stringify(collapsedCats)); } catch (e) {}
       renderOwned();
