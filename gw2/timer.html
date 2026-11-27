@@ -43,7 +43,9 @@
     letter-spacing: 1.5px; font-weight: 700; margin: 26px 0 6px;
   }
   .section-note { color: var(--dim); font-size: 0.82rem; margin-bottom: 10px; }
-  .section-note b { color: var(--accent2); }
+  .title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin: 26px 0 14px; }
+  .title-row .section-title { margin: 0; }
+  .title-row .section-note { margin: 0; }
   .roster { display: flex; flex-wrap: wrap; gap: 10px; }
   .chip {
     display: inline-flex; align-items: center; gap: 8px;
@@ -230,12 +232,16 @@
   </div>
 </div>
 <div class="page" id="page-trackers">
-  <div class="section-title">Dailies</div>
-  <div class="section-note" id="daily-meta"></div>
+  <div class="title-row">
+    <div class="section-title">Dailies</div>
+    <div class="section-note" id="daily-meta"></div>
+  </div>
   <div class="roster" id="roster-daily"></div>
   <div id="ghost-block"></div>
-  <div class="section-title">Weeklies</div>
-  <div class="section-note" id="weekly-meta"></div>
+  <div class="title-row">
+    <div class="section-title">Weeklies</div>
+    <div class="section-note" id="weekly-meta"></div>
+  </div>
   <div class="progress-outer"><div class="progress-inner" id="weekly-bar"></div></div>
   <div class="roster" id="roster-weekly"></div>
   <div class="info-panel" id="info-panel">
