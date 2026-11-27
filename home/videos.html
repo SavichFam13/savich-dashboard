@@ -728,8 +728,8 @@ on("aiSave", "click", function () {
   var subs = document.getElementById("aiSubs").checked;
   var coll = document.getElementById("aiColl").value.trim() || null;
   var year = document.getElementById("aiYear").value.trim() || null;
-  var season = parseInt(document.getElementById("aiSeason").value, 10);
-  var ep = parseInt(document.getElementById("aiEp").value, 10);
+  var season = document.getElementById("aiSeason").value.trim() || null;
+  var ep = document.getElementById("aiEp").value.trim() || null;
   var rating = aiStars || null;
   var notes = document.getElementById("aiNotes").value.trim() || null;
   if (!title) { toast("Give it a title."); return; }
@@ -739,8 +739,8 @@ on("aiSave", "click", function () {
     if (it) {
       it.title = title; it.type = type; it.cat = cat; it.subs = subs;
       it.coll = coll; it.year = year;
-      it.season = isNaN(season) ? null : season;
-      it.ep = isNaN(ep) ? null : ep;
+      it.season = season;
+      it.ep = ep;
       it.rating = rating; it.notes = notes;
     }
     toast("Updated.");
@@ -750,8 +750,8 @@ on("aiSave", "click", function () {
       title: title, type: type, cat: cat, subs: subs,
       owned: addItemCtx.mode === "owned",
       coll: coll, year: year,
-      season: isNaN(season) ? null : season,
-      ep: isNaN(ep) ? null : ep,
+      season: season,
+      ep: ep,
       rating: rating, notes: notes
     });
     toast(addItemCtx.mode === "owned" ? "Added to collection." : "Added to wishlist.");
