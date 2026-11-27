@@ -1345,7 +1345,7 @@ function openInfo(task, evt, isWeekly) {
     }
   } else if (ev) {
     const nx = evNextMs(ev, now);
-    let nextTxt = "next @ " + fmtClock(nx);
+    let nextTxt = "next @ " + fmtClock(nx) + " \u00B7 in " + fmtCDShort((nx - now) / 60000);
     if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
     line('<span class="lab">Status:</span> ' + nextTxt);
   }
@@ -1391,7 +1391,7 @@ function cdSpanHtml(t, now) {
            '" style="color:var(--now);font-weight:700">Active NOW</span>';
   }
   const nx = evNextMs(ev, now);
-  let nextTxt = "next @ " + fmtClock(nx) + " \u00B7 in " + fmtCDShort((nx - now) / 60000);
+  let nextTxt = "next @ " + fmtClock(nx);
   if (t.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
   return ' <span class="chip-cd live-cd" data-ev="' + t.id + '">' + nextTxt + '</span>';
 }
@@ -1674,7 +1674,7 @@ function updateClock() {
       span.style.fontWeight = "700";
     } else {
       const nx = evNextMs(ev, now);
-      let txt = "next @ " + fmtClock(nx) + " \u00B7 in " + fmtCDShort((nx - now) / 60000);
+      let txt = "next @ " + fmtClock(nx);
       if (t.id === "nakedman") txt += " \u00B7 " + nakedMap(nx);
       span.textContent = txt;
       span.style.color = "";
