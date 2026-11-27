@@ -86,6 +86,13 @@
     50%      { transform: scale(1.35); }
   }
   .chip.warn { border-color: var(--now); }
+  .chip.logged.active,
+  .chip.logged.next {
+    border-color: var(--good);
+    box-shadow: 0 0 0 2px rgba(125, 219, 163, 0.30);
+    animation: none;
+  }
+  .chip.logged.active .dot { animation: none; }
   .chip .warn-flag { color: var(--now); font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
   #ghost-block { margin-top: 14px; }
   .ghost-divider {
