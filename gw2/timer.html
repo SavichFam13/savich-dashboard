@@ -1449,15 +1449,13 @@ function renderGhosts(now) {
   ghosts.forEach(g => {
     const x = EXTRAS[g.tid] || { name: g.tid, zone: "logged from Event Timers" };
     const multi = isMulti(g.tid);
-    let stamp = fmtClock(g.ts);
-    if (g.tid === "fractalincursion") stamp += " \u00B7 " + incursionZone(g.ts);
     let tick = ' <span class="tick">\u2713</span>';
     if (multi && g.logs.length > 1) tick = ' <span class="tick">\u2713 \u00D7' + g.logs.length + '</span>';
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "chip ghost logged";
     chip.innerHTML = '<span class="dot" style="background:' + (x.color || "#5fd3c4") + '"></span>' +
-                     x.name + tick + '<span class="stamp-info">@ ' + stamp + '</span>';
+                     x.name + tick;
     let tip = x.name + "\nWhere: " + (x.zone || "?");
     if (x.reward) tip += "\nReward: " + x.reward;
     tip += "\nLeft-click: log. Shift-click: remove last. Right-click: details.";
