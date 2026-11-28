@@ -381,14 +381,12 @@ function openDetailPopup(ev, t) {
     '<button class="menu-x">close ×</button>' +
     '<div class="np-title">' + esc(t.title) + "</div>" +
     '<div class="np-body">' + esc(t.notes || "no notes on this one") + "</div>" +
-    histBlock +
-    '<button data-act="edit">✎ edit series</button>';
+    histBlock;
   document.body.appendChild(el);
   detailPopupEl = el;
   el.style.left = Math.min(ev.clientX, window.innerWidth - el.offsetWidth - 12) + "px";
   el.style.top = Math.min(ev.clientY, window.innerHeight - el.offsetHeight - 12) + "px";
   el.querySelector(".menu-x").onclick = closeDetailPopup;
-  el.querySelector('[data-act="edit"]').onclick = () => { closeDetailPopup(); openEditor(t); };
   setTimeout(() => document.addEventListener("mousedown", function onDoc(mev) {
     if (detailPopupEl && !detailPopupEl.contains(mev.target)) closeDetailPopup();
     document.removeEventListener("mousedown", onDoc);
@@ -588,7 +586,10 @@ function openEditor(task) {
     task ? "Edit Task Series" : "New Task";
   document.getElementById("ed-title").value = t.title || "";
   document.getElementById("ed-notes").value = t.notes || "";
-  document.getElementById("ed-list").value = t.list_id || edDefaultListId();
+  const edSel = document.getElementById("ed-list");
+  if (!edSel.options.length && typeof fillListSelect === "function") fillListSelect();
+  if (!edSel.options.length && typeof fillListSelectForPage === "function") fillListSelectForPage();
+  edSel.value = t.list_id || edDefaultListId();
   document.getElementById("ed-date").value = t.start_date || "";
   document.getElementById("ed-section").value = t.section || "";
   document.getElementById("ed-note").checked = !!t.is_note;
