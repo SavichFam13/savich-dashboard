@@ -12,10 +12,9 @@
   .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .intro { color: var(--dim); font-size: 0.85rem; margin: 4px 0 24px; }
-  .intro b { color: var(--accent2); }
 
-  /* ---- type cards grid ---- */
-  .jt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  /* ---- door cards ---- */
+  .jt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
   .jt-card {
     --tc: var(--accent);
     position: relative; background: var(--panel);
@@ -29,25 +28,23 @@
   .jt-emoji {
     width: 44px; height: 44px; border-radius: 50%;
     background: color-mix(in srgb, var(--tc) 16%, var(--panel));
-    border: 1px solid var(--tc); color: var(--tc);
+    border: 1px solid var(--tc);
     display: flex; align-items: center; justify-content: center;
     font-size: 1.25rem; margin-bottom: 10px;
   }
-  .jt-card h3 { color: var(--tc); font-size: 0.95rem; margin: 0 0 6px; }
+  .jt-card h3 { color: var(--tc); font-size: 0.98rem; margin: 0 0 6px; }
   .jt-card p { color: var(--dim); font-size: 0.78rem; margin: 0; line-height: 1.5; }
   .jt-status { margin-top: 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; }
   .jt-status.done { color: var(--good); }
   .jt-status.todo { color: var(--dim); }
-  /* decorative corner patterns, one flavor per type */
-  .jt-card::after { content: ""; position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; border-radius: 50%; opacity: 0.14; }
-  .t-emotional::after { background: repeating-radial-gradient(circle at 60% 40%, var(--tc) 0 2px, transparent 3px 10px); }
-  .t-reflect::after   { background: repeating-linear-gradient(0deg, var(--tc) 0 3px, transparent 3px 9px); }
-  .t-create::after    { background: conic-gradient(#5fd3c4, #66e0ff, #c9a0ff, #e10ab2, #e8c27a, #5fd3c4); }
-  .t-goals::after     { background: repeating-linear-gradient(45deg, var(--tc) 0 2px, transparent 2px 10px); }
-  .t-care::after      { background: radial-gradient(circle at 30% 50%, var(--tc) 0 18px, transparent 19px), radial-gradient(circle at 70% 50%, var(--tc) 0 18px, transparent 19px); }
-  .t-social::after    { background: repeating-linear-gradient(90deg, var(--tc) 0 6px, transparent 6px 12px); border-radius: 0; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%); }
-  .t-checkin::after   { background: radial-gradient(circle, var(--tc) 2px, transparent 3px); background-size: 12px 12px; }
-  .t-free::after      { background: linear-gradient(135deg, transparent 46%, var(--tc) 46%, var(--tc) 54%, transparent 54%), linear-gradient(45deg, transparent 46%, var(--tc) 46%, var(--tc) 54%, transparent 54%); }
+  /* each door gets its own corner doodle */
+  .jt-card::after { content: ""; position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; opacity: 0.16; pointer-events: none; }
+  .t-brain::after     { border-radius: 50%; background: repeating-radial-gradient(circle at 60% 40%, var(--tc) 0 2px, transparent 3px 11px); }
+  .t-therapist::after { background: repeating-linear-gradient(45deg, var(--tc) 0 3px, transparent 3px 12px); }
+  .t-letters::after   { border-radius: 4px 18px 4px 18px; border: 3px dashed var(--tc); width: 56px; height: 56px; right: -6px; top: -6px; }
+  .t-vent::after      { border-radius: 50%; background: radial-gradient(circle, var(--tc) 0 30%, transparent 32%), radial-gradient(circle, var(--tc) 0 18%, transparent 20%), radial-gradient(circle, var(--tc) 0 12%, transparent 13%); }
+  .t-diary::after     { border-radius: 0; background: repeating-linear-gradient(0deg, var(--tc) 0 2px, transparent 2px 10px); height: 56px; }
+  .t-sparks::after    { border-radius: 50% 50% 50% 0; background: var(--tc); }
 
   /* ---- history ---- */
   .hist { margin-top: 40px; }
@@ -73,7 +70,7 @@
   .entry-panel {
     --jc: var(--accent);
     background: var(--panel); border: 1px solid var(--jc);
-    border-radius: 12px; width: min(720px, 96vw);
+    border-radius: 12px; width: min(740px, 96vw);
     max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
     box-shadow: 0 12px 40px rgba(0,0,0,0.6);
   }
@@ -95,9 +92,7 @@
   }
   .entry-x:hover { color: var(--bad); border-color: var(--bad); }
   .entry-body { padding: 18px 20px 24px; overflow-y: auto; }
-  .entry-body.readonly .fld input,
-  .entry-body.readonly .fld textarea,
-  .entry-body.readonly .fld select { opacity: 0.75; pointer-events: none; }
+  .entry-body.readonly input, .entry-body.readonly textarea, .entry-body.readonly select { opacity: 0.8; }
   .entry-foot {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     padding: 12px 20px; border-top: 1px solid var(--border);
@@ -113,15 +108,15 @@
   .jbtn.danger { background: none; color: var(--bad); border: 1px solid var(--bad); margin-left: auto; }
   .entry-hint { width: 100%; color: var(--dim); font-size: 0.7rem; }
 
-  /* ---- fields ---- */
+  /* ---- generic field bits ---- */
   .fld { margin-bottom: 14px; }
-  .fld > label { display: block; font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .fld > label { display: block; font-size: 0.75rem; color: var(--dim); margin-bottom: 5px; }
   .fld input[type="text"], .fld textarea, .fld select {
     width: 100%; background: var(--bg); color: var(--text);
     border: 1px solid var(--border); border-radius: 6px;
-    padding: 9px 11px; font-family: inherit; font-size: 0.88rem;
+    padding: 9px 11px; font-family: inherit; font-size: 0.9rem;
   }
-  .fld input:focus, .fld textarea:focus, .fld select:focus { outline: none; border-color: var(--jc); }
+  .fld input:focus, .fld textarea:focus { outline: none; border-color: var(--jc); }
   .fld textarea { resize: vertical; min-height: 60px; }
   .slider-row { display: flex; align-items: center; gap: 12px; }
   .slider-row input[type="range"] { flex: 1; accent-color: var(--jc); }
@@ -130,6 +125,94 @@
     background: color-mix(in srgb, var(--jc) 12%, var(--bg));
     border: 1px solid var(--jc); border-radius: 6px; padding: 4px 8px; font-size: 0.85rem;
   }
+
+  /* =============== BRAIN DUMP — neon void =============== */
+  .p-brain { background: radial-gradient(circle at 50% 0%, #2a1233 0%, var(--panel) 60%); }
+  .p-brain .bd-box {
+    width: 100%; min-height: 260px; background: rgba(0,0,0,0.35);
+    color: #f2eef7; border: 1px solid #e10ab2; border-radius: 8px;
+    padding: 14px; font-family: inherit; font-size: 0.95rem; line-height: 1.6;
+    resize: vertical;
+  }
+  .p-brain .bd-box:focus { outline: none; box-shadow: 0 0 0 2px rgba(225,10,178,0.35); }
+  .p-brain .bd-count { color: #e10ab2; font-size: 0.72rem; font-weight: 700; text-align: right; margin-top: 4px; }
+
+  /* =============== THERAPIST LIST — tidy checklist =============== */
+  .p-therapist { background: color-mix(in srgb, #5fd3c4 5%, var(--panel)); }
+  .th-add { display: flex; gap: 8px; margin-bottom: 14px; }
+  .th-add input {
+    flex: 1; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-family: inherit; font-size: 0.9rem;
+  }
+  .th-add input:focus { outline: none; border-color: #5fd3c4; }
+  .th-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; background: var(--bg);
+  }
+  .th-row .th-check {
+    width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid var(--dim); background: none; color: transparent;
+    cursor: pointer; font-size: 0.8rem; line-height: 1;
+  }
+  .th-row.discussed { opacity: 0.55; }
+  .th-row.discussed .th-check { border-color: #7ddba3; color: #7ddba3; }
+  .th-row.discussed .th-txt { text-decoration: line-through; }
+  .th-row .th-txt { flex: 1; font-size: 0.9rem; }
+  .th-row .th-del {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    font-size: 0.85rem; padding: 2px 6px;
+  }
+  .th-row .th-del:hover { color: var(--bad); }
+  .th-empty { color: var(--dim); font-size: 0.82rem; }
+
+  /* =============== UNSNT LETTERS — real paper =============== */
+  .p-letters {
+    background:
+      radial-gradient(circle at 85% 15%, rgba(232,194,122,0.25), transparent 40%),
+      #f6f0e0;
+    color: #33302a;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .p-letters .fld > label { color: #8a8064; font-style: italic; font-size: 0.8rem; }
+  .p-letters .fld input[type="text"], .p-letters .fld textarea {
+    background: #fffdf6; color: #33302a; border: 1px solid #d9cfb4;
+    font-family: Georgia, "Times New Roman", serif; font-size: 1rem;
+  }
+  .p-letters .letter-body {
+    width: 100%; min-height: 230px;
+    background: repeating-linear-gradient(#fffdf6 0 27px, #ece2c8 27px 28px);
+    color: #33302a; border: 1px solid #d9cfb4; border-radius: 4px;
+    padding: 8px 14px; line-height: 28px;
+    font-family: Georgia, "Times New Roman", serif; font-size: 1rem;
+    resize: vertical;
+  }
+  .p-letters .letter-body:focus { outline: none; border-color: #b39244; }
+  .p-letters .salut, .p-letters .sig { font-style: italic; color: #6b6350; }
+
+  /* =============== VENT — the loud room =============== */
+  .p-vent { background: radial-gradient(circle at 50% 110%, #3a0f16 0%, var(--panel) 65%); }
+  .p-vent .fld textarea {
+    min-height: 260px; border-color: #ff5a5a; background: rgba(0,0,0,0.35);
+    font-size: 0.95rem; line-height: 1.6;
+  }
+  .p-vent .fld textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,90,90,0.3); }
+  .p-vent .fld > label { color: #ff9a9a; text-transform: uppercase; letter-spacing: 1px; font-size: 0.68rem; font-weight: 700; }
+
+  /* =============== LIFE DIARY — soft sage =============== */
+  .p-diary { background: linear-gradient(180deg, color-mix(in srgb, #7ddba3 9%, var(--panel)), var(--panel)); }
+  .p-diary .fld textarea { min-height: 240px; font-size: 0.95rem; line-height: 1.65; }
+  .p-diary .fld textarea:focus { outline: none; border-color: #7ddba3; }
+
+  /* =============== SPARKS — sticky energy =============== */
+  .p-sparks { background: radial-gradient(circle at 20% 0%, rgba(255,209,102,0.14), transparent 45%), var(--panel); }
+  .p-sparks .fld textarea {
+    min-height: 240px; border-style: dashed; border-color: #ffd166;
+    font-size: 0.95rem; line-height: 1.6;
+  }
+  .p-sparks .fld textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,209,102,0.3); }
+  .p-sparks .fld > label { color: #ffd166; font-weight: 700; }
 
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
@@ -149,24 +232,24 @@
     <div id="nav"></div>
   </div>
 </div>
-<p class="intro">Six guided journals — <b>emotions, reflection, creativity, goals, self-care, and social</b> — plus a quick daily check-in and a blank page. Lists, scales, and half-finished sentences all count. There's no wrong way to do this.</p>
+<p class="intro">No homework. No questions. Pick a door, dump what's in your head, close it again.</p>
 <nav class="jt-grid" id="jt-grid"></nav>
 <div class="hist" id="hist-block"></div>
 
 <div class="overlay" id="entry-overlay">
   <div class="entry-panel" id="entry-panel">
     <div class="entry-head">
-      <span class="entry-emoji" id="entry-emoji">💭</span>
+      <span class="entry-emoji" id="entry-emoji">🧠</span>
       <span class="entry-title" id="entry-title">Journal</span>
       <input type="date" class="entry-date" id="entry-date">
       <button class="entry-x" id="entry-x" title="close (Esc)">✕</button>
     </div>
     <div class="entry-body" id="entry-body"></div>
     <div class="entry-foot">
-      <button class="jbtn" id="entry-save">SAVE ENTRY</button>
+      <button class="jbtn" id="entry-save">SAVE</button>
       <button class="jbtn ghost" id="entry-edit" style="display:none">✎ EDIT</button>
       <button class="jbtn danger" id="entry-del" style="display:none">DELETE</button>
-      <span class="entry-hint">your journal is private · spelling and grammar don't matter here · skip any question that doesn't fit today</span>
+      <span class="entry-hint" id="entry-hint">nothing is graded · you can save it empty if today was empty</span>
     </div>
   </div>
 </div>
@@ -178,11 +261,12 @@
 <script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
-/* ============================== data model ==============================
+/* =====================================================================
    Per-user cloud state (key: "journal-entries"):
-     { entries: { "YYYY-MM-DD": { typeId: { field: value, ... } } } }
-   All values are strings (sliders store their number as a string).
-========================================================================= */
+     { entries: { "YYYY-MM-DD": { typeId: <value> } } }
+   Most pages save a single object { main: "...", extras }.
+   The therapist list saves { items: [{t, d}, ...] }.
+===================================================================== */
 
 const Store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
@@ -191,163 +275,144 @@ const Store = {
 
 const JOURNAL_KEY = "journal-entries";
 let USER_ID = null;
-let entries = {};            // "YYYY-MM-DD" -> { typeId: {field: value} }
+let entries = {};
 let entriesUpdatedAt = {};
 let online = false;
 let historySyncReady = false;
 
-/* ---------- little field-builder helpers ---------- */
-function tx(f, label, ph, tall) {
-  return '<div class="fld"><label>' + label + '</label>' +
-    '<textarea data-f="' + f + '"' + (tall ? ' style="min-height:110px"' : '') +
-    ' placeholder="' + (ph || "") + '"></textarea></div>';
-}
-function ti(f, label, ph) {
-  return '<div class="fld"><label>' + label + '</label>' +
-    '<input type="text" data-f="' + f + '" placeholder="' + (ph || "") + '"></div>';
-}
-function sl(f, label, min, max, lo) {
-  return '<div class="fld"><label>' + label + '</label><div class="slider-row">' +
-    '<input type="range" data-f="' + f + '" min="' + (min || 1) + '" max="' + (max || 10) + '" value="' + (lo || min || 1) + '">' +
-    '<output>' + (lo || min || 1) + '</output></div></div>';
-}
-function sec(title) {
-  return '<div class="fld"><label style="color:var(--jc);font-weight:700;letter-spacing:1px;margin-top:10px">' + title + '</label></div>';
-}
-
-/* ============================== the 8 journal types ============================== */
+/* ============================== the six doors ============================== */
 
 const TYPES = [
   {
-    id: "emotional", name: "Emotional Expression", emoji: "💭", color: "#c9a0ff",
-    desc: "Put feelings into written words — no speaking required. Works through the harder moments first, then the calm and positive ones.",
+    id: "brain", name: "Brain Dump", emoji: "🧠", color: "#e10ab2", pclass: "p-brain",
+    desc: "One giant box. Whatever is rattling around in your head — dump it in and close the lid. No format, no rules.",
+    hint: "just spill · mid-sentence is fine · you never have to finish a thought",
     build() {
-      return sec("— working through harder moments —") +
-        tx("emotionNow", "Describe an emotion you are feeling right now — what caused this feeling?", "") +
-        tx("overwhelmed", "Write about a time when you felt overwhelmed — how did you cope with it?", "") +
-        tx("angry", "Reflect on a situation that made you angry — what set it off, and how did you respond?", "") +
-        tx("disappointed", "Describe a recent disappointment — how did it affect you, and what did you learn from it?", "") +
-        tx("misunderstood", "Write about a time when you felt misunderstood — how did it make you feel, and how did you address it?", "") +
-        sec("— calmer, positive moments —") +
-        tx("happiness", "Reflect on a moment of happiness — what contributed to those positive feelings?", "") +
-        tx("anxious", "Describe a situation where you felt anxious — what thoughts were running through your mind?", "") +
-        tx("peace", "Write about a time when you felt at peace — what were you doing, and what made you feel calm?", "") +
-        tx("proud", "Reflect on an experience that made you feel proud — what did you achieve, and why was it meaningful?", "") +
-        tx("kindness", "Describe a recent act of kindness you witnessed or took part in — how did it make you feel?", "");
+      return '<div class="fld" style="margin-bottom:4px">' +
+        '<textarea class="bd-box" data-f="main" data-grow="1" placeholder="ok. go."></textarea>' +
+        '<div class="bd-count" id="bd-count"></div></div>';
+    },
+    after(el) {
+      const upd = () => {
+        const words = el.value.trim() ? el.value.trim().split(/\s+/).length : 0;
+        document.getElementById("bd-count").textContent =
+          words ? words + " word" + (words === 1 ? "" : "s") + " out of your head" : "";
+      };
+      el.addEventListener("input", upd);
+      upd();
     }
   },
   {
-    id: "reflect", name: "Self-Reflection", emoji: "🔎", color: "#5fd3c4",
-    desc: "Look back at your day or week, then zoom out to the bigger picture. Builds self-awareness of your own patterns over time.",
+    id: "therapist", name: "Therapist List", emoji: "🛋️", color: "#5fd3c4", pclass: "p-therapist",
+    desc: "Running list of things to bring up in sessions. Add the moment you think of it, cross it off after you've talked it through.",
+    hint: "add it when you think of it · that's the whole system",
     build() {
-      return sec("— looking back at your day or week —") +
-        tx("happy", "Describe a recent experience that made you happy — what about it brought you joy?", "") +
-        tx("challenge", "Write about a challenging situation you faced this week — how did you handle it?", "") +
-        tx("grateful", "List three things you are grateful for today — why are you grateful for them?", "1.\n2.\n3.") +
-        tx("conversation", "Reflect on a recent conversation — how did it make you feel?", "") +
-        tx("proudSelf", "Write about a time when you felt proud of yourself — what did you accomplish?", "") +
-        sec("— thinking bigger —") +
-        tx("idealDay", "Describe your ideal day — what activities would you do, and who would you spend it with?", "") +
-        tx("favoriteMemory", "Reflect on a favorite memory — what makes it special to you?", "") +
-        tx("safePlace", "Describe a place where you feel safe and comfortable — why do you feel at ease there?", "") +
-        tx("admire", "Write about a quality you admire in yourself — how does it help you in daily life?", "");
+      return '<div class="fld"><div class="th-add">' +
+        '<input type="text" id="th-input" placeholder="want to remember to bring up…">' +
+        '<button type="button" class="jbtn" id="th-add-btn">ADD</button></div>' +
+        '<div id="th-list"></div></div>';
+    },
+    fill(saved) {
+      theraItems = (saved && Array.isArray(saved.items)) ? saved.items : [];
+      renderThera();
+    },
+    collect() { return { items: theraItems }; },
+    focusId: "th-input"
+  },
+  {
+    id: "letters", name: "Unsent Letters", emoji: "💌", color: "#e8c27a", pclass: "p-letters",
+    desc: "Write to anyone you will never send it to — the person you're furious at, the one who's gone, the version of you from five years ago. The paper keeps every secret.",
+    hint: "says exactly what you'd never say out loud · it stays on this paper",
+    build() {
+      return '<div class="fld"><label>To</label><input type="text" data-f="to" placeholder="who is this for — a name, \u201cnobody\u201d, \u201cyou know who you are\u201d…"></div>' +
+        '<div class="fld"><label>Say it</label>' +
+        '<textarea class="letter-body" data-f="main" data-grow="1" placeholder="Dear whatever-your-name-is,"></textarea></div>' +
+        '<div class="fld"><label>Signed</label><input type="text" data-f="sig" class="sig" placeholder="\u2014 me"></div>';
     }
   },
   {
-    id: "create", name: "Creativity & Imagination", emoji: "✨", color: "#e10ab2",
-    desc: "Room to explore new ideas, stories, and perspectives — places, possibilities, characters, and inventions.",
+    id: "vent", name: "Vent", emoji: "🌋", color: "#ff5a5a", pclass: "p-vent",
+    desc: "For when it's too loud inside. Rate how loud, then yell into the void. The void does not judge, interrupt, or say \u201cbreathe\u201d.",
+    hint: "caps lock encouraged · typos welcome · nobody is coming to fix this, it just gets heard",
     build() {
-      return sec("— places and possibilities —") +
-        tx("travel", "Imagine you could travel anywhere in the world — where would you go, and why?", "") +
-        tx("dream", "Describe a dream you had recently — what do you think it means?", "") +
-        tx("superpower", "Imagine you have a superpower — what is it, and how do you use it to help others?", "") +
-        tx("magical", "Describe a magical place you would like to visit — what does it look like, and what happens there?", "") +
-        tx("world", "Describe an imaginary world — what are its rules, inhabitants, and landscapes like?", "") +
-        sec("— stories and ideas —") +
-        tx("story", "Write a short story about a fictional character — what challenges do they face, and how do they overcome them?", "", true) +
-        tx("poem", "Write a poem about your favorite season — what do you love about it?", "", true) +
-        tx("dialogue", "Create a dialogue between two fictional characters — what are they discussing?", "") +
-        tx("futureSelf", "Write a letter to your future self — what advice or encouragement would you give?", "", true) +
-        tx("invention", "Imagine you are an inventor — what new invention would you create, and how would it benefit people?", "");
+      return '<div class="fld"><label>How loud is it in there right now (1–10)</label><div class="slider-row">' +
+        '<input type="range" data-f="loud" min="1" max="10" value="7"><output>7</output></div></div>' +
+        '<div class="fld"><label>Let it out</label>' +
+        '<textarea data-f="main" data-grow="1" placeholder="AAAAAAAAAH. ok so—"></textarea></div>';
     }
   },
   {
-    id: "goals", name: "Goals & Planning", emoji: "🎯", color: "#e8c27a",
-    desc: "Choose and shape a goal, then plan it and check your progress — a place to plan coping strategies before you need them.",
+    id: "diary", name: "Life Diary", emoji: "🌤️", color: "#7ddba3", pclass: "p-diary",
+    desc: "What's going on in your life, unfiltered — the good days, the bad stretches, the stuff in between. Future-you will want to read this.",
+    hint: "write like you're telling future-you what happened · or write nothing, the blank counts too",
     build() {
-      return sec("— choosing and shaping a goal —") +
-        tx("personalGoal", "Write about a personal goal you have — why is it important to you?", "") +
-        tx("steps", "Describe the steps you need to take to achieve a specific goal — what challenges might you face?", "1.\n2.\n3.") +
-        tx("skill", "Write about a skill you want to develop — how can you start working on it?", "") +
-        tx("career", "Describe your ideal career — what steps can you take to move toward it?", "") +
-        tx("dream", "Write about a long-term dream you have — what inspires you to pursue it?", "") +
-        sec("— planning and checking progress —") +
-        tx("pastGoal", "Reflect on a past goal you accomplished — how did you achieve it, and what did you learn?", "") +
-        tx("project", "Write a plan for a project you want to start — what are the key steps and milestones?", "") +
-        tx("progress", "Reflect on your progress toward a current goal — what is done, and what still needs doing?", "") +
-        tx("habit", "Describe a habit you want to form — how will you fit it into your daily routine?", "") +
-        tx("challengeNow", "Reflect on a challenge you are currently facing — what strategies can you use to overcome it?", "");
+      return '<div class="fld"><label>Today in one line (optional)</label>' +
+        '<input type="text" data-f="line" placeholder="what kind of day was it?"></div>' +
+        '<div class="fld"><label>The longer version</label>' +
+        '<textarea data-f="main" data-grow="1" placeholder="so here\u2019s where I\u2019m at\u2026"></textarea></div>';
     }
   },
   {
-    id: "care", name: "Self-Care & Well-Being", emoji: "🌿", color: "#7ddba3",
-    desc: "Notice what drains your energy and what restores it — self-care activities, relaxation, sleep, and what keeps you balanced.",
+    id: "sparks", name: "Sparks", emoji: "💡", color: "#ffd166", pclass: "p-sparks",
+    desc: "Half-formed ideas, hyperfocus rambles, the thing you remembered at 2am, plans you might chase someday. Catch them before they evaporate.",
+    hint: "half an idea is a caught idea · finish nothing",
     build() {
-      return sec("— noticing what drains and restores —") +
-        tx("activity", "Write about a self-care activity that makes you feel good — how can you do it more often?", "") +
-        tx("relaxed", "Describe a time when you felt relaxed and at peace — what were you doing?", "") +
-        tx("routine", "Reflect on your current self-care routine — what is working well, and what could you improve?", "") +
-        tx("stress", "Reflect on how you manage stress — what techniques help you the most?", "") +
-        tx("sleep", "Reflect on your sleep routine — how can you improve your sleep quality?", "") +
-        sec("— what keeps you balanced —") +
-        tx("healthyHabit", "Write about a healthy habit you want to adopt — how will it benefit you?", "") +
-        tx("perfectDay", "Describe your perfect day of self-care — what activities would you include?", "") +
-        tx("energetic", "Write about a time you felt physically healthy and energetic — what contributed to that feeling?", "") +
-        tx("hobby", "Describe a favorite hobby or activity — how does it contribute to your well-being?", "") +
-        tx("balanced", "Write about a time you felt emotionally balanced — what factors helped keep that balance?", "");
-    }
-  },
-  {
-    id: "social", name: "Social Reflection", emoji: "🤝", color: "#66e0ff",
-    desc: "Start with the people who matter to you, then look at how your interactions went — strengths, conflicts, and goals.",
-    build() {
-      return sec("— the people who matter to you —") +
-        tx("friendship", "Write about a meaningful friendship — what makes this relationship special to you?", "") +
-        tx("supported", "Describe a time when you felt supported by others — what did they do to help?", "") +
-        tx("valuedQuality", "Write about a quality you value in a friend — why is it important to you?", "") +
-        tx("inspires", "Describe a person who inspires you — what qualities do they have?", "") +
-        tx("included", "Describe a time when you felt included and accepted — what contributed to that feeling?", "") +
-        sec("— how your interactions go —") +
-        tx("recentInteraction", "Reflect on a recent social interaction — how did it make you feel?", "") +
-        tx("conflict", "Reflect on a time you had a conflict with someone — how did you resolve it?", "") +
-        tx("positive", "Write about a positive social experience you had recently — what made it enjoyable?", "") +
-        tx("communication", "Reflect on how you communicate with others — what are your strengths, and what would you like to work on?", "") +
-        tx("socialGoal", "Write about a goal you have for your social life — how can you work toward it?", "");
-    }
-  },
-  {
-    id: "checkin", name: "Daily Check-In", emoji: "📋", color: "#8ab4ff",
-    desc: "The simple self-monitoring entry: rate your energy and stress 1–5, note the best and hardest parts, set up tomorrow.",
-    build() {
-      return sl("energy", "Energy today (1–5)", 1, 5, 3) +
-        sl("stress", "Stress today (1–5)", 1, 5, 3) +
-        tx("bestPart", "The best part of today", "") +
-        tx("hardestPart", "The hardest part of today", "") +
-        tx("tomorrow", "One thing tomorrow needs", "") +
-        ti("oneWord", "One word for today (optional)", "");
-    }
-  },
-  {
-    id: "free", name: "Free Write", emoji: "✏️", color: "#d1c4f6",
-    desc: "A blank page. Write whatever you want, however you want — or nothing at all. Lists count. Sketches count. Half-thoughts count.",
-    build() {
-      return tx("freewrite", "Today's page", "whatever is in your head — no structure, no grading", true) +
-        ti("freeTitle", "Give today's page a title (optional)", "e.g. \"misc brain noise\" or \"wednesday\"");
+      return '<div class="fld"><label>Catch them here</label>' +
+        '<textarea data-f="main" data-grow="1" placeholder="what if\u2026"></textarea></div>';
     }
   }
 ];
 const TYPE_BY_ID = {};
 TYPES.forEach(t => { TYPE_BY_ID[t.id] = t; });
+
+/* ============================== therapist list internals ============================== */
+
+let theraItems = [];   // [{ t: "text", d: true/false }]
+
+function renderThera() {
+  const list = document.getElementById("th-list");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!theraItems.length) {
+    const p = document.createElement("p");
+    p.className = "th-empty";
+    p.textContent = "Empty right now. Anything that loops in your head at night goes here.";
+    list.appendChild(p);
+    return;
+  }
+  theraItems.forEach((it, i) => {
+    const row = document.createElement("div");
+    row.className = "th-row" + (it.d ? " discussed" : "");
+    const chk = document.createElement("button");
+    chk.type = "button";
+    chk.className = "th-check";
+    chk.innerHTML = "✓";
+    chk.title = it.d ? "mark as not-yet-discussed" : "marked as talked through";
+    chk.onclick = () => { it.d = !it.d; renderThera(); };
+    const txt = document.createElement("span");
+    txt.className = "th-txt";
+    txt.textContent = it.t;
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "th-del";
+    del.textContent = "✕";
+    del.title = "remove";
+    del.onclick = () => { theraItems.splice(i, 1); renderThera(); };
+    row.appendChild(chk); row.appendChild(txt); row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function addTheraItem() {
+  const inp = document.getElementById("th-input");
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) return;
+  theraItems.push({ t: v, d: false });
+  inp.value = "";
+  renderThera();
+  inp.focus();
+}
 
 /* ============================== sync ============================== */
 
@@ -400,6 +465,12 @@ function flash(msg) {
   flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
 }
 
+function hasContent(t) {
+  if (!t) return false;
+  if (t.items) return t.items.length > 0;
+  return Object.values(t).some(v => v !== undefined && v !== null && String(v).trim() !== "" && String(v) !== "7");
+}
+
 /* ============================== home view ============================== */
 
 function renderHome() {
@@ -408,7 +479,7 @@ function renderHome() {
   const grid = document.getElementById("jt-grid");
   grid.innerHTML = "";
   TYPES.forEach(t => {
-    const done = !!(day[t.id] && Object.values(day[t.id]).some(v => v !== undefined && String(v).trim() !== ""));
+    const done = hasContent(day[t.id]);
     const card = document.createElement("button");
     card.type = "button";
     card.className = "jt-card t-" + t.id;
@@ -418,7 +489,7 @@ function renderHome() {
       '<h3>' + t.name + '</h3>' +
       '<p>' + t.desc + '</p>' +
       '<div class="jt-status ' + (done ? "done" : "todo") + '">' +
-      (done ? "✓ written today" : "not written yet") + '</div>';
+      (done ? "✓ written today" : "open it") + '</div>';
     card.onclick = () => openEntry(t.id, today, false);
     grid.appendChild(card);
   });
@@ -478,16 +549,28 @@ function openEntry(typeId, dateStr, readonly) {
   document.getElementById("entry-title").textContent = openType.name;
   document.getElementById("entry-date").value = dateStr;
   document.getElementById("entry-date").disabled = viewMode;
+  document.getElementById("entry-hint").textContent = openType.hint ||
+    "nothing is graded · you can save it empty if today was empty";
 
-  body.className = "entry-body" + (viewMode ? " readonly" : "");
+  body.className = "entry-body " + openType.pclass + (viewMode ? " readonly" : "");
   body.innerHTML = openType.build();
 
   const saved = entries[dateStr] && entries[dateStr][typeId];
-  fillForm(saved || {});
+  if (openType.fill) openType.fill(saved);
+  else fillForm(saved || {});
+  if (openType.after) {
+    const mainEl = body.querySelector("[data-f='main']");
+    if (mainEl) openType.after(mainEl);
+  }
 
   document.getElementById("entry-save").style.display = viewMode ? "none" : "";
   document.getElementById("entry-edit").style.display = viewMode ? "" : "none";
   document.getElementById("entry-del").style.display = viewMode ? "" : "none";
+
+  if (openType.focusId && !viewMode) {
+    const f = document.getElementById(openType.focusId);
+    if (f) setTimeout(() => f.focus(), 60);
+  }
   overlay.classList.add("open");
 }
 
@@ -508,6 +591,7 @@ function fillForm(vals) {
     } else {
       el.value = vals[f] !== undefined ? vals[f] : "";
     }
+    if (el.hasAttribute("data-grow")) autogrow(el);
   });
 }
 
@@ -521,7 +605,7 @@ function collectForm() {
 
 function saveEntry() {
   const dateStr = document.getElementById("entry-date").value || todayStr();
-  const vals = collectForm();
+  const vals = openType.collect ? openType.collect() : collectForm();
   if (!entries[dateStr]) entries[dateStr] = {};
   entries[dateStr][openType.id] = vals;
   if (historySyncReady) journalSync.save(true); else Store.set(JOURNAL_KEY + ":" + USER_ID, { entries: entries, updatedAt: entriesUpdatedAt });
@@ -542,6 +626,11 @@ function deleteEntry() {
   renderHome();
 }
 
+function autogrow(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight + 4, 2000) + "px";
+}
+
 /* ============================== wiring ============================== */
 
 document.getElementById("entry-x").onclick = closeEntry;
@@ -554,15 +643,26 @@ document.getElementById("entry-edit").onclick = () => {
   document.getElementById("entry-save").style.display = "";
   document.getElementById("entry-edit").style.display = "none";
   viewMode = false;
+  if (openType.id === "therapist") renderThera();
   flash("editing — SAVE when done");
 };
 document.getElementById("entry-date").addEventListener("change", () => {
   openDate = document.getElementById("entry-date").value || todayStr();
 });
-document.getElementById("entry-overlay").addEventListener("input", e => {
+document.getElementById("entry-body").addEventListener("input", e => {
   if (e.target && e.target.type === "range") {
     const out = e.target.parentElement.querySelector("output");
     if (out) out.textContent = e.target.value;
+  }
+  if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-grow")) autogrow(e.target);
+});
+document.getElementById("entry-body").addEventListener("click", e => {
+  if (e.target && e.target.id === "th-add-btn") addTheraItem();
+});
+document.getElementById("entry-body").addEventListener("keydown", e => {
+  if (e.target && e.target.id === "th-input" && e.key === "Enter") {
+    e.preventDefault();
+    addTheraItem();
   }
 });
 document.addEventListener("keydown", e => {
