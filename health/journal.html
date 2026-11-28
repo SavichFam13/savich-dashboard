@@ -12,6 +12,7 @@
   .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
   .intro { color: var(--dim); font-size: 0.85rem; margin: 4px 0 24px; }
+  .intro b { color: var(--accent2); }
 
   /* ---- type cards grid ---- */
   .jt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
@@ -39,20 +40,20 @@
   .jt-status.todo { color: var(--dim); }
   /* decorative corner patterns, one flavor per type */
   .jt-card::after { content: ""; position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; border-radius: 50%; opacity: 0.14; }
-  .t-structured::after { background: repeating-linear-gradient(0deg, var(--tc) 0 3px, transparent 3px 9px); }
-  .t-bullet::after    { background: repeating-linear-gradient(90deg, var(--tc) 0 6px, transparent 6px 12px); border-radius: 0; height: 64px; width: 64px; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%); }
-  .t-visual::after    { background: conic-gradient(#5fd3c4, #66e0ff, #c9a0ff, #e10ab2, #e8c27a, #5fd3c4); }
-  .t-data::after      { background: radial-gradient(circle, var(--tc) 2px, transparent 3px); background-size: 12px 12px; }
-  .t-sensory::after   { background: repeating-radial-gradient(circle at 60% 40%, var(--tc) 0 2px, transparent 3px 10px); }
-  .t-social::after    { background: radial-gradient(circle at 30% 50%, var(--tc) 0 18px, transparent 19px), radial-gradient(circle at 70% 50%, var(--tc) 0 18px, transparent 19px); }
-  .t-routine::after   { background: repeating-linear-gradient(45deg, var(--tc) 0 2px, transparent 2px 10px); }
-  .t-identity::after  { background: radial-gradient(circle, var(--tc) 1.5px, transparent 2.5px); background-size: 9px 9px; transform: rotate(20deg); }
+  .t-emotional::after { background: repeating-radial-gradient(circle at 60% 40%, var(--tc) 0 2px, transparent 3px 10px); }
+  .t-reflect::after   { background: repeating-linear-gradient(0deg, var(--tc) 0 3px, transparent 3px 9px); }
+  .t-create::after    { background: conic-gradient(#5fd3c4, #66e0ff, #c9a0ff, #e10ab2, #e8c27a, #5fd3c4); }
+  .t-goals::after     { background: repeating-linear-gradient(45deg, var(--tc) 0 2px, transparent 2px 10px); }
+  .t-care::after      { background: radial-gradient(circle at 30% 50%, var(--tc) 0 18px, transparent 19px), radial-gradient(circle at 70% 50%, var(--tc) 0 18px, transparent 19px); }
+  .t-social::after    { background: repeating-linear-gradient(90deg, var(--tc) 0 6px, transparent 6px 12px); border-radius: 0; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%); }
+  .t-checkin::after   { background: radial-gradient(circle, var(--tc) 2px, transparent 3px); background-size: 12px 12px; }
+  .t-free::after      { background: linear-gradient(135deg, transparent 46%, var(--tc) 46%, var(--tc) 54%, transparent 54%), linear-gradient(45deg, transparent 46%, var(--tc) 46%, var(--tc) 54%, transparent 54%); }
 
   /* ---- history ---- */
   .hist { margin-top: 40px; }
   .hist h2 { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); margin: 0 0 12px; }
   .hist-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .hist-date { color: var(--text); font-size: 0.85rem; font-weight: 700; min-width: 130px; }
+  .hist-date { color: var(--text); font-size: 0.85rem; font-weight: 700; min-width: 150px; }
   .hist-date.today { color: var(--accent2); }
   .hist-chip {
     background: none; border: 1px solid var(--tc); color: var(--tc);
@@ -97,8 +98,6 @@
   .entry-body.readonly .fld input,
   .entry-body.readonly .fld textarea,
   .entry-body.readonly .fld select { opacity: 0.75; pointer-events: none; }
-  .entry-body.readonly .pill input { pointer-events: none; }
-  .entry-body.readonly #vgrid { pointer-events: none; }
   .entry-foot {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     padding: 12px 20px; border-top: 1px solid var(--border);
@@ -124,7 +123,6 @@
   }
   .fld input:focus, .fld textarea:focus, .fld select:focus { outline: none; border-color: var(--jc); }
   .fld textarea { resize: vertical; min-height: 60px; }
-  .fld-sub { color: var(--dim); font-size: 0.68rem; margin-top: 2px; margin-bottom: 5px; text-transform: none; letter-spacing: 0; }
   .slider-row { display: flex; align-items: center; gap: 12px; }
   .slider-row input[type="range"] { flex: 1; accent-color: var(--jc); }
   .slider-row output {
@@ -132,26 +130,6 @@
     background: color-mix(in srgb, var(--jc) 12%, var(--bg));
     border: 1px solid var(--jc); border-radius: 6px; padding: 4px 8px; font-size: 0.85rem;
   }
-  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .pill {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 999px; padding: 6px 14px; cursor: pointer;
-    font-size: 0.8rem; color: var(--dim);
-  }
-  .pill input { accent-color: var(--jc); }
-  .pill.on-checked { border-color: var(--jc); color: var(--text); }
-
-  /* ---- visual journal grid ---- */
-  .vgrid-wrap { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--bg); display: inline-block; }
-  #vgrid { display: grid; grid-template-columns: repeat(8, 34px); gap: 4px; }
-  #vgrid button {
-    width: 34px; height: 34px; border-radius: 5px;
-    border: 1px solid var(--border); background: var(--panel); cursor: pointer; padding: 0;
-  }
-  .vlegend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 0.72rem; color: var(--dim); }
-  .vlegend span { display: inline-flex; align-items: center; gap: 6px; }
-  .vlegend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
 
   .flash-msg {
     position: fixed; top: 18px; right: 18px; z-index: 300;
@@ -171,14 +149,14 @@
     <div id="nav"></div>
   </div>
 </div>
-<p class="intro">Eight ways in — pick the one that fits how your brain works today. Same structure every time or something different; all of it saves to your account.</p>
+<p class="intro">Six guided journals — <b>emotions, reflection, creativity, goals, self-care, and social</b> — plus a quick daily check-in and a blank page. Lists, scales, and half-finished sentences all count. There's no wrong way to do this.</p>
 <nav class="jt-grid" id="jt-grid"></nav>
 <div class="hist" id="hist-block"></div>
 
 <div class="overlay" id="entry-overlay">
   <div class="entry-panel" id="entry-panel">
     <div class="entry-head">
-      <span class="entry-emoji" id="entry-emoji">📋</span>
+      <span class="entry-emoji" id="entry-emoji">💭</span>
       <span class="entry-title" id="entry-title">Journal</span>
       <input type="date" class="entry-date" id="entry-date">
       <button class="entry-x" id="entry-x" title="close (Esc)">✕</button>
@@ -188,7 +166,7 @@
       <button class="jbtn" id="entry-save">SAVE ENTRY</button>
       <button class="jbtn ghost" id="entry-edit" style="display:none">✎ EDIT</button>
       <button class="jbtn danger" id="entry-del" style="display:none">DELETE</button>
-      <span class="entry-hint">left-click = write · nothing is graded · a one-word answer is a real answer</span>
+      <span class="entry-hint">your journal is private · spelling and grammar don't matter here · skip any question that doesn't fit today</span>
     </div>
   </div>
 </div>
@@ -203,8 +181,7 @@
 /* ============================== data model ==============================
    Per-user cloud state (key: "journal-entries"):
      { entries: { "YYYY-MM-DD": { typeId: { field: value, ... } } } }
-   Values: strings for text/selects, numbers for sliders,
-   arrays of strings for checkbox pill groups, JSON string for the visual grid.
+   All values are strings (sliders store their number as a string).
 ========================================================================= */
 
 const Store = {
@@ -225,164 +202,147 @@ function tx(f, label, ph, tall) {
     '<textarea data-f="' + f + '"' + (tall ? ' style="min-height:110px"' : '') +
     ' placeholder="' + (ph || "") + '"></textarea></div>';
 }
-function sl(f, label, min, max) {
-  const lo = (min === undefined) ? 1 : min, hi = (max === undefined) ? 10 : max;
+function ti(f, label, ph) {
+  return '<div class="fld"><label>' + label + '</label>' +
+    '<input type="text" data-f="' + f + '" placeholder="' + (ph || "") + '"></div>';
+}
+function sl(f, label, min, max, lo) {
   return '<div class="fld"><label>' + label + '</label><div class="slider-row">' +
-    '<input type="range" data-f="' + f + '" min="' + lo + '" max="' + hi + '" value="' + Math.ceil((lo + hi) / 2) + '">' +
-    '<output>' + Math.ceil((lo + hi) / 2) + '</output></div></div>';
+    '<input type="range" data-f="' + f + '" min="' + (min || 1) + '" max="' + (max || 10) + '" value="' + (lo || min || 1) + '">' +
+    '<output>' + (lo || min || 1) + '</output></div></div>';
 }
-function sel(f, label, opts) {
-  return '<div class="fld"><label>' + label + '</label><select data-f="' + f + '">' +
-    opts.map(o => '<option value="' + o + '">' + o + '</option>').join("") +
-    '</select></div>';
-}
-function pills(f, label, items) {
-  return '<div class="fld"><label>' + label + '</label><div class="pill-row">' +
-    items.map(i => '<label class="pill"><input type="checkbox" data-f="' + f + '" data-v="' + i + '"><span>' + i + '</span></label>').join("") +
-    '</div></div>';
+function sec(title) {
+  return '<div class="fld"><label style="color:var(--jc);font-weight:700;letter-spacing:1px;margin-top:10px">' + title + '</label></div>';
 }
 
 /* ============================== the 8 journal types ============================== */
 
-const VPAL = ["", "#5fd3c4", "#66e0ff", "#c9a0ff", "#e8c27a", "#ff8a8a", "#e10ab2"];
-
 const TYPES = [
   {
-    id: "structured", name: "Structured Template", emoji: "📋", color: "#c9a0ff",
-    desc: "Same fields every day — predictable structure, low effort. Date, energy, sensory input, wins, struggles, tomorrow.",
+    id: "emotional", name: "Emotional Expression", emoji: "💭", color: "#c9a0ff",
+    desc: "Put feelings into written words — no speaking required. Works through the harder moments first, then the calm and positive ones.",
     build() {
-      return sel("energy", "Energy level (1–5)", ["1 — running on fumes", "2", "3", "4", "5 — fully charged"]) +
-        sel("sensory", "Sensory input today", ["low", "medium", "high"]) +
-        tx("well", "One thing that went well", "even tiny counts") +
-        tx("hard", "One thing that was difficult", "") +
-        tx("tomorrow", "Tomorrow I need…", "");
+      return sec("— working through harder moments —") +
+        tx("emotionNow", "Describe an emotion you are feeling right now — what caused this feeling?", "") +
+        tx("overwhelmed", "Write about a time when you felt overwhelmed — how did you cope with it?", "") +
+        tx("angry", "Reflect on a situation that made you angry — what set it off, and how did you respond?", "") +
+        tx("disappointed", "Describe a recent disappointment — how did it affect you, and what did you learn from it?", "") +
+        tx("misunderstood", "Write about a time when you felt misunderstood — how did it make you feel, and how did you address it?", "") +
+        sec("— calmer, positive moments —") +
+        tx("happiness", "Reflect on a moment of happiness — what contributed to those positive feelings?", "") +
+        tx("anxious", "Describe a situation where you felt anxious — what thoughts were running through your mind?", "") +
+        tx("peace", "Write about a time when you felt at peace — what were you doing, and what made you feel calm?", "") +
+        tx("proud", "Reflect on an experience that made you feel proud — what did you achieve, and why was it meaningful?", "") +
+        tx("kindness", "Describe a recent act of kindness you witnessed or took part in — how did it make you feel?", "");
     }
   },
   {
-    id: "bullet", name: "Bullet Journal", emoji: "✏️", color: "#5fd3c4",
-    desc: "Short, factual lines. No paragraphs required — process in concrete, sequential steps.",
+    id: "reflect", name: "Self-Reflection", emoji: "🔎", color: "#5fd3c4",
+    desc: "Look back at your day or week, then zoom out to the bigger picture. Builds self-awareness of your own patterns over time.",
     build() {
-      return tx("bullets", "Today, one line at a time", "Woke 7am.\nWork was manageable.\nNoise at lunch was too much.\nWore headphones 1–3pm.\nBetter after walk.", true) +
-        tx("notes", "Anything that needs following up", "");
+      return sec("— looking back at your day or week —") +
+        tx("happy", "Describe a recent experience that made you happy — what about it brought you joy?", "") +
+        tx("challenge", "Write about a challenging situation you faced this week — how did you handle it?", "") +
+        tx("grateful", "List three things you are grateful for today — why are you grateful for them?", "1.\n2.\n3.") +
+        tx("conversation", "Reflect on a recent conversation — how did it make you feel?", "") +
+        tx("proudSelf", "Write about a time when you felt proud of yourself — what did you accomplish?", "") +
+        sec("— thinking bigger —") +
+        tx("idealDay", "Describe your ideal day — what activities would you do, and who would you spend it with?", "") +
+        tx("favoriteMemory", "Reflect on a favorite memory — what makes it special to you?", "") +
+        tx("safePlace", "Describe a place where you feel safe and comfortable — why do you feel at ease there?", "") +
+        tx("admire", "Write about a quality you admire in yourself — how does it help you in daily life?", "");
     }
   },
   {
-    id: "visual", name: "Visual Journal", emoji: "🎨", color: "#e10ab2",
-    desc: "Feelings as colors instead of words — good for alexithymia. Cool colors = comfortable, warm = overwhelming.",
+    id: "create", name: "Creativity & Imagination", emoji: "✨", color: "#e10ab2",
+    desc: "Room to explore new ideas, stories, and perspectives — places, possibilities, characters, and inventions.",
     build() {
-      return '<div class="fld"><label>Tap the grid — each square cycles through a color. Make today a picture.</label>' +
-        '<div class="vgrid-wrap"><div id="vgrid"></div>' +
-        '<div class="vlegend">' +
-        '<span><i style="background:#5fd3c4"></i> calm / comfortable</span>' +
-        '<span><i style="background:#66e0ff"></i> steady</span>' +
-        '<span><i style="background:#c9a0ff"></i> busy mind</span>' +
-        '<span><i style="background:#e8c27a"></i> scratchy / rising</span>' +
-        '<span><i style="background:#ff8a8a"></i> too much</span>' +
-        '<span><i style="background:#e10ab2"></i> overwhelm</span>' +
-        '</div></div>' +
-        '<input type="hidden" data-f="grid" id="vgrid-input">' +
-        '</div>' +
-        tx("metaphor", "My mind feels like… (metaphors welcome — “a browser with too many tabs open” is a real answer)", "");
+      return sec("— places and possibilities —") +
+        tx("travel", "Imagine you could travel anywhere in the world — where would you go, and why?", "") +
+        tx("dream", "Describe a dream you had recently — what do you think it means?", "") +
+        tx("superpower", "Imagine you have a superpower — what is it, and how do you use it to help others?", "") +
+        tx("magical", "Describe a magical place you would like to visit — what does it look like, and what happens there?", "") +
+        tx("world", "Describe an imaginary world — what are its rules, inhabitants, and landscapes like?", "") +
+        sec("— stories and ideas —") +
+        tx("story", "Write a short story about a fictional character — what challenges do they face, and how do they overcome them?", "", true) +
+        tx("poem", "Write a poem about your favorite season — what do you love about it?", "", true) +
+        tx("dialogue", "Create a dialogue between two fictional characters — what are they discussing?", "") +
+        tx("futureSelf", "Write a letter to your future self — what advice or encouragement would you give?", "", true) +
+        tx("invention", "Imagine you are an inventor — what new invention would you create, and how would it benefit people?", "");
     }
   },
   {
-    id: "data", name: "Data-Driven", emoji: "📊", color: "#8ab4ff",
-    desc: "Numbers instead of words. Patterns become visible through data that narrative might miss.",
+    id: "goals", name: "Goals & Planning", emoji: "🎯", color: "#e8c27a",
+    desc: "Choose and shape a goal, then plan it and check your progress — a place to plan coping strategies before you need them.",
     build() {
-      return sl("energy", "Energy level (1–10)") +
-        sl("sensoryLoad", "Sensory load (1–10)") +
-        sl("socialBattery", "Social battery (1–10)") +
-        sl("meltdownRisk", "Meltdown / shutdown risk (1–10)") +
-        sl("sleep", "Sleep last night (hours)", 0, 12) +
-        tx("patterns", "Patterns I notice today (food, sleep, people, weather…)", "");
+      return sec("— choosing and shaping a goal —") +
+        tx("personalGoal", "Write about a personal goal you have — why is it important to you?", "") +
+        tx("steps", "Describe the steps you need to take to achieve a specific goal — what challenges might you face?", "1.\n2.\n3.") +
+        tx("skill", "Write about a skill you want to develop — how can you start working on it?", "") +
+        tx("career", "Describe your ideal career — what steps can you take to move toward it?", "") +
+        tx("dream", "Write about a long-term dream you have — what inspires you to pursue it?", "") +
+        sec("— planning and checking progress —") +
+        tx("pastGoal", "Reflect on a past goal you accomplished — how did you achieve it, and what did you learn?", "") +
+        tx("project", "Write a plan for a project you want to start — what are the key steps and milestones?", "") +
+        tx("progress", "Reflect on your progress toward a current goal — what is done, and what still needs doing?", "") +
+        tx("habit", "Describe a habit you want to form — how will you fit it into your daily routine?", "") +
+        tx("challengeNow", "Reflect on a challenge you are currently facing — what strategies can you use to overcome it?", "");
     }
   },
   {
-    id: "sensory", name: "Sensory Check-In", emoji: "🎧", color: "#66e0ff",
-    desc: "Prompts 1–10: rate your environment, trace overwhelming moments, log accommodations, map the day by load.",
+    id: "care", name: "Self-Care & Well-Being", emoji: "🌿", color: "#7ddba3",
+    desc: "Notice what drains your energy and what restores it — self-care activities, relaxation, sleep, and what keeps you balanced.",
     build() {
-      return sl("sight", "Sensory environment right now — sight (1–10)") +
-        sl("sound", "— sound (1–10)") +
-        sl("touch", "— touch (1–10)") +
-        sl("smell", "— smell (1–10)") +
-        tx("change", "What would I change about my environment right now?", "") +
-        sl("battery", "Current sensory battery level (1–10)") +
-        tx("recharge", "What would recharge it?", "") +
-        tx("overMoment", "Most overwhelming moment today — the situation", "what happened, where, who was there") +
-        tx("overResponse", "…what I did", "") +
-        tx("overAlt", "…what would have helped", "") +
-        pills("accom", "Accommodations I used today", ["headphones", "ear plugs", "sunglasses", "stim toys", "weighted blanket", "quiet room", "left early", "none"]) +
-        tx("accomHelp", "Did they help?", "") +
-        sel("amLoad", "Morning sensory load", ["", "low", "medium", "high"]) +
-        sel("pmLoad", "Afternoon sensory load", ["", "low", "medium", "high"]) +
-        sel("eveLoad", "Evening sensory load", ["", "low", "medium", "high"]) +
-        tx("dayPattern", "What pattern emerges across the day?", "") +
-        tx("trace", "Did any input trigger a meltdown or shutdown? Trace it — what was the FIRST sign my system was overwhelmed?", "timeline it: first sign → what built → the peak") +
-        tx("comfort", "Textures, sounds, or smells that bring comfort — when did I last feel them?", "") +
-        tx("ideal", "My ideal sensory environment in detail — light, sound, temperature, texture, smell. How close is my current space?", "");
+      return sec("— noticing what drains and restores —") +
+        tx("activity", "Write about a self-care activity that makes you feel good — how can you do it more often?", "") +
+        tx("relaxed", "Describe a time when you felt relaxed and at peace — what were you doing?", "") +
+        tx("routine", "Reflect on your current self-care routine — what is working well, and what could you improve?", "") +
+        tx("stress", "Reflect on how you manage stress — what techniques help you the most?", "") +
+        tx("sleep", "Reflect on your sleep routine — how can you improve your sleep quality?", "") +
+        sec("— what keeps you balanced —") +
+        tx("healthyHabit", "Write about a healthy habit you want to adopt — how will it benefit you?", "") +
+        tx("perfectDay", "Describe your perfect day of self-care — what activities would you include?", "") +
+        tx("energetic", "Write about a time you felt physically healthy and energetic — what contributed to that feeling?", "") +
+        tx("hobby", "Describe a favorite hobby or activity — how does it contribute to your well-being?", "") +
+        tx("balanced", "Write about a time you felt emotionally balanced — what factors helped keep that balance?", "");
     }
   },
   {
-    id: "social", name: "Masking & Social Battery", emoji: "🎭", color: "#e10ab2",
-    desc: "Prompts 11–20: how much masking, what felt genuine vs performed, what drained the battery and what fills it.",
+    id: "social", name: "Social Reflection", emoji: "🤝", color: "#66e0ff",
+    desc: "Start with the people who matter to you, then look at how your interactions went — strengths, conflicts, and goals.",
     build() {
-      return sl("masking", "How much masking today? (1 = none, 10 = constant)") +
-        tx("maskWhere", "Which situations required the most?", "") +
-        tx("genuine", "What felt genuine", "") +
-        tx("performed", "What felt performed", "") +
-        pills("exhaust", "Am I exhausted right now? If so, which kind?", ["not exhausted", "physical tiredness", "social exhaustion", "sensory overload", "autistic burnout"]) +
-        tx("rule", "What social rule confused me today — or felt arbitrary / frustrating?", "") +
-        tx("actual", "Misunderstood moment — what actually happened", "") +
-        tx("perceived", "…what they interpreted", "") +
-        tx("avoiding", "What social interaction am I avoiding?", "") +
-        tx("fix", "What would make it more manageable?", "") +
-        sl("battery", "Social battery right now (1–10)") +
-        tx("drains", "What drained it today?", "") +
-        tx("socRecharge", "What would recharge it?", "") +
-        pills("commstyle", "Communication style that works best for me", ["direct", "written", "visual", "structured"]) +
-        tx("commUse", "Am I getting to use it?", "") +
-        tx("unmask", "If I could be fully myself in one situation I currently mask in, it would be… what would be different?", "") +
-        tx("letter", "Something I wish I could explain to neurotypical people about my social experience", "", true);
+      return sec("— the people who matter to you —") +
+        tx("friendship", "Write about a meaningful friendship — what makes this relationship special to you?", "") +
+        tx("supported", "Describe a time when you felt supported by others — what did they do to help?", "") +
+        tx("valuedQuality", "Write about a quality you value in a friend — why is it important to you?", "") +
+        tx("inspires", "Describe a person who inspires you — what qualities do they have?", "") +
+        tx("included", "Describe a time when you felt included and accepted — what contributed to that feeling?", "") +
+        sec("— how your interactions go —") +
+        tx("recentInteraction", "Reflect on a recent social interaction — how did it make you feel?", "") +
+        tx("conflict", "Reflect on a time you had a conflict with someone — how did you resolve it?", "") +
+        tx("positive", "Write about a positive social experience you had recently — what made it enjoyable?", "") +
+        tx("communication", "Reflect on how you communicate with others — what are your strengths, and what would you like to work on?", "") +
+        tx("socialGoal", "Write about a goal you have for your social life — how can you work toward it?", "");
     }
   },
   {
-    id: "routine", name: "Routine & Executive Function", emoji: "🧩", color: "#e8c27a",
-    desc: "Prompts 21–30: what worked, what broke down, transitions, time blindness, procrastination barriers, tomorrow's plan.",
+    id: "checkin", name: "Daily Check-In", emoji: "📋", color: "#8ab4ff",
+    desc: "The simple self-monitoring entry: rate your energy and stress 1–5, note the best and hardest parts, set up tomorrow.",
     build() {
-      return tx("worked", "What part of my routine worked today?", "") +
-        tx("broke", "What broke down?", "") +
-        tx("cause", "What caused the breakdown?", "") +
-        tx("transition", "Was there a difficult transition today? (switching tasks, leaving the house, ending an activity)", "") +
-        tx("smoother", "What would have made it smoother?", "") +
-        tx("week", "Everything I need to do this week — then ★ the ones that matter, ○ the ones I'm avoiding", "· pick up meds\n★ pay water bill\n○ call dentist", true) +
-        sel("ef", "Hardest executive function task today", ["starting something", "switching tasks", "organizing", "time awareness", "decision-making", "nothing in particular"]) +
-        tx("blindness", "Did I experience time blindness? What happened? What helped or could help?", "") +
-        tx("proc", "What task am I procrastinating on?", "") +
-        pills("barriers", "Why? (identify the barrier)", ["boring", "overwhelming", "unclear", "sensory-unpleasant"]) +
-        tx("plan", "Design tomorrow's schedule with realistic transition times — include sensory breaks", "") +
-        pills("tools", "Accommodation / tool that helped today", ["timer", "checklist", "visual schedule", "body doubling", "app", "notes/body-first check-in", "none"]) +
-        tx("toolsHelp", "How did it help?", "") +
-        sl("efRate", "Executive function today (1–10)") +
-        tx("factors", "What factors affected it? (sleep, food, stress, sensory load, social demands)", "") +
-        tx("system", "A system that worked before that I stopped using — why did I stop? Should I restart it?", "");
+      return sl("energy", "Energy today (1–5)", 1, 5, 3) +
+        sl("stress", "Stress today (1–5)", 1, 5, 3) +
+        tx("bestPart", "The best part of today", "") +
+        tx("hardestPart", "The hardest part of today", "") +
+        tx("tomorrow", "One thing tomorrow needs", "") +
+        ti("oneWord", "One word for today (optional)", "");
     }
   },
   {
-    id: "identity", name: "Special Interests & Joy", emoji: "⭐", color: "#7ddba3",
-    desc: "Prompts 31–40: infodump freely, unmasked moments, autistic strengths, boundaries, gratitude, the day's number.",
+    id: "free", name: "Free Write", emoji: "✏️", color: "#d1c4f6",
+    desc: "A blank page. Write whatever you want, however you want — or nothing at all. Lists count. Sketches count. Half-thoughts count.",
     build() {
-      return tx("interest", "What did I learn today about my special interest? What excited me about it? No filter — as much as I want.", "infodump freely", true) +
-        tx("myself", "When did I feel most like myself today — unmasked, comfortable, engaged?", "") +
-        tx("grateful", "An aspect of being autistic I'm grateful for today", "") +
-        tx("struggle", "A trait I struggle with most — what support would help?", "") +
-        tx("perfect", "My perfect day honoring all my needs (sensory, social, routine, interests) would look like…", "", true) +
-        tx("ableism", "Internalized ableism I noticed today (“I should be able to handle this”, “normal people don't need this”…)", "") +
-        tx("advantage", "A time my way of thinking gave me an advantage neurotypical people missed", "") +
-        tx("boundary", "A boundary I need to set to protect my energy — with whom?", "") +
-        tx("pastLetter", "One thing I want to tell my past self about being autistic", "", true) +
-        sl("rating", "Today overall (1–10)") +
-        tx("why", "What made it that number?", "") +
-        tx("higher", "What would make tomorrow a higher number?", "");
+      return tx("freewrite", "Today's page", "whatever is in your head — no structure, no grading", true) +
+        ti("freeTitle", "Give today's page a title (optional)", "e.g. \"misc brain noise\" or \"wednesday\"");
     }
   }
 ];
@@ -448,7 +408,7 @@ function renderHome() {
   const grid = document.getElementById("jt-grid");
   grid.innerHTML = "";
   TYPES.forEach(t => {
-    const done = !!day[t.id];
+    const done = !!(day[t.id] && Object.values(day[t.id]).some(v => v !== undefined && String(v).trim() !== ""));
     const card = document.createElement("button");
     card.type = "button";
     card.className = "jt-card t-" + t.id;
@@ -503,7 +463,6 @@ function renderHome() {
 let openType = null;
 let openDate = null;
 let viewMode = false;
-let vgridColors = new Array(32).fill("");
 
 function openEntry(typeId, dateStr, readonly) {
   openType = TYPE_BY_ID[typeId];
@@ -522,7 +481,6 @@ function openEntry(typeId, dateStr, readonly) {
 
   body.className = "entry-body" + (viewMode ? " readonly" : "");
   body.innerHTML = openType.build();
-  buildVGrid();
 
   const saved = entries[dateStr] && entries[dateStr][typeId];
   fillForm(saved || {});
@@ -539,48 +497,11 @@ function closeEntry() {
   openDate = null;
 }
 
-function buildVGrid() {
-  const grid = document.getElementById("vgrid");
-  if (!grid) return;
-  grid.innerHTML = "";
-  for (let i = 0; i < 32; i++) {
-    const cell = document.createElement("button");
-    cell.type = "button";
-    cell.style.background = vgridColors[i] || "";
-    cell.title = "click to cycle color";
-    cell.onclick = () => {
-      const cur = VPAL.indexOf(vgridColors[i] || "");
-      vgridColors[i] = VPAL[(cur + 1) % VPAL.length];
-      cell.style.background = vgridColors[i] || "";
-      syncGridInput();
-    };
-    grid.appendChild(cell);
-  }
-  syncGridInput();
-}
-function syncGridInput() {
-  const inp = document.getElementById("vgrid-input");
-  if (inp) inp.value = JSON.stringify(vgridColors);
-}
-
 function fillForm(vals) {
   const body = document.getElementById("entry-body");
-  if (vals.grid) {
-    try { vgridColors = JSON.parse(vals.grid).slice(0, 32); }
-      catch (e) { vgridColors = new Array(32).fill(""); }
-    while (vgridColors.length < 32) vgridColors.push("");
-  } else {
-    vgridColors = new Array(32).fill("");
-  }
-  buildVGrid();
-  const ranges = [];
   body.querySelectorAll("[data-f]").forEach(el => {
     const f = el.getAttribute("data-f");
-    if (el.type === "checkbox") {
-      const group = Array.isArray(vals[f]) ? vals[f] : [];
-      el.checked = group.includes(el.getAttribute("data-v"));
-      el.closest(".pill").classList.toggle("on-checked", el.checked);
-    } else if (el.tagName === "INPUT" && el.type === "range") {
+    if (el.tagName === "INPUT" && el.type === "range") {
       el.value = (vals[f] !== undefined && vals[f] !== "") ? vals[f] : el.value;
       const out = el.parentElement.querySelector("output");
       if (out) out.textContent = el.value;
@@ -593,13 +514,7 @@ function fillForm(vals) {
 function collectForm() {
   const out = {};
   document.getElementById("entry-body").querySelectorAll("[data-f]").forEach(el => {
-    const f = el.getAttribute("data-f");
-    if (el.type === "checkbox") {
-      if (!Array.isArray(out[f])) out[f] = [];
-      if (el.checked) out[f].push(el.getAttribute("data-v"));
-    } else {
-      out[f] = el.value;
-    }
+    out[el.getAttribute("data-f")] = el.value;
   });
   return out;
 }
@@ -616,7 +531,6 @@ function saveEntry() {
 }
 
 function deleteEntry() {
-  if (!confirmBox || false) { /* confirmBox only exists on task pages; use native confirm here */ }
   if (!window.confirm("Delete this " + openType.name + " entry from " + openDate + "?")) return;
   if (entries[openDate]) {
     delete entries[openDate][openType.id];
@@ -643,18 +557,12 @@ document.getElementById("entry-edit").onclick = () => {
   flash("editing — SAVE when done");
 };
 document.getElementById("entry-date").addEventListener("change", () => {
-  /* moving the date while composing: keep unsaved values, retarget save */
   openDate = document.getElementById("entry-date").value || todayStr();
 });
 document.getElementById("entry-overlay").addEventListener("input", e => {
   if (e.target && e.target.type === "range") {
     const out = e.target.parentElement.querySelector("output");
     if (out) out.textContent = e.target.value;
-  }
-});
-document.getElementById("entry-overlay").addEventListener("change", e => {
-  if (e.target && e.target.type === "checkbox") {
-    e.target.closest(".pill").classList.toggle("on-checked", e.target.checked);
   }
 });
 document.addEventListener("keydown", e => {
