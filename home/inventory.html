@@ -270,9 +270,6 @@ STORES.sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 let inventory = [];
 let groceryFilter = localStorage.getItem("savich-grocery-filter") || "ALL";
 let IS_ADMIN = false;
-async function ensureAuth() {
-  return await requireAuth();
-}
 async function loadRows() {
   const { data, error } = await sb()
     .from("inventory_items").select("*")
@@ -667,7 +664,7 @@ function switchTab(name) {
   buildColumns();
   renderInventory();
   renderGrocery();
-  try { await ensureAuth(); } catch (e) { return; }
+  try { await requireAuth(); } catch (e) { return; }
   try {
     const { data, error } = await sb().rpc("is_admin");
     IS_ADMIN = !error && data === true;

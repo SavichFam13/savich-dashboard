@@ -240,9 +240,6 @@ let vaults  = DEFAULT_VAULTS.map(v => ({ ...v }));
 let current = { amount: "", done: {} };
 let history = [];
 let IS_ADMIN = false;
-async function ensureAuth() {
-  return await requireAuth();
-}
 async function getBlob(key) {
   const { data, error } = await sb()
     .from("app_data").select("data")
@@ -620,7 +617,7 @@ function switchTab(name) {
 }
 (async function init() {
   try {
-    await ensureAuth();
+    await requireAuth();
   } catch (e) {
     return;
   }

@@ -592,9 +592,6 @@ expandTa.addEventListener("paste", e => {
   document.execCommand("insertText", false,
     e.clipboardData.getData("text/plain"));
 });
-async function ensureAuth() {
-  return await requireAuth();
-}
 function setSync(ok, msg) {
   const el = document.getElementById("sync-note");
   el.textContent = ok ? (msg || "\u2713") :
@@ -1194,7 +1191,7 @@ document.getElementById("import-file")
   });
 (async function init() {
   try {
-    await ensureAuth();
+    await requireAuth();
   } catch (e) {
     return;
   }
