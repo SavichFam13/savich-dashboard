@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M18 40 L18 14 L40 28 Q50 22 60 28 L82 14 L82 40 Q82 86 50 86 Q18 86 18 40 Z' fill='%2314111a' stroke='%23c9a0ff' stroke-width='5' stroke-linejoin='round'/%3E%3Cellipse cx='36' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3Cellipse cx='64' cy='54' rx='5' ry='8' fill='%235fd3c4'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal — Savich Family Dashboard</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+  body { font-size: 15px; line-height: 1.5; padding: 32px 20px; max-width: 1180px; margin: 0 auto; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  h1 { font-size: 1.5rem; color: var(--accent); letter-spacing: 0.5px; }
+  .intro { color: var(--dim); font-size: 0.85rem; margin: 4px 0 24px; }
+
+  /* ---- type cards grid ---- */
+  .jt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .jt-card {
+    --tc: var(--accent);
+    position: relative; background: var(--panel);
+    border: 1px solid var(--border); border-top: 4px solid var(--tc);
+    border-radius: 10px; padding: 18px; text-align: left;
+    cursor: pointer; color: var(--text); font-family: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    overflow: hidden;
+  }
+  .jt-card:hover { transform: translateY(-3px); border-color: var(--tc); }
+  .jt-emoji {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: color-mix(in srgb, var(--tc) 16%, var(--panel));
+    border: 1px solid var(--tc); color: var(--tc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; margin-bottom: 10px;
+  }
+  .jt-card h3 { color: var(--tc); font-size: 0.95rem; margin: 0 0 6px; }
+  .jt-card p { color: var(--dim); font-size: 0.78rem; margin: 0; line-height: 1.5; }
+  .jt-status { margin-top: 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; }
+  .jt-status.done { color: var(--good); }
+  .jt-status.todo { color: var(--dim); }
+  /* decorative corner patterns, one flavor per type */
+  .jt-card::after { content: ""; position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; border-radius: 50%; opacity: 0.14; }
+  .t-structured::after { background: repeating-linear-gradient(0deg, var(--tc) 0 3px, transparent 3px 9px); }
+  .t-bullet::after    { background: repeating-linear-gradient(90deg, var(--tc) 0 6px, transparent 6px 12px); border-radius: 0; height: 64px; width: 64px; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%); }
+  .t-visual::after    { background: conic-gradient(#5fd3c4, #66e0ff, #c9a0ff, #e10ab2, #e8c27a, #5fd3c4); }
+  .t-data::after      { background: radial-gradient(circle, var(--tc) 2px, transparent 3px); background-size: 12px 12px; }
+  .t-sensory::after   { background: repeating-radial-gradient(circle at 60% 40%, var(--tc) 0 2px, transparent 3px 10px); }
+  .t-social::after    { background: radial-gradient(circle at 30% 50%, var(--tc) 0 18px, transparent 19px), radial-gradient(circle at 70% 50%, var(--tc) 0 18px, transparent 19px); }
+  .t-routine::after   { background: repeating-linear-gradient(45deg, var(--tc) 0 2px, transparent 2px 10px); }
+  .t-identity::after  { background: radial-gradient(circle, var(--tc) 1.5px, transparent 2.5px); background-size: 9px 9px; transform: rotate(20deg); }
+
+  /* ---- history ---- */
+  .hist { margin-top: 40px; }
+  .hist h2 { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); margin: 0 0 12px; }
+  .hist-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .hist-date { color: var(--text); font-size: 0.85rem; font-weight: 700; min-width: 130px; }
+  .hist-date.today { color: var(--accent2); }
+  .hist-chip {
+    background: none; border: 1px solid var(--tc); color: var(--tc);
+    border-radius: 999px; padding: 3px 12px; cursor: pointer;
+    font-family: inherit; font-size: 0.72rem; font-weight: 700;
+  }
+  .hist-chip:hover { background: color-mix(in srgb, var(--tc) 14%, var(--panel)); }
+  .hist-empty { color: var(--dim); font-size: 0.82rem; }
+
+  /* ---- overlay ---- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 250;
+    background: rgba(10, 8, 14, 0.72);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay.open { display: flex; }
+  .entry-panel {
+    --jc: var(--accent);
+    background: var(--panel); border: 1px solid var(--jc);
+    border-radius: 12px; width: min(720px, 96vw);
+    max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .entry-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--jc) 10%, var(--panel)), var(--panel));
+  }
+  .entry-emoji { font-size: 1.4rem; }
+  .entry-title { color: var(--jc); font-size: 1.05rem; font-weight: 700; }
+  .entry-date {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-family: inherit; font-size: 0.85rem;
+  }
+  .entry-x {
+    margin-left: auto; background: none; color: var(--dim);
+    border: 1px solid var(--border); border-radius: 50%;
+    width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem;
+  }
+  .entry-x:hover { color: var(--bad); border-color: var(--bad); }
+  .entry-body { padding: 18px 20px 24px; overflow-y: auto; }
+  .entry-body.readonly .fld input,
+  .entry-body.readonly .fld textarea,
+  .entry-body.readonly .fld select { opacity: 0.75; pointer-events: none; }
+  .entry-body.readonly .pill input { pointer-events: none; }
+  .entry-body.readonly #vgrid { pointer-events: none; }
+  .entry-foot {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 12px 20px; border-top: 1px solid var(--border);
+  }
+  .jbtn {
+    background: var(--jc); color: #121016; border: none; border-radius: 6px;
+    padding: 9px 18px; font-family: inherit; font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 1px; cursor: pointer;
+  }
+  .jbtn:hover { filter: brightness(1.1); }
+  .jbtn.ghost { background: none; color: var(--dim); border: 1px solid var(--border); }
+  .jbtn.ghost:hover { color: var(--text); border-color: var(--dim); }
+  .jbtn.danger { background: none; color: var(--bad); border: 1px solid var(--bad); margin-left: auto; }
+  .entry-hint { width: 100%; color: var(--dim); font-size: 0.7rem; }
+
+  /* ---- fields ---- */
+  .fld { margin-bottom: 14px; }
+  .fld > label { display: block; font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .fld input[type="text"], .fld textarea, .fld select {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 11px; font-family: inherit; font-size: 0.88rem;
+  }
+  .fld input:focus, .fld textarea:focus, .fld select:focus { outline: none; border-color: var(--jc); }
+  .fld textarea { resize: vertical; min-height: 60px; }
+  .fld-sub { color: var(--dim); font-size: 0.68rem; margin-top: 2px; margin-bottom: 5px; text-transform: none; letter-spacing: 0; }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type="range"] { flex: 1; accent-color: var(--jc); }
+  .slider-row output {
+    min-width: 40px; text-align: center; font-weight: 700; color: var(--jc);
+    background: color-mix(in srgb, var(--jc) 12%, var(--bg));
+    border: 1px solid var(--jc); border-radius: 6px; padding: 4px 8px; font-size: 0.85rem;
+  }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px; cursor: pointer;
+    font-size: 0.8rem; color: var(--dim);
+  }
+  .pill input { accent-color: var(--jc); }
+  .pill.on-checked { border-color: var(--jc); color: var(--text); }
+
+  /* ---- visual journal grid ---- */
+  .vgrid-wrap { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--bg); display: inline-block; }
+  #vgrid { display: grid; grid-template-columns: repeat(8, 34px); gap: 4px; }
+  #vgrid button {
+    width: 34px; height: 34px; border-radius: 5px;
+    border: 1px solid var(--border); background: var(--panel); cursor: pointer; padding: 0;
+  }
+  .vlegend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 0.72rem; color: var(--dim); }
+  .vlegend span { display: inline-flex; align-items: center; gap: 6px; }
+  .vlegend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  .flash-msg {
+    position: fixed; top: 18px; right: 18px; z-index: 300;
+    background: var(--panel); border: 1px solid var(--good);
+    color: var(--good); border-radius: 10px; padding: 10px 18px;
+    font-weight: 700; font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: none;
+  }
+  .flash-msg.show { display: block; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Personal Journal</h1>
+  <div class="top-right">
+    <span class="sync-note" id="sync-note">syncing…</span>
+    <div id="nav"></div>
+  </div>
+</div>
+<p class="intro">Eight ways in — pick the one that fits how your brain works today. Same structure every time or something different; all of it saves to your account.</p>
+<nav class="jt-grid" id="jt-grid"></nav>
+<div class="hist" id="hist-block"></div>
+
+<div class="overlay" id="entry-overlay">
+  <div class="entry-panel" id="entry-panel">
+    <div class="entry-head">
+      <span class="entry-emoji" id="entry-emoji">📋</span>
+      <span class="entry-title" id="entry-title">Journal</span>
+      <input type="date" class="entry-date" id="entry-date">
+      <button class="entry-x" id="entry-x" title="close (Esc)">✕</button>
+    </div>
+    <div class="entry-body" id="entry-body"></div>
+    <div class="entry-foot">
+      <button class="jbtn" id="entry-save">SAVE ENTRY</button>
+      <button class="jbtn ghost" id="entry-edit" style="display:none">✎ EDIT</button>
+      <button class="jbtn danger" id="entry-del" style="display:none">DELETE</button>
+      <span class="entry-hint">left-click = write · nothing is graded · a one-word answer is a real answer</span>
+    </div>
+  </div>
+</div>
+
+<div class="flash-msg" id="flash-msg"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../db.js"></script>
+<script src="../rollover.js"></script>
+<script src="../nav.js"></script>
+<script>
+/* ============================== data model ==============================
+   Per-user cloud state (key: "journal-entries"):
+     { entries: { "YYYY-MM-DD": { typeId: { field: value, ... } } } }
+   Values: strings for text/selects, numbers for sliders,
+   arrays of strings for checkbox pill groups, JSON string for the visual grid.
+========================================================================= */
+
+const Store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+const JOURNAL_KEY = "journal-entries";
+let USER_ID = null;
+let entries = {};            // "YYYY-MM-DD" -> { typeId: {field: value} }
+let entriesUpdatedAt = {};
+let online = false;
+let historySyncReady = false;
+
+/* ---------- little field-builder helpers ---------- */
+function tx(f, label, ph, tall) {
+  return '<div class="fld"><label>' + label + '</label>' +
+    '<textarea data-f="' + f + '"' + (tall ? ' style="min-height:110px"' : '') +
+    ' placeholder="' + (ph || "") + '"></textarea></div>';
+}
+function sl(f, label, min, max) {
+  const lo = (min === undefined) ? 1 : min, hi = (max === undefined) ? 10 : max;
+  return '<div class="fld"><label>' + label + '</label><div class="slider-row">' +
+    '<input type="range" data-f="' + f + '" min="' + lo + '" max="' + hi + '" value="' + Math.ceil((lo + hi) / 2) + '">' +
+    '<output>' + Math.ceil((lo + hi) / 2) + '</output></div></div>';
+}
+function sel(f, label, opts) {
+  return '<div class="fld"><label>' + label + '</label><select data-f="' + f + '">' +
+    opts.map(o => '<option value="' + o + '">' + o + '</option>').join("") +
+    '</select></div>';
+}
+function pills(f, label, items) {
+  return '<div class="fld"><label>' + label + '</label><div class="pill-row">' +
+    items.map(i => '<label class="pill"><input type="checkbox" data-f="' + f + '" data-v="' + i + '"><span>' + i + '</span></label>').join("") +
+    '</div></div>';
+}
+
+/* ============================== the 8 journal types ============================== */
+
+const VPAL = ["", "#5fd3c4", "#66e0ff", "#c9a0ff", "#e8c27a", "#ff8a8a", "#e10ab2"];
+
+const TYPES = [
+  {
+    id: "structured", name: "Structured Template", emoji: "📋", color: "#c9a0ff",
+    desc: "Same fields every day — predictable structure, low effort. Date, energy, sensory input, wins, struggles, tomorrow.",
+    build() {
+      return sel("energy", "Energy level (1–5)", ["1 — running on fumes", "2", "3", "4", "5 — fully charged"]) +
+        sel("sensory", "Sensory input today", ["low", "medium", "high"]) +
+        tx("well", "One thing that went well", "even tiny counts") +
+        tx("hard", "One thing that was difficult", "") +
+        tx("tomorrow", "Tomorrow I need…", "");
+    }
+  },
+  {
+    id: "bullet", name: "Bullet Journal", emoji: "✏️", color: "#5fd3c4",
+    desc: "Short, factual lines. No paragraphs required — process in concrete, sequential steps.",
+    build() {
+      return tx("bullets", "Today, one line at a time", "Woke 7am.\nWork was manageable.\nNoise at lunch was too much.\nWore headphones 1–3pm.\nBetter after walk.", true) +
+        tx("notes", "Anything that needs following up", "");
+    }
+  },
+  {
+    id: "visual", name: "Visual Journal", emoji: "🎨", color: "#e10ab2",
+    desc: "Feelings as colors instead of words — good for alexithymia. Cool colors = comfortable, warm = overwhelming.",
+    build() {
+      return '<div class="fld"><label>Tap the grid — each square cycles through a color. Make today a picture.</label>' +
+        '<div class="vgrid-wrap"><div id="vgrid"></div>' +
+        '<div class="vlegend">' +
+        '<span><i style="background:#5fd3c4"></i> calm / comfortable</span>' +
+        '<span><i style="background:#66e0ff"></i> steady</span>' +
+        '<span><i style="background:#c9a0ff"></i> busy mind</span>' +
+        '<span><i style="background:#e8c27a"></i> scratchy / rising</span>' +
+        '<span><i style="background:#ff8a8a"></i> too much</span>' +
+        '<span><i style="background:#e10ab2"></i> overwhelm</span>' +
+        '</div></div>' +
+        '<input type="hidden" data-f="grid" id="vgrid-input">' +
+        '</div>' +
+        tx("metaphor", "My mind feels like… (metaphors welcome — “a browser with too many tabs open” is a real answer)", "");
+    }
+  },
+  {
+    id: "data", name: "Data-Driven", emoji: "📊", color: "#8ab4ff",
+    desc: "Numbers instead of words. Patterns become visible through data that narrative might miss.",
+    build() {
+      return sl("energy", "Energy level (1–10)") +
+        sl("sensoryLoad", "Sensory load (1–10)") +
+        sl("socialBattery", "Social battery (1–10)") +
+        sl("meltdownRisk", "Meltdown / shutdown risk (1–10)") +
+        sl("sleep", "Sleep last night (hours)", 0, 12) +
+        tx("patterns", "Patterns I notice today (food, sleep, people, weather…)", "");
+    }
+  },
+  {
+    id: "sensory", name: "Sensory Check-In", emoji: "🎧", color: "#66e0ff",
+    desc: "Prompts 1–10: rate your environment, trace overwhelming moments, log accommodations, map the day by load.",
+    build() {
+      return sl("sight", "Sensory environment right now — sight (1–10)") +
+        sl("sound", "— sound (1–10)") +
+        sl("touch", "— touch (1–10)") +
+        sl("smell", "— smell (1–10)") +
+        tx("change", "What would I change about my environment right now?", "") +
+        sl("battery", "Current sensory battery level (1–10)") +
+        tx("recharge", "What would recharge it?", "") +
+        tx("overMoment", "Most overwhelming moment today — the situation", "what happened, where, who was there") +
+        tx("overResponse", "…what I did", "") +
+        tx("overAlt", "…what would have helped", "") +
+        pills("accom", "Accommodations I used today", ["headphones", "ear plugs", "sunglasses", "stim toys", "weighted blanket", "quiet room", "left early", "none"]) +
+        tx("accomHelp", "Did they help?", "") +
+        sel("amLoad", "Morning sensory load", ["", "low", "medium", "high"]) +
+        sel("pmLoad", "Afternoon sensory load", ["", "low", "medium", "high"]) +
+        sel("eveLoad", "Evening sensory load", ["", "low", "medium", "high"]) +
+        tx("dayPattern", "What pattern emerges across the day?", "") +
+        tx("trace", "Did any input trigger a meltdown or shutdown? Trace it — what was the FIRST sign my system was overwhelmed?", "timeline it: first sign → what built → the peak") +
+        tx("comfort", "Textures, sounds, or smells that bring comfort — when did I last feel them?", "") +
+        tx("ideal", "My ideal sensory environment in detail — light, sound, temperature, texture, smell. How close is my current space?", "");
+    }
+  },
+  {
+    id: "social", name: "Masking & Social Battery", emoji: "🎭", color: "#e10ab2",
+    desc: "Prompts 11–20: how much masking, what felt genuine vs performed, what drained the battery and what fills it.",
+    build() {
+      return sl("masking", "How much masking today? (1 = none, 10 = constant)") +
+        tx("maskWhere", "Which situations required the most?", "") +
+        tx("genuine", "What felt genuine", "") +
+        tx("performed", "What felt performed", "") +
+        pills("exhaust", "Am I exhausted right now? If so, which kind?", ["not exhausted", "physical tiredness", "social exhaustion", "sensory overload", "autistic burnout"]) +
+        tx("rule", "What social rule confused me today — or felt arbitrary / frustrating?", "") +
+        tx("actual", "Misunderstood moment — what actually happened", "") +
+        tx("perceived", "…what they interpreted", "") +
+        tx("avoiding", "What social interaction am I avoiding?", "") +
+        tx("fix", "What would make it more manageable?", "") +
+        sl("battery", "Social battery right now (1–10)") +
+        tx("drains", "What drained it today?", "") +
+        tx("socRecharge", "What would recharge it?", "") +
+        pills("commstyle", "Communication style that works best for me", ["direct", "written", "visual", "structured"]) +
+        tx("commUse", "Am I getting to use it?", "") +
+        tx("unmask", "If I could be fully myself in one situation I currently mask in, it would be… what would be different?", "") +
+        tx("letter", "Something I wish I could explain to neurotypical people about my social experience", "", true);
+    }
+  },
+  {
+    id: "routine", name: "Routine & Executive Function", emoji: "🧩", color: "#e8c27a",
+    desc: "Prompts 21–30: what worked, what broke down, transitions, time blindness, procrastination barriers, tomorrow's plan.",
+    build() {
+      return tx("worked", "What part of my routine worked today?", "") +
+        tx("broke", "What broke down?", "") +
+        tx("cause", "What caused the breakdown?", "") +
+        tx("transition", "Was there a difficult transition today? (switching tasks, leaving the house, ending an activity)", "") +
+        tx("smoother", "What would have made it smoother?", "") +
+        tx("week", "Everything I need to do this week — then ★ the ones that matter, ○ the ones I'm avoiding", "· pick up meds\n★ pay water bill\n○ call dentist", true) +
+        sel("ef", "Hardest executive function task today", ["starting something", "switching tasks", "organizing", "time awareness", "decision-making", "nothing in particular"]) +
+        tx("blindness", "Did I experience time blindness? What happened? What helped or could help?", "") +
+        tx("proc", "What task am I procrastinating on?", "") +
+        pills("barriers", "Why? (identify the barrier)", ["boring", "overwhelming", "unclear", "sensory-unpleasant"]) +
+        tx("plan", "Design tomorrow's schedule with realistic transition times — include sensory breaks", "") +
+        pills("tools", "Accommodation / tool that helped today", ["timer", "checklist", "visual schedule", "body doubling", "app", "notes/body-first check-in", "none"]) +
+        tx("toolsHelp", "How did it help?", "") +
+        sl("efRate", "Executive function today (1–10)") +
+        tx("factors", "What factors affected it? (sleep, food, stress, sensory load, social demands)", "") +
+        tx("system", "A system that worked before that I stopped using — why did I stop? Should I restart it?", "");
+    }
+  },
+  {
+    id: "identity", name: "Special Interests & Joy", emoji: "⭐", color: "#7ddba3",
+    desc: "Prompts 31–40: infodump freely, unmasked moments, autistic strengths, boundaries, gratitude, the day's number.",
+    build() {
+      return tx("interest", "What did I learn today about my special interest? What excited me about it? No filter — as much as I want.", "infodump freely", true) +
+        tx("myself", "When did I feel most like myself today — unmasked, comfortable, engaged?", "") +
+        tx("grateful", "An aspect of being autistic I'm grateful for today", "") +
+        tx("struggle", "A trait I struggle with most — what support would help?", "") +
+        tx("perfect", "My perfect day honoring all my needs (sensory, social, routine, interests) would look like…", "", true) +
+        tx("ableism", "Internalized ableism I noticed today (“I should be able to handle this”, “normal people don't need this”…)", "") +
+        tx("advantage", "A time my way of thinking gave me an advantage neurotypical people missed", "") +
+        tx("boundary", "A boundary I need to set to protect my energy — with whom?", "") +
+        tx("pastLetter", "One thing I want to tell my past self about being autistic", "", true) +
+        sl("rating", "Today overall (1–10)") +
+        tx("why", "What made it that number?", "") +
+        tx("higher", "What would make tomorrow a higher number?", "");
+    }
+  }
+];
+const TYPE_BY_ID = {};
+TYPES.forEach(t => { TYPE_BY_ID[t.id] = t; });
+
+/* ============================== sync ============================== */
+
+function updateSyncNote() {
+  const el = document.getElementById("sync-note");
+  if (!el) return;
+  el.textContent = online ? "✓" : "offline — changes NOT saved";
+  el.classList.toggle("live", online);
+}
+
+const journalSync = createUserSync({
+  key: JOURNAL_KEY,
+  sections: ["entries"],
+  growSections: ["entries"],
+  loadLocal: () => {
+    const cached = Store.get(JOURNAL_KEY + ":" + USER_ID);
+    return cached && cached.entries ? cached : { entries: {}, updatedAt: {} };
+  },
+  saveLocal: v => Store.set(JOURNAL_KEY + ":" + USER_ID, v),
+  getState: () => ({ entries: entries, updatedAt: entriesUpdatedAt }),
+  setState: v => {
+    entries = (v && v.entries && typeof v.entries === "object" && !Array.isArray(v.entries)) ? v.entries : {};
+    entriesUpdatedAt = (v && v.updatedAt) || {};
+  },
+  onRender: renderHome,
+  setOnline: ok => { online = !!ok; updateSyncNote(); }
+});
+
+/* ============================== helpers ============================== */
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function fmtDateLong(iso) {
+  const p = iso.split("-");
+  if (p.length !== 3) return iso;
+  const d = new Date(+p[0], +p[1] - 1, +p[2]);
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return days[d.getDay()] + ", " + months[d.getMonth()] + " " + d.getDate() + " " + d.getFullYear();
+}
+
+let flashTimer = null;
+function flash(msg) {
+  const el = document.getElementById("flash-msg");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+/* ============================== home view ============================== */
+
+function renderHome() {
+  const today = todayStr();
+  const day = entries[today] || {};
+  const grid = document.getElementById("jt-grid");
+  grid.innerHTML = "";
+  TYPES.forEach(t => {
+    const done = !!day[t.id];
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "jt-card t-" + t.id;
+    card.style.setProperty("--tc", t.color);
+    card.innerHTML =
+      '<div class="jt-emoji">' + t.emoji + '</div>' +
+      '<h3>' + t.name + '</h3>' +
+      '<p>' + t.desc + '</p>' +
+      '<div class="jt-status ' + (done ? "done" : "todo") + '">' +
+      (done ? "✓ written today" : "not written yet") + '</div>';
+    card.onclick = () => openEntry(t.id, today, false);
+    grid.appendChild(card);
+  });
+
+  const hb = document.getElementById("hist-block");
+  hb.innerHTML = "";
+  const dates = Object.keys(entries).filter(d => Object.keys(entries[d] || {}).length).sort().reverse();
+  const h2 = document.createElement("h2");
+  h2.textContent = "Past entries";
+  hb.appendChild(h2);
+  if (!dates.length) {
+    const p = document.createElement("p");
+    p.className = "hist-empty";
+    p.textContent = "Nothing yet — today's the first page.";
+    hb.appendChild(p);
+    return;
+  }
+  dates.slice(0, 60).forEach(d => {
+    const row = document.createElement("div");
+    row.className = "hist-row";
+    const lab = document.createElement("span");
+    lab.className = "hist-date" + (d === today ? " today" : "");
+    lab.textContent = fmtDateLong(d);
+    row.appendChild(lab);
+    Object.keys(entries[d]).forEach(tid => {
+      const t = TYPE_BY_ID[tid];
+      if (!t) return;
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "hist-chip";
+      chip.style.setProperty("--tc", t.color);
+      chip.textContent = t.emoji + " " + t.name;
+      chip.onclick = () => openEntry(tid, d, true);
+      row.appendChild(chip);
+    });
+    hb.appendChild(row);
+  });
+}
+
+/* ============================== entry overlay ============================== */
+
+let openType = null;
+let openDate = null;
+let viewMode = false;
+let vgridColors = new Array(32).fill("");
+
+function openEntry(typeId, dateStr, readonly) {
+  openType = TYPE_BY_ID[typeId];
+  if (!openType) return;
+  openDate = dateStr;
+  viewMode = !!readonly;
+
+  const overlay = document.getElementById("entry-overlay");
+  const panel = document.getElementById("entry-panel");
+  const body = document.getElementById("entry-body");
+  panel.style.setProperty("--jc", openType.color);
+  document.getElementById("entry-emoji").textContent = openType.emoji;
+  document.getElementById("entry-title").textContent = openType.name;
+  document.getElementById("entry-date").value = dateStr;
+  document.getElementById("entry-date").disabled = viewMode;
+
+  body.className = "entry-body" + (viewMode ? " readonly" : "");
+  body.innerHTML = openType.build();
+  buildVGrid();
+
+  const saved = entries[dateStr] && entries[dateStr][typeId];
+  fillForm(saved || {});
+
+  document.getElementById("entry-save").style.display = viewMode ? "none" : "";
+  document.getElementById("entry-edit").style.display = viewMode ? "" : "none";
+  document.getElementById("entry-del").style.display = viewMode ? "" : "none";
+  overlay.classList.add("open");
+}
+
+function closeEntry() {
+  document.getElementById("entry-overlay").classList.remove("open");
+  openType = null;
+  openDate = null;
+}
+
+function buildVGrid() {
+  const grid = document.getElementById("vgrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  for (let i = 0; i < 32; i++) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.style.background = vgridColors[i] || "";
+    cell.title = "click to cycle color";
+    cell.onclick = () => {
+      const cur = VPAL.indexOf(vgridColors[i] || "");
+      vgridColors[i] = VPAL[(cur + 1) % VPAL.length];
+      cell.style.background = vgridColors[i] || "";
+      syncGridInput();
+    };
+    grid.appendChild(cell);
+  }
+  syncGridInput();
+}
+function syncGridInput() {
+  const inp = document.getElementById("vgrid-input");
+  if (inp) inp.value = JSON.stringify(vgridColors);
+}
+
+function fillForm(vals) {
+  const body = document.getElementById("entry-body");
+  if (vals.grid) {
+    try { vgridColors = JSON.parse(vals.grid).slice(0, 32); }
+      catch (e) { vgridColors = new Array(32).fill(""); }
+    while (vgridColors.length < 32) vgridColors.push("");
+  } else {
+    vgridColors = new Array(32).fill("");
+  }
+  buildVGrid();
+  const ranges = [];
+  body.querySelectorAll("[data-f]").forEach(el => {
+    const f = el.getAttribute("data-f");
+    if (el.type === "checkbox") {
+      const group = Array.isArray(vals[f]) ? vals[f] : [];
+      el.checked = group.includes(el.getAttribute("data-v"));
+      el.closest(".pill").classList.toggle("on-checked", el.checked);
+    } else if (el.tagName === "INPUT" && el.type === "range") {
+      el.value = (vals[f] !== undefined && vals[f] !== "") ? vals[f] : el.value;
+      const out = el.parentElement.querySelector("output");
+      if (out) out.textContent = el.value;
+    } else {
+      el.value = vals[f] !== undefined ? vals[f] : "";
+    }
+  });
+}
+
+function collectForm() {
+  const out = {};
+  document.getElementById("entry-body").querySelectorAll("[data-f]").forEach(el => {
+    const f = el.getAttribute("data-f");
+    if (el.type === "checkbox") {
+      if (!Array.isArray(out[f])) out[f] = [];
+      if (el.checked) out[f].push(el.getAttribute("data-v"));
+    } else {
+      out[f] = el.value;
+    }
+  });
+  return out;
+}
+
+function saveEntry() {
+  const dateStr = document.getElementById("entry-date").value || todayStr();
+  const vals = collectForm();
+  if (!entries[dateStr]) entries[dateStr] = {};
+  entries[dateStr][openType.id] = vals;
+  if (historySyncReady) journalSync.save(true); else Store.set(JOURNAL_KEY + ":" + USER_ID, { entries: entries, updatedAt: entriesUpdatedAt });
+  flash("✓ saved — " + openType.name + " · " + dateStr);
+  closeEntry();
+  renderHome();
+}
+
+function deleteEntry() {
+  if (!confirmBox || false) { /* confirmBox only exists on task pages; use native confirm here */ }
+  if (!window.confirm("Delete this " + openType.name + " entry from " + openDate + "?")) return;
+  if (entries[openDate]) {
+    delete entries[openDate][openType.id];
+    if (!Object.keys(entries[openDate]).length) delete entries[openDate];
+  }
+  if (historySyncReady) journalSync.save(true); else Store.set(JOURNAL_KEY + ":" + USER_ID, { entries: entries, updatedAt: entriesUpdatedAt });
+  flash("✖ entry deleted");
+  closeEntry();
+  renderHome();
+}
+
+/* ============================== wiring ============================== */
+
+document.getElementById("entry-x").onclick = closeEntry;
+document.getElementById("entry-save").onclick = saveEntry;
+document.getElementById("entry-del").onclick = deleteEntry;
+document.getElementById("entry-edit").onclick = () => {
+  const body = document.getElementById("entry-body");
+  body.classList.remove("readonly");
+  document.getElementById("entry-date").disabled = false;
+  document.getElementById("entry-save").style.display = "";
+  document.getElementById("entry-edit").style.display = "none";
+  viewMode = false;
+  flash("editing — SAVE when done");
+};
+document.getElementById("entry-date").addEventListener("change", () => {
+  /* moving the date while composing: keep unsaved values, retarget save */
+  openDate = document.getElementById("entry-date").value || todayStr();
+});
+document.getElementById("entry-overlay").addEventListener("input", e => {
+  if (e.target && e.target.type === "range") {
+    const out = e.target.parentElement.querySelector("output");
+    if (out) out.textContent = e.target.value;
+  }
+});
+document.getElementById("entry-overlay").addEventListener("change", e => {
+  if (e.target && e.target.type === "checkbox") {
+    e.target.closest(".pill").classList.toggle("on-checked", e.target.checked);
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeEntry();
+});
+
+/* ============================== boot ============================== */
+
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  USER_ID = session.user && session.user.id;
+  if (!USER_ID) return;
+  const cached = Store.get(JOURNAL_KEY + ":" + USER_ID);
+  if (cached && cached.entries) entries = cached.entries;
+  renderHome();
+  await journalSync.init();
+  historySyncReady = true;
+  renderHome();
+})();
+</script>
+</body>
+</html>
