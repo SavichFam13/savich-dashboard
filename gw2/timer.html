@@ -1514,7 +1514,7 @@ function renderWeeklyChips(now) {
     const chipName = (t.rotating && weekData && weekData[t.rotating])
       ? weekData[t.rotating]
       : t.name;
-    let inner = '<span class="dot" style="background:#148eb4"></span>' + chipName;
+    let inner = (t.color ? '<span class="dot" style="background:' + t.color + '"></span>' : '') + chipName;
     if (ts !== undefined) {
       inner += ' <span class="tick">\u2713</span>';
     } else if (missing) {
