@@ -1248,6 +1248,16 @@ function evToggleLogMulti(ev, nowMs, removeLast) {
   saveState(KEY_DAILY, s);
 }
 let infoTask = null;
+function infoNextHtml(task, now) {
+  const ev = EVS[task.id];
+  const since = minsSinceSpawn(ev, now);
+  if (since < 15) return '<b style="color:var(--now);">Active NOW</b>';
+  const nx = evNextMs(ev, now);
+  let txt = "next @ " + fmtClock(nx) + ' <span style="color:var(--accent2);">\u00B7 ' +
+            fmtCD((nx - now) / 60000) + "</span>";
+  if (task.id === "nakedman") txt += " \u00B7 " + nakedMap(nx);
+  return txt;
+}
 function openInfo(task, evt, isWeekly) {
   infoTask = { t: task, isWeekly: isWeekly };
   const now = Date.now();
@@ -1344,11 +1354,7 @@ function openInfo(task, evt, isWeekly) {
       line('<span class="lab">Status:</span> <b style="color:var(--good)">' + stampTxt + '</b>');
     }
   } else if (ev) {
-    const nx = evNextMs(ev, now);
-    let nextTxt = "next @ " + fmtClock(nx) + ' <span style="color:var(--accent2);">\u00B7 ' +
-                  fmtCD((nx - now) / 60000) + "</span>";
-    if (task.id === "nakedman") nextTxt += " \u00B7 " + nakedMap(nx);
-    line('<span class="lab">Status:</span> ' + nextTxt);
+    line('<span class="lab">Status:</span> <span class="info-next">' + infoNextHtml(task, now) + '</span>');
   }
   panel.classList.add("open");
   const chipEl = evt && evt.currentTarget ? evt.currentTarget : null;
@@ -1682,6 +1688,10 @@ function updateClock() {
       span.style.fontWeight = "";
     }
   });
+  if (infoTask && !infoTask.isWeekly && infoTask.t.ev) {
+    const span = document.querySelector("#info-lines .info-next");
+    if (span) span.innerHTML = infoNextHtml(infoTask.t, now);
+  }
   if (selectedEv) renderSchedule(now);
 }
 document.addEventListener("keydown", e => {
