@@ -309,6 +309,7 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../ui.js"></script>
 <script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
@@ -322,11 +323,6 @@ const PALETTE_COUNT = 8;
 const expandOverlay = document.getElementById("expand-overlay");
 const expandBox = document.getElementById("expand-box");
 const expandTa = document.getElementById("expand-ta");
-function esc(str) {
-  return String(str == null ? "" : str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 function markedToHtml(txt) {
   const s = esc(String(txt == null ? "" : txt));
   let out = "";
@@ -1076,16 +1072,7 @@ document.addEventListener("keydown", e => {
     closeModal(false);
   }
 });
-let toastTimer = null;
-function showToast(message) {
-  const t = document.getElementById("toast");
-  t.textContent = message;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    t.classList.remove("show");
-  }, 2600);
-}
+function showToast(message) { toast(message); }
 document.getElementById("search-box")
   .addEventListener("input", renderNotes);
 function exportNotes() {
