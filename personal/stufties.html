@@ -38,7 +38,6 @@ header {
     --pastel-pink: rgba(255,79,163,.12);
     --pastel-blush: rgba(255,158,207,.10);
     --pastel-magenta: rgba(216,27,127,.13);
-    --pastel-gold: rgba(255,217,61,.10);
     --pastel-lilac: rgba(139,47,201,.12);
   }
   body {
@@ -470,7 +469,6 @@ header {
     </div>
   </div>
   <header>
-    <div class="rainbow-bar"></div>
     <h1>🦄 Iri's Stufties 🧸</h1>
     <p class="tagline">💖✨ A very pink playpen of floof, glitter & squeaks ✨💖</p>
     <div class="stats" id="stats"></div>
@@ -525,99 +523,34 @@ header {
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../ui.js"></script>
+<script src="../blobsync.js"></script>
 <script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
 const CLOUD_KEY = "savich-stufties";
 const CACHE_KEY = "savich-stufties-cache";
 let data = { list: [] };
-let cloudReady = false;
-let rtChannel = null;
-let rtReloadTimer = null;
-let lastSyncedPrint = null; 
-let saveQueued = false;
+var sync = Blobsync.shared({
+  key: CLOUD_KEY,
+  cacheKey: CACHE_KEY,
+  getState: function () { return data; },
+  setState: function (value) { data = normalizeState(value); },
+  onRender: renderAll,
+  setOnline: setSync
+});
 function normalizeState(value) {
   const source = value && typeof value === "object" ? value : {};
   return { list: Array.isArray(source.list) ? source.list : [] };
 }
-const Store = {
-  get(key) {
-    try { return JSON.parse(localStorage.getItem(key)); }
-    catch (e) { return null; }
-  },
-  set(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-};
 function setSync(ok, message) {
   const el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = ok ? (message || "✓ One playpen, whole household") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-let saveTimer = null;
-function save(immediate) {
-  if (!cloudReady) return;
-  clearTimeout(saveTimer);
-  const finishOk = () => {
-    lastSyncedPrint = fingerprint(data);
-    saveQueued = false;
-    setSync(true);
-  };
-  const fail = err => {
-    saveQueued = false;
-    console.error("Stufties cloud save failed:", err.message);
-    setSync(false);
-  };
-  if (immediate) {
-    saveDash(CLOUD_KEY, data).then(finishOk).catch(fail);
-  } else {
-    saveQueued = true;
-    setSync(true, "☁️ saving…");
-    saveTimer = setTimeout(() => {
-      saveDash(CLOUD_KEY, data).then(finishOk).catch(fail);
-    }, 900);
-  }
-}
-function cacheLocal() {
-  Store.set(CACHE_KEY, data);
-}
-function fingerprint(obj) {
-  try { return JSON.stringify(obj); }
-  catch (e) { return ""; }
-}
-function setupRealtime() {
-  rtChannel = sb()
-    .channel("stufties-realtime")
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: "app_data" },
-      () => scheduleRemoteReload())
-    .subscribe();
-}
-function scheduleRemoteReload() {
-  if (saveQueued) {
-    clearTimeout(rtReloadTimer);
-    rtReloadTimer = setTimeout(scheduleRemoteReload, 1000);
-    return;
-  }
-  clearTimeout(rtReloadTimer);
-  rtReloadTimer = setTimeout(async () => {
-    try {
-      const cloud = await loadDash(CLOUD_KEY);
-      if (!cloud) return;
-      const fresh = normalizeState(cloud);
-      const fp = fingerprint(fresh);
-      if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
-      if (fp === fingerprint(data)) return;
-      data = fresh;
-      lastSyncedPrint = fp;
-      cacheLocal();
-      renderAll();
-    } catch (e) {
-      console.warn("realtime reload skipped:", e.message);
-    }
-  }, 300);
-}
+function save(immediate) { sync.persist(immediate); }
+function cacheLocal() {}
 const SPECIES_EMOJI = [
   ["uni", "🦄"], ["unicorn", "🦄"], ["bear", "🧸"], ["teddy", "🧸"], ["dragon", "🐉"],
   ["cat", "🐱"], ["kitten", "🐱"], ["dog", "🐶"], ["puppy", "🐶"], ["bunny", "🐰"],
@@ -633,9 +566,7 @@ function emojiFor(species, txt) {
   }
   return "✨";
 }
-function escapeHtml(s) {
-  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+function escapeHtml(s) { return esc(s); }
 function renderStats() {
   const total = data.list.length;
   const favs = data.list.filter(i => i.fav).length;
@@ -902,14 +833,7 @@ document.addEventListener("keydown", e => {
     closeModal(null);
   }
 });
-let toastTimer = null;
-function showToast(message) {
-  const t = document.getElementById("toast");
-  t.textContent = message;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
-}
+function showToast(message) { toast(message); }
 (function() {
   const sky = document.getElementById("sky");
   const doodles = ["🦄","🦄","🦄","💖","✨","🦄","🌈","⭐","💫","🦄","💗","✨"];
@@ -936,27 +860,16 @@ function showToast(message) {
     fall.appendChild(s);
   }
 })();
-data = normalizeState(Store.get(CACHE_KEY));
 renderAll();
-(async function initSharedCloud() {
+(async function init() {
   try {
+    if (typeof Blobsync === "undefined")
+      throw new Error("blobsync.js did not load (check ../blobsync.js)");
     const session = await requireAuth();
-    if (!session) return; 
-
-    const cloud = await loadDash(CLOUD_KEY);
-    if (cloud) {
-      data = normalizeState(cloud);
-      cacheLocal();
-      renderAll();
-    } else {
-      await saveDash(CLOUD_KEY, data);
-    }
-    lastSyncedPrint = fingerprint(data);
-    cloudReady = true;
-    setSync(true, "✓ One playpen, whole household");
-    setupRealtime();
+    if (!session) return;
+    await sync.init();
   } catch (error) {
-    console.error("Stufties shared cloud init failed:", error.message);
+    console.error("Stufties cloud init failed:", error && error.message);
     setSync(false);
   }
 })();
