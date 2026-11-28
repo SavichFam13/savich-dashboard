@@ -452,6 +452,8 @@ tr:hover td { background: #1d1926; }
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../db.js"></script>
+<script src="../ui.js"></script>
+<script src="../blobsync.js"></script>
 <script src="../rollover.js"></script>
 <script src="../nav.js"></script>
 <script>
@@ -463,20 +465,10 @@ var LEGACY_CATS_KEY = "savich-media-cats-v1";
 var DEFAULT_CATS = ["Sci-Fi", "Horror", "Fantasy", "Action", "Comedy", "Drama", "Animation", "Documentary", "Thriller", "Other"];
 var items = [];
 var cats = DEFAULT_CATS.slice();
-var cloudReady = false;
-var lastSyncedPrint = null;
-var saveQueued = false;
-var saveTimer = null;
-var rtReloadTimer = null;
 function on(id, evt, fn) {
   var el = document.getElementById(id);
   if (el) el.addEventListener(evt, fn);
   else console.warn("Media page: element #" + id + " not found — handler skipped");
-}
-function esc(s) {
-  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-  });
 }
 function snapshot() { return { items: items, cats: cats }; }
 function adoptState(value) {
@@ -484,133 +476,35 @@ function adoptState(value) {
   items = Array.isArray(o.items) ? o.items : [];
   cats = (Array.isArray(o.cats) && o.cats.length) ? o.cats : DEFAULT_CATS.slice();
 }
-function fingerprint() {
-  try { return JSON.stringify(snapshot()); } catch (e) { return ""; }
-}
-function loadCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) { return null; }
-}
-function cacheLocal() {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot())); } catch (e) {}
-}
-function loadLegacy() {
-  try {
-    var li = JSON.parse(localStorage.getItem(LEGACY_ITEMS_KEY) || "null");
-    var lc = JSON.parse(localStorage.getItem(LEGACY_CATS_KEY) || "null");
-    if (Array.isArray(li) && li.length) return { items: li, cats: Array.isArray(lc) && lc.length ? lc : DEFAULT_CATS.slice() };
-  } catch (e) {}
-  return null;
-}
+var sync = Blobsync.shared({
+  key: CLOUD_KEY,
+  cacheKey: CACHE_KEY,
+  getState: snapshot,
+  setState: adoptState,
+  onRender: renderAll,
+  setOnline: setSync
+});
 function setSync(ok, message) {
   var el = document.getElementById("sync-note");
   if (!el) return;
   el.textContent = ok ? (message || "✓") : "offline — changes NOT saved";
   el.classList.toggle("live", !!ok);
 }
-function save(immediate) {
-  if (!cloudReady) return;
-  clearTimeout(saveTimer);
-  var finishOk = function () {
-    lastSyncedPrint = fingerprint();
-    saveQueued = false;
-    setSync(true);
-  };
-  var fail = function (err) {
-    saveQueued = false;
-    console.error("Media cloud save failed:", err && err.message);
-    setSync(false);
-  };
-  if (immediate) {
-    saveDash(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
-  } else {
-    saveQueued = true;
-    setSync(true, "☁️ saving…");
-    saveTimer = setTimeout(function () {
-      saveDash(CLOUD_KEY, snapshot()).then(finishOk).catch(fail);
-    }, 900);
-  }
-}
-function persist(immediate) {
-  cacheLocal();
-  save(immediate);
-}
-function setupRealtime() {
-  sb()
-    .channel("media-realtime")
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: "app_data" },
-      function () { scheduleRemoteReload(); })
-    .subscribe();
-}
-function scheduleRemoteReload() {
-  if (saveQueued) {
-    clearTimeout(rtReloadTimer);
-    rtReloadTimer = setTimeout(scheduleRemoteReload, 1000);
-    return;
-  }
-  clearTimeout(rtReloadTimer);
-  rtReloadTimer = setTimeout(async function () {
-    try {
-      var cloud = await loadDash(CLOUD_KEY);
-      if (!cloud) return;
-      var o = cloud && typeof cloud === "object" ? cloud : {};
-      var normalized = {
-        items: Array.isArray(o.items) ? o.items : [],
-        cats: (Array.isArray(o.cats) && o.cats.length) ? o.cats : DEFAULT_CATS.slice()
-      };
-      var fp = JSON.stringify(normalized);
-      if (lastSyncedPrint !== null && fp === lastSyncedPrint) return;
-      if (fp === fingerprint()) return;
-      adoptState(cloud);
-      lastSyncedPrint = fingerprint();
-      cacheLocal();
-      renderAll();
-    } catch (e) {
-      console.warn("realtime reload skipped:", e && e.message);
+function save(immediate) { sync.save(immediate); }
+function persist(immediate) { sync.persist(immediate); }
+(function seedLegacy() {
+  try {
+    if (localStorage.getItem("savich-media-cache")) return;
+    var li = JSON.parse(localStorage.getItem(LEGACY_ITEMS_KEY) || "null");
+    var lc = JSON.parse(localStorage.getItem(LEGACY_CATS_KEY) || "null");
+    if (Array.isArray(li) && li.length) {
+      localStorage.setItem("savich-media-cache", JSON.stringify({
+        items: li,
+        cats: (Array.isArray(lc) && lc.length) ? lc : DEFAULT_CATS.slice()
+      }));
     }
-  }, 300);
-}
-adoptState(loadCache());
-if (!items.length) {
-  var legacy = loadLegacy();
-  if (legacy) { items = legacy.items; cats = legacy.cats; }
-}
-var toastTimer = null;
-function toast(msg) {
-  var t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
-}
-function askConfirm(title, msg, destructive, labels) {
-  var L = labels || {};
-  return new Promise(function (resolve) {
-    var ov = document.getElementById("modalOverlay");
-    document.getElementById("modalTitle").textContent = title;
-    document.getElementById("modalMsg").textContent = msg;
-    document.getElementById("modalYes").textContent = L.yes || "YES";
-    document.getElementById("modalNo").textContent = L.no || "NO";
-    document.getElementById("modalYes").classList.toggle("destructive", !!destructive);
-    ov.classList.add("open");
-    function done(val) {
-      ov.classList.remove("open");
-      document.getElementById("modalYes").removeEventListener("click", yes);
-      document.getElementById("modalNo").removeEventListener("click", no);
-      ov.removeEventListener("click", overlay);
-      document.removeEventListener("keydown", key);
-      resolve(val);
-    }
-    function yes() { done(true); }
-    function no() { done(false); }
-    function overlay(e) { if (e.target === ov) done(false); }
-    function key(e) { if (e.key === "Escape") done(false); }
-    document.getElementById("modalYes").addEventListener("click", yes);
-    document.getElementById("modalNo").addEventListener("click", no);
-    ov.addEventListener("click", overlay);
-    document.addEventListener("keydown", key);
-  });
-}
+  } catch (e) {}
+})();
 var tabBtns = document.querySelectorAll("nav.tabs button");
 tabBtns.forEach(function (b) {
   b.addEventListener("click", function () {
@@ -1233,28 +1127,16 @@ function renderAll() {
   renderCats();
 }
 renderAll();
-(async function initSharedCloud() {
+(async function init() {
   try {
-    if (typeof requireAuth !== "function" || typeof loadDash !== "function" || typeof saveDash !== "function") {
-      throw new Error("db.js did not load (check the ../db.js path)");
-    }
+    if (typeof Blobsync === "undefined")
+      throw new Error("blobsync.js did not load (check ../blobsync.js)");
     var session = await requireAuth();
-    if (!session) return; // bounced to login
-    var cloud = await loadDash(CLOUD_KEY);
-    if (cloud && cloud.items) {
-      adoptState(cloud);
-      cacheLocal();
-      renderAll();
-    } else {
-      await saveDash(CLOUD_KEY, snapshot());
-    }
-    lastSyncedPrint = fingerprint();
-    cloudReady = true;
-    setSync(true, "✓");
-    setupRealtime();
+    if (!session) return; 
+    await sync.init();    
   } catch (error) {
-    console.error("Media shared cloud init failed:", error && error.message);
-    setSync(false, "⚠ " + (error && error.message ? error.message : "cloud init failed"));
+    console.error("Media cloud init failed:", error && error.message);
+    setSync(false, "\u26A0 " + (error && error.message ? error.message : "cloud init failed"));
   }
 })();
 </script>
